@@ -9,7 +9,7 @@ export default function RegistrationHeader({ title }) {
         <span className="mx-1 text-gray-300">|</span>
         <span>Registration</span>
       </div>
-      <div className="text-2xl font-semibold text-blue-600 mt-2">
+      <div className="text-base font-semibold text-blue-600 mt-2">
         {title}
       </div>
     </div>
