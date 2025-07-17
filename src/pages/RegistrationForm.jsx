@@ -300,6 +300,7 @@ export default function RegistrationForm() {
       <input
         ref={idLast4Ref}
         type="text"
+        inputMode="text"  // 允许数字和字母混输，移动端一般会显示字母数字混合键盘
         maxLength={4}
         placeholder="eg. 123A"
         value={form.idLast4}

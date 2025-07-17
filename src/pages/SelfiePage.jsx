@@ -77,7 +77,7 @@ export default function SelfiePage() {
 
       {!imageSrc ? (
         <div className="flex flex-col items-center mb-4">
-          <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-200 mx-auto">
+          <div className="w-[260px] h-[260px] max-w-[90vw] max-h-[90vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-200 mx-auto">
             <Webcam
               audio={false}
               ref={webcamRef}
@@ -102,9 +102,9 @@ export default function SelfiePage() {
           <img
             src={imageSrc}
             alt="Your selfie preview"
-            className="w-[220px] h-[220px] rounded-full object-cover mb-4"
+            className="w-[260px] h-[260px] rounded-full object-cover mb-4"
           />
-          <div className="flex flex-col gap-1 w-full">
+          <div className="flex flex-col gap-0.5 w-full">
             <button
               onClick={handleRetake}
               type="button"

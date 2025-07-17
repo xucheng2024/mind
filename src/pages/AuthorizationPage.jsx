@@ -61,10 +61,10 @@ export default function AuthorizationPage() {
         the patient's legal guardian or authorized representative.
       </p>
 
-      <label className="font-semibold block text-sm text-gray-800 mb-1">
+      <label className="font-semibold block text-sm text-gray-800 mb-0">
         Are you a Guardian or a Representative? <span className="text-red-500">*</span>
       </label>
-      <div className="flex gap-3">
+      <div className="flex gap-3 mb-4">
         {[true, false].map((val) => (
           <button
             type="button"
@@ -90,13 +90,12 @@ export default function AuthorizationPage() {
         Signature of Patient/Guardian or Representative <span className="text-red-500">*</span>
       </label>
       <div
-        className={`relative rounded-md mb-2 w-full max-w-xs mx-auto overflow-hidden border
+        className={`relative rounded-md mb-2 w-full max-w-md mx-auto overflow-hidden border
           ${errors.signature ? 'border-red-500' : 'border-gray-300'}`}
         style={{
-          height: '48px',         // 高度
-          minWidth: '96px',       // 宽度约为高度2倍
-          maxWidth: '240px',      // 最大宽度适配移动端
-          aspectRatio: '2 / 1',   // 保证宽高比
+          aspectRatio: '2 / 1',
+          minHeight: '56px',
+          background: '#fff',
           position: 'relative'
         }}
       >
@@ -118,23 +117,23 @@ export default function AuthorizationPage() {
           onClick={handleClear}
           style={{
             position: 'absolute',
-            top: 4,
-            right: 4,
-            background: 'rgba(255,255,255,0.85)',
-            border: 'none',
+            top: 8,
+            right: 8,
+            background: '#fff',
+            border: '1px solid #ccc',
             borderRadius: '50%',
-            width: 24,
-            height: 24,
+            width: 28,
+            height: 28,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 18,
             cursor: 'pointer',
-            zIndex: 10,
+            zIndex: 20,
             boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
           }}
         >
-          ×
+          <span style={{ fontWeight: 700, color: '#888', fontSize: 18 }}>×</span>
         </button>
       </div>
       {submitted && errors.signature && (
