@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.medical-option-button {
+  background: #fff;
+  color: #333;
+  border: 1.5px solid #ccc;
+  border-radius: 22px;      /* 更大的圆角 */
+  padding: 10px 28px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.medical-option-button.selected {
+  background: #1677ff;
+  color: #fff;
+  border: 1.5px solid #1677ff;
+  box-shadow: 0 2px 8px rgba(22,119,255,0.10);
+}
+
+.medical-option-button:active {
+  background: #145bcc;
+  color: #fff;
+  border-color: #145bcc;
+}
+
+.medical-textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 15px;
+  margin-bottom: 10px;
+  resize: vertical;
+  box-sizing: border-box;
+}
