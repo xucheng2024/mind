@@ -64,12 +64,12 @@ export default function AuthorizationPage() {
       <label className="font-semibold block text-sm text-gray-800 mb-0">
         Are you a Guardian or a Representative? <span className="text-red-500">*</span>
       </label>
-      <div className="flex gap-3 mb-4">
+      <div className="flex gap-2 mb-3">
         {[true, false].map((val) => (
           <button
             type="button"
             key={val ? 'YES' : 'NO'}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition
+            className={`px-3 py-1 rounded-full border text-sm font-medium transition
               ${isGuardian === val
                 ? 'border-blue-600 bg-blue-50 text-blue-600'
                 : 'border-gray-300 bg-white text-gray-800'}`}
@@ -124,6 +124,8 @@ export default function AuthorizationPage() {
             borderRadius: '50%',
             width: 28,
             height: 28,
+            minWidth: 28,
+            minHeight: 28,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -133,7 +135,7 @@ export default function AuthorizationPage() {
             boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
           }}
         >
-          <span style={{ fontWeight: 700, color: '#888', fontSize: 18 }}>×</span>
+          <span style={{ fontWeight: 700, color: '#888', fontSize: 18, lineHeight: 1 }}>×</span>
         </button>
       </div>
       {submitted && errors.signature && (

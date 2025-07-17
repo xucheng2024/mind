@@ -417,7 +417,8 @@ export default function RegistrationForm() {
           const val = e.target.value.toLowerCase();
           setForm({ ...form, email: val });
           updateRegistrationData({ email: val });
-          if (/^\S+@\S+\.\S+$/.test(val)) setErrors(prev => ({ ...prev, email: '' }));
+          // 只清除错误，不做格式校验
+          if (val) setErrors(prev => ({ ...prev, email: '' }));
         }}
         onBlur={() => {
           let err = '';
@@ -476,24 +477,65 @@ export default function RegistrationForm() {
         <div style={{ fontSize: '12px', color: '#888' }}>Looking up address...</div>
       )}
 
-      {[{ label: 'Block Number', name: 'blockNo' }, { label: 'Street Name', name: 'street' }, { label: 'Building Name (Optional)', name: 'building' }, { label: 'Floor Number', name: 'floor' }, { label: 'Unit Number', name: 'unit' }].map(({ label, name }) => (
-        <div key={name}>
-          <label style={labelStyle}>{label} {(name !== 'building') && requiredStar}</label>
-          <input
-            ref={fieldRefs[name]}
-            type="text"
-            value={form[name]}
-            onChange={(e) => {
-              setForm({ ...form, [name]: e.target.value });
-              updateRegistrationData({ [name]: e.target.value });
-              if (e.target.value) setErrors(prev => ({ ...prev, [name]: '' }));
-            }}
-            style={inputStyle(name)}
-            disabled={loading}
-          />
-          {errors[name] && <div style={{ color: 'red', fontSize: '12px' }}>{errors[name]}</div>}
-        </div>
-      ))}
+      {/* Block Number */}
+      <label style={labelStyle}>
+        Block Number {requiredStar}
+      </label>
+      <input
+        ref={fieldRefs.blockNo}
+        type="text"
+        inputMode="numeric"
+        value={form.blockNo}
+        onChange={e => {
+          const val = e.target.value.replace(/[^0-9]/g, '');
+          setForm({ ...form, blockNo: val });
+          updateRegistrationData({ blockNo: val });
+          if (val) setErrors(prev => ({ ...prev, blockNo: '' }));
+        }}
+        style={inputStyle('blockNo')}
+        disabled={loading}
+      />
+      {errors.blockNo && <div style={{ color: 'red', fontSize: '12px' }}>{errors.blockNo}</div>}
+
+      {/* Floor Number */}
+      <label style={labelStyle}>
+        Floor Number {requiredStar}
+      </label>
+      <input
+        ref={fieldRefs.floor}
+        type="text"
+        inputMode="text"
+        value={form.floor}
+        onChange={e => {
+          const val = e.target.value.replace(/[^A-Za-z0-9]/g, '');
+          setForm({ ...form, floor: val });
+          updateRegistrationData({ floor: val });
+          if (val) setErrors(prev => ({ ...prev, floor: '' }));
+        }}
+        style={inputStyle('floor')}
+        disabled={loading}
+      />
+      {errors.floor && <div style={{ color: 'red', fontSize: '12px' }}>{errors.floor}</div>}
+
+      {/* Unit Number */}
+      <label style={labelStyle}>
+        Unit Number {requiredStar}
+      </label>
+      <input
+        ref={fieldRefs.unit}
+        type="text"
+        inputMode="text"
+        value={form.unit}
+        onChange={e => {
+          const val = e.target.value.replace(/[^A-Za-z0-9]/g, '');
+          setForm({ ...form, unit: val });
+          updateRegistrationData({ unit: val });
+          if (val) setErrors(prev => ({ ...prev, unit: '' }));
+        }}
+        style={inputStyle('unit')}
+        disabled={loading}
+      />
+      {errors.unit && <div style={{ color: 'red', fontSize: '12px' }}>{errors.unit}</div>}
 
       <div className="text-center mt-8">
         <button

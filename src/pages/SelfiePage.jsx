@@ -104,11 +104,11 @@ export default function SelfiePage() {
             alt="Your selfie preview"
             className="w-[260px] h-[260px] rounded-full object-cover mb-4"
           />
-          <div className="flex flex-col gap-0.5 w-full">
+          <div className="flex flex-col space-y-px w-full">
             <button
               onClick={handleRetake}
               type="button"
-              className="w-full py-3 rounded-lg text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
+              className="w-full py-2 rounded-lg text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
             >
               Retake Photo
             </button>
@@ -116,7 +116,7 @@ export default function SelfiePage() {
               onClick={handleFinish}
               disabled={uploading}
               type="button"
-              className={`w-full py-3 rounded-lg text-lg font-semibold ${uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              className={`w-full py-2 rounded-lg text-lg font-semibold ${uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               {uploading ? 'Uploading...' : 'Finish'}
             </button>
