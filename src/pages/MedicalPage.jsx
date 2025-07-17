@@ -74,7 +74,8 @@ export default function MedicalPage() {
                     className={`px-3 py-0.5 rounded-full border text-sm font-medium transition
                       ${form[item] === opt
                         ? 'border-blue-600 bg-blue-50 text-blue-600'
-                        : 'border-gray-300 bg-white text-gray-800'}`}
+                        : 'border-gray-300 bg-white text-gray-800'}
+                      active:border-blue-600 active:bg-blue-50 active:text-blue-600`}
                     onClick={() => handleSelect(item, opt)}
                   >
                     {opt}
