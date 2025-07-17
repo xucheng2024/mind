@@ -62,7 +62,7 @@ export default function MedicalPage() {
 
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-800 mb-2">
+            <label className="block text-sm font-semibold text-gray-800 mb-0">
               {item.replace(/([A-Z])/g, ' $1')}
             </label>
             <div className="flex gap-2">
@@ -70,7 +70,7 @@ export default function MedicalPage() {
                 <button
                   key={opt}
                   type="button"
-                  className={`px-3 py-1 rounded-full border text-sm font-medium transition
+                  className={`px-3 py-0.5 rounded-full border text-sm font-medium transition
                     ${form[item] === opt
                       ? 'border-blue-600 bg-blue-50 text-blue-600'
                       : 'border-gray-300 bg-white text-gray-800'}`}

@@ -93,8 +93,7 @@ export default function AuthorizationPage() {
         className={`relative rounded-md mb-2 w-full max-w-md mx-auto overflow-hidden border
           ${errors.signature ? 'border-red-500' : 'border-gray-300'}`}
         style={{
-          aspectRatio: '2 / 1',
-          minHeight: '56px',
+          height: '120px',         // 固定高度
           background: '#fff',
           position: 'relative'
         }}
@@ -115,9 +114,25 @@ export default function AuthorizationPage() {
           type="button"
           aria-label="Clear signature"
           onClick={handleClear}
-          className="absolute top-2 right-2 w-8 h-8 rounded-full border border-gray-300 bg-white shadow flex items-center justify-center text-xl text-gray-600"
+          style={{
+            position: 'absolute',
+            top: '6px',             // 微调更贴顶
+            right: '6px',
+            background: '#fff',
+            border: '1px solid #ccc',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '20px',
+            cursor: 'pointer',
+            zIndex: 20,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
+          }}
         >
-          <span className="font-semibold leading-none">×</span>
+          <span style={{ fontWeight: 600, color: '#888', lineHeight: 1 }}>×</span>
         </button>
       </div>
       {submitted && errors.signature && (
