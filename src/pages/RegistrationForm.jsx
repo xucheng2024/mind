@@ -244,16 +244,20 @@ export default function RegistrationForm() {
     yyyy = yyyy || '';
     setForm({ ...form, dobDay: dd, dobMonth: mm, dobYear: yyyy });
 
-    // 新增：输入不完整时不报错
-    if (!dd || !mm || !yyyy) {
+    // 只有输入完整时才校验
+    if (dd.length !== 2 || mm.length !== 2 || yyyy.length !== 4) {
       setErrors(prev => ({ ...prev, dob: '' }));
       return;
     }
 
     let dobError = '';
-    if (isNaN(dd) || +dd < 1 || +dd > 31) dobError = 'Day must be 1-31';
-    else if (isNaN(mm) || +mm < 1 || +mm > 12) dobError = 'Month must be 1-12';
-    else if (isNaN(yyyy) || +yyyy < 1900 || +yyyy > 2050) dobError = 'Year must be 1900-2050';
+    const day = parseInt(dd, 10);
+    const month = parseInt(mm, 10);
+    const year = parseInt(yyyy, 10);
+
+    if (isNaN(day) || day < 1 || day > 31) dobError = 'Day must be 1-31';
+    else if (isNaN(month) || month < 1 || month > 12) dobError = 'Month must be 1-12';
+    else if (isNaN(year) || year < 1900 || year > 2050) dobError = 'Year must be 1900-2050';
     else if (!validateDOB()) dobError = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
 
     setErrors(prev => ({ ...prev, dob: dobError }));

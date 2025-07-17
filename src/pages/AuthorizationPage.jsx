@@ -61,10 +61,10 @@ export default function AuthorizationPage() {
         the patient's legal guardian or authorized representative.
       </p>
 
-      <label className="font-semibold mt-4 block text-sm text-gray-800">
+      <label className="font-semibold block text-sm text-gray-800 mb-2">
         Are you a Guardian or a Representative? <span className="text-red-500">*</span>
       </label>
-      <div className="flex gap-3 mt-2">
+      <div className="flex gap-3">
         {[true, false].map((val) => (
           <button
             type="button"
@@ -86,14 +86,16 @@ export default function AuthorizationPage() {
         <div className="text-red-500 text-xs mt-1">{errors.guardian}</div>
       )}
 
-      <label className="font-semibold mt-4 block text-sm text-gray-800">
+      <label className="font-semibold mt-4 block text-sm text-gray-800 mb-2">
         Signature of Patient/Guardian or Representative <span className="text-red-500">*</span>
       </label>
       <div
-        className={`rounded-md mb-2 w-full overflow-hidden border
+        className={`relative rounded-md mb-2 w-full max-w-xs mx-auto overflow-hidden border
           ${errors.signature ? 'border-red-500' : 'border-gray-300'}`}
         style={{
-          height: window.innerWidth < 600 ? '300px' : '220px'
+          height: '56px',      // 高度适合一行签名
+          minWidth: '180px',   // 最小宽度适合写2-3个字
+          maxWidth: '320px',   // 最大宽度适合移动端
         }}
       >
         <SignatureCanvas
@@ -108,23 +110,28 @@ export default function AuthorizationPage() {
             }
           }}
         />
-      </div>
-      <div className="flex justify-between items-center">
-        <a
-          href="/consent"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 underline"
-        >
-          Consent, Release & Indemnity Agreement
-        </a>
         <button
           type="button"
           aria-label="Clear signature"
           onClick={handleClear}
-          className="text-xs text-gray-500 border-none bg-none cursor-pointer"
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            background: 'rgba(255,255,255,0.8)',
+            border: 'none',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 16,
+            cursor: 'pointer',
+            zIndex: 2
+          }}
         >
-          Clear
+          ×
         </button>
       </div>
       {submitted && errors.signature && (

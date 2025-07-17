@@ -61,8 +61,8 @@ export default function MedicalPage() {
         <RegistrationHeader title="Health Declaration" />
 
         {healthItems.map(item => (
-          <div key={item} id={`option-${item}`}>
-            <label className="font-semibold mt-3 block text-sm text-gray-800 mb-2">
+          <div key={item} id={`option-${item}`} className="mb-4">
+            <label className="font-semibold block text-sm text-gray-800 mb-2">
               {item.replace(/([A-Z])/g, ' $1')}
             </label>
             <div className="flex gap-3">

@@ -73,10 +73,10 @@ export default function SelfiePage() {
 
   return (
     <div className="form-container min-h-screen flex flex-col">
-      <RegistrationHeader title="Selfie Photo" />
+      <RegistrationHeader title="Face Capture" />
 
-      <p className="text-gray-800 mb-6 text-center">
-        Please take a selfie to help us recognize you in the future.
+      <p className="text-sm text-gray-600 text-center mb-6 font-normal">
+        Take a selfie for future identification.
       </p>
 
       {!imageSrc ? (
@@ -108,16 +108,18 @@ export default function SelfiePage() {
             alt="Your selfie preview"
             className="w-[220px] h-[220px] rounded-full object-cover mb-4"
           />
-          <div className="flex flex-col gap-3 w-full">
+          <div className="flex flex-col gap-2 w-full">
             <button
               onClick={handleRetake}
-              className="bg-gray-200 text-gray-800 py-2 rounded-md text-base"
+              type="button"
+              className="w-full py-3 rounded-lg text-lg font-semibold bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
             >
               Retake Photo
             </button>
             <button
               onClick={handleFinish}
               disabled={uploading}
+              type="button"
               className={`w-full py-3 rounded-lg text-lg font-semibold ${uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               {uploading ? 'Uploading...' : 'Finish'}
