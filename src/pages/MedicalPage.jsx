@@ -62,9 +62,9 @@ export default function MedicalPage() {
 
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-800 mb-0">
+            <span className="block text-sm font-semibold text-gray-800 mb-px leading-tight">
               {item.replace(/([A-Z])/g, ' $1')}
-            </label>
+            </span>
             <div className="flex gap-2">
               {['YES', 'NO', 'UNSURE'].map(opt => (
                 <button

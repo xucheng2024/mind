@@ -106,7 +106,10 @@ export default function AuthorizationPage() {
             style: {
               width: '100%',
               height: '100%',
-              display: 'block'
+              display: 'block',
+              margin: 0,         // ✅ 去掉外边距
+              padding: 0,        // ✅ 可加
+              border: 'none',    // ✅ 保险
             }
           }}
         />
@@ -116,23 +119,24 @@ export default function AuthorizationPage() {
           onClick={handleClear}
           style={{
             position: 'absolute',
-            top: '6px',             // 微调更贴顶
-            right: '6px',
+            top: '4px',         // ✅ 尽量小，贴紧角落
+            right: '4px',
             background: '#fff',
             border: '1px solid #ccc',
-            borderRadius: '50%',
-            width: '32px',
-            height: '32px',
+            borderRadius: '9999px',  // ✅ 完美圆角
+            width: '28px',
+            height: '28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '20px',
+            fontSize: '18px',
+            lineHeight: 1,
             cursor: 'pointer',
             zIndex: 20,
             boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
           }}
         >
-          <span style={{ fontWeight: 600, color: '#888', lineHeight: 1 }}>×</span>
+          <span style={{ fontWeight: 600, color: '#888' }}>×</span>
         </button>
       </div>
       {submitted && errors.signature && (
