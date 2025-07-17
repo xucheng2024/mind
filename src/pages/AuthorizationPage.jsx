@@ -119,24 +119,21 @@ export default function AuthorizationPage() {
           onClick={handleClear}
           style={{
             position: 'absolute',
-            top: '4px',         // ✅ 尽量小，贴紧角落
-            right: '4px',
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: '9999px',  // ✅ 完美圆角
-            width: '28px',
-            height: '28px',
+            top: 0,
+            right: 0,
+            background: 'transparent',
+            border: 'none',
+            width: '32px',
+            height: '32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '18px',
-            lineHeight: 1,
+            fontSize: '22px',
             cursor: 'pointer',
             zIndex: 20,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
           }}
         >
-          <span style={{ fontWeight: 600, color: '#888' }}>×</span>
+          <span style={{ fontWeight: 700, color: '#888', lineHeight: 1 }}>×</span>
         </button>
       </div>
       {submitted && errors.signature && (
