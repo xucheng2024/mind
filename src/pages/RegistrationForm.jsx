@@ -266,22 +266,19 @@ export default function RegistrationForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="form-container"
-      style={{
-        height: '100dvh',
-        minHeight: '100dvh',
-        overflowY: 'auto'
-      }}
+      className="form-container min-h-screen flex flex-col overflow-y-auto"
     >
       <RegistrationHeader title="Personal Information" />
 
       {fatalError && (
-        <div style={{ color: 'red', background: '#fff0f0', padding: 12, borderRadius: 6, marginBottom: 16, textAlign: 'center' }}>
+        <div className="text-red-600 bg-red-50 p-3 rounded mb-4 text-center">
           {fatalError}
         </div>
       )}
 
-      <label style={labelStyle}>Full Name (In NRIC or Passport) {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Full Name (In NRIC or Passport) <span className="text-red-500">*</span>
+      </label>
       {/* Full Name */}
       <input
         ref={fullNameRef}
@@ -294,12 +291,14 @@ export default function RegistrationForm() {
           // 清除错误
           if (val) setErrors(prev => ({ ...prev, fullName: '' }));
         }}
-        style={inputStyle('fullName')}
+        className={`w-full border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.fullName && <div style={{ color: 'red', fontSize: '12px' }}>{errors.fullName}</div>}
+      {errors.fullName && <div className="text-red-500 text-xs">{errors.fullName}</div>}
 
-      <label style={labelStyle}>Last 4 digits of NRIC or Passport Number {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Last 4 digits of NRIC or Passport Number <span className="text-red-500">*</span>
+      </label>
       <input
         ref={idLast4Ref}
         type="text"
@@ -317,12 +316,14 @@ export default function RegistrationForm() {
           if (!/^[A-Za-z0-9]{4}$/.test(form.idLast4)) err = 'Must be exactly 4 letters or digits';
           setErrors(prev => ({ ...prev, idLast4: err }));
         }}
-        style={inputStyle('idLast4')}
+        className={`w-full border ${errors.idLast4 ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.idLast4 && <div style={{ color: 'red', fontSize: '12px' }}>{errors.idLast4}</div>}
+      {errors.idLast4 && <div className="text-red-500 text-xs">{errors.idLast4}</div>}
 
-      <label style={labelStyle}>Date of Birth {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Date of Birth <span className="text-red-500">*</span>
+      </label>
       <InputMask
         ref={dobInputRef}
         mask="99/99/9999"
@@ -346,11 +347,13 @@ export default function RegistrationForm() {
           }
           setErrors(prev => ({ ...prev, dob: err }));
         }}
-        style={inputStyle('dob')}
+        className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
       />
-      {errors.dob && <div style={{ color: 'red', fontSize: '12px' }}>{errors.dob}</div>}
+      {errors.dob && <div className="text-red-500 text-xs">{errors.dob}</div>}
 
-      <label style={labelStyle}>Phone Number {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Phone Number <span className="text-red-500">*</span>
+      </label>
       {/* Phone Number */}
       <input
         ref={phoneRef}
@@ -382,12 +385,14 @@ export default function RegistrationForm() {
           }
           setErrors(prev => ({ ...prev, phone: err }));
         }}
-        style={inputStyle('phone')}
+        className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.phone && <div style={{ color: 'red', fontSize: '12px' }}>{errors.phone}</div>}
+      {errors.phone && <div className="text-red-500 text-xs">{errors.phone}</div>}
 
-      <label style={labelStyle}>Email {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Email <span className="text-red-500">*</span>
+      </label>
       {/* Email */}
       <input
         ref={emailRef}
@@ -405,13 +410,15 @@ export default function RegistrationForm() {
           if (!/^\S+@\S+\.\S+$/.test(form.email)) err = 'Invalid email';
           setErrors(prev => ({ ...prev, email: err }));
         }}
-        style={inputStyle('email')}
+        className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.email && <div style={{ color: 'red', fontSize: '12px' }}>{errors.email}</div>}
+      {errors.email && <div className="text-red-500 text-xs">{errors.email}</div>}
 
       {/* 邮编输入框和提示 */}
-      <label style={labelStyle}>Postal Code {requiredStar}</label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Postal Code <span className="text-red-500">*</span>
+      </label>
       <input
         ref={postalCodeRef}
         type="text"
@@ -430,7 +437,7 @@ export default function RegistrationForm() {
           if (!/^\d{6}$/.test(form.postalCode)) err = 'Postal code must be exactly 6 digits';
           setErrors(prev => ({ ...prev, postalCode: err }));
         }}
-        style={inputStyle('postalCode')}
+        className={`w-full border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
       {/* 红色错误：输入不是6位 */}
@@ -474,8 +481,12 @@ export default function RegistrationForm() {
         </div>
       ))}
 
-      <div style={{ textAlign: 'center', marginTop: '32px' }}>
-        <button type="submit" disabled={loading} style={{ backgroundColor: '#1677ff', color: '#fff', padding: '14px 32px', border: 'none', borderRadius: '8px', fontSize: '18px', width: '100%' }}>
+      <div className="text-center mt-8">
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-semibold ${loading ? 'bg-gray-300 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+        >
           {loading ? 'Submitting...' : 'Next'}
         </button>
       </div>

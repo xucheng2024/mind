@@ -49,49 +49,30 @@ export default function AuthorizationPage() {
     navigate('/register/selfie');
   };
 
-  const labelStyle = {
-    fontWeight: '600',
-    marginTop: '16px',
-    display: 'block',
-    fontSize: '14px',
-    color: '#333'
-  };
-
-  const buttonStyle = (active) => ({
-    padding: '6px 14px',
-    borderRadius: '20px',
-    border: `1px solid ${active ? '#1677ff' : '#ccc'}`,
-    backgroundColor: active ? '#e6f0ff' : '#fff',
-    color: active ? '#1677ff' : '#333',
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: 'pointer'
-  });
-
   return (
     <form
       onSubmit={handleSubmit}
-      className="form-container"
-      style={{
-        height: '100dvh',
-        minHeight: '100dvh',
-        overflowY: 'auto'
-      }}
+      className="form-container min-h-screen flex flex-col"
     >
       <RegistrationHeader title="Guardian Authorization" />
 
-      <p style={{ fontSize: '14px', lineHeight: '1.6' }}>
+      <p className="text-sm leading-relaxed mb-4">
         If the patient is under 18 or physically/mentally incapacitated, the following must be signed by
         the patient's legal guardian or authorized representative.
       </p>
 
-      <label style={labelStyle}>Are you a Guardian or a Representative? <span style={{ color: 'red' }}>*</span></label>
-      <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Are you a Guardian or a Representative? <span className="text-red-500">*</span>
+      </label>
+      <div className="flex gap-3 mt-2">
         {[true, false].map((val) => (
           <button
             type="button"
             key={val ? 'YES' : 'NO'}
-            style={buttonStyle(isGuardian === val)}
+            className={`px-4 py-2 rounded-full border text-sm font-medium transition
+              ${isGuardian === val
+                ? 'border-blue-600 bg-blue-50 text-blue-600'
+                : 'border-gray-300 bg-white text-gray-800'}`}
             onClick={() => {
               setIsGuardian(val);
               setErrors(prev => ({ ...prev, guardian: '' }));
@@ -101,17 +82,18 @@ export default function AuthorizationPage() {
           </button>
         ))}
       </div>
-      {submitted && errors.guardian && <div style={{ color: 'red', fontSize: '12px' }}>{errors.guardian}</div>}
+      {submitted && errors.guardian && (
+        <div className="text-red-500 text-xs mt-1">{errors.guardian}</div>
+      )}
 
-      <label style={labelStyle}>Signature of Patient/Guardian or Representative <span style={{ color: 'red' }}>*</span></label>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Signature of Patient/Guardian or Representative <span className="text-red-500">*</span>
+      </label>
       <div
+        className={`rounded-md mb-2 w-full overflow-hidden border
+          ${errors.signature ? 'border-red-500' : 'border-gray-300'}`}
         style={{
-          border: errors.signature ? '1px solid red' : '1px solid #ccc',
-          borderRadius: '6px',
-          marginBottom: '8px',
-          height: window.innerWidth < 600 ? '300px' : '220px',
-          width: '100%',
-          overflow: 'hidden'
+          height: window.innerWidth < 600 ? '300px' : '220px'
         }}
       >
         <SignatureCanvas
@@ -127,12 +109,12 @@ export default function AuthorizationPage() {
           }}
         />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="flex justify-between items-center">
         <a
           href="/consent"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: '13px', color: '#1677ff', textDecoration: 'underline' }}
+          className="text-xs text-blue-600 underline"
         >
           Consent, Release & Indemnity Agreement
         </a>
@@ -140,39 +122,23 @@ export default function AuthorizationPage() {
           type="button"
           aria-label="Clear signature"
           onClick={handleClear}
-          style={{ fontSize: '13px', color: '#888', border: 'none', background: 'none', cursor: 'pointer' }}
+          className="text-xs text-gray-500 border-none bg-none cursor-pointer"
         >
           Clear
         </button>
       </div>
       {submitted && errors.signature && (
-        <div style={{
-          color: 'red',
-          fontSize: '12px',
-          background: '#fff0f0',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          marginTop: '4px'
-        }}>
+        <div className="text-red-500 text-xs bg-red-50 px-2 py-1 rounded mt-1">
           {errors.signature}
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
+      <div className="flex justify-end mt-8">
         <button
           type="submit"
           disabled={loading}
-          style={{
-            backgroundColor: loading ? '#ccc' : '#1677ff',
-            color: '#fff',
-            padding: '14px 32px',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '18px',
-            width: '100%',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
+          className={`w-full py-3 rounded-lg text-lg font-semibold
+            ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
         >
           {loading ? 'Submitting...' : 'Next'}
         </button>

@@ -72,110 +72,53 @@ export default function SelfiePage() {
   };
 
   return (
-    <div
-      className="form-container"
-      style={{
-        height: '100dvh',
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        boxSizing: 'border-box'
-      }}
-    >
+    <div className="form-container min-h-screen flex flex-col">
       <RegistrationHeader title="Selfie Photo" />
 
-      <p style={{ color: '#1f2d3d', marginBottom: '24px' }}>
+      <p className="text-gray-800 mb-6 text-center">
         Please take a selfie to help us recognize you in the future.
       </p>
 
       {!imageSrc ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-          <div
-            style={{
-              width: '220px',
-              height: '220px',
-              maxWidth: '80vw',
-              maxHeight: '80vw',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              background: '#eee',
-              margin: '0 auto' // 新增，让圆形摄像头居中
-            }}
-          >
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-200 mx-auto">
             <Webcam
               audio={false}
               ref={webcamRef}
               screenshotFormat="image/jpeg"
               videoConstraints={{ facingMode: 'user' }}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+              className="w-full h-full object-cover rounded-full"
               onUserMediaError={() => setError('Unable to access camera. Please check your browser permissions.')}
             />
           </div>
-          <div style={{ marginTop: '24px', width: '100%' }}>
+          <div className="mt-6 w-full">
             <button
               onClick={capture}
               disabled={capturing}
-              style={{
-                backgroundColor: '#1677ff',
-                color: '#fff',
-                padding: '12px 24px',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                cursor: 'pointer',
-                width: '100%'
-              }}
+              className={`w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold ${capturing ? 'bg-gray-300 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             >
               {capturing ? 'Processing...' : 'Take a Photo'}
             </button>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
+        <div className="flex flex-col items-center mb-4">
           <img
             src={imageSrc}
             alt="Your selfie preview"
-            style={{
-              width: '220px',
-              height: '220px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              marginBottom: '16px'
-            }}
+            className="w-[220px] h-[220px] rounded-full object-cover mb-4"
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          <div className="flex flex-col gap-3 w-full">
             <button
               onClick={handleRetake}
-              style={{
-                backgroundColor: '#eee',
-                color: '#333',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
+              className="bg-gray-200 text-gray-800 py-2 rounded-md text-base"
             >
               Retake Photo
             </button>
             <button
               onClick={handleFinish}
               disabled={uploading}
-              style={{
-                backgroundColor: uploading ? '#ccc' : '#1677ff',
-                color: '#fff',
-                padding: '14px 0',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                width: '100%',
-                cursor: uploading ? 'not-allowed' : 'pointer'
-              }}
+              className={`w-full py-3 rounded-lg text-lg font-semibold ${uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               {uploading ? 'Uploading...' : 'Finish'}
             </button>
@@ -184,7 +127,7 @@ export default function SelfiePage() {
       )}
 
       {error && (
-        <div style={{ color: 'red', fontSize: '13px', marginTop: '12px', textAlign: 'center' }}>
+        <div className="text-red-600 text-sm mt-3 text-center">
           {error}
         </div>
       )}

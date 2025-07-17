@@ -159,109 +159,58 @@ export default function SubmitPage() {
 
   if (submitted) {
     return (
-      <div style={{
-        width: '100%',
-        maxWidth: '480px',
-        margin: '0 auto',
-        fontFamily: 'Arial',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '8px',
-        minHeight: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        padding: '32px',
-        boxSizing: 'border-box',
-        textAlign: 'center'
-      }}>
-        <div style={{ marginBottom: '16px' }}>
+      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-center items-center bg-gray-50 rounded-lg p-8 text-center">
+        <div className="mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="120"
             height="120"
             viewBox="0 0 24 24"
             fill="white"
-            style={{
-              backgroundColor: '#52c41a',
-              borderRadius: '50%',
-              padding: '12px',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-            }}
+            className="bg-green-500 rounded-full p-3 shadow"
           >
             <path d="M20.285 6.708l-11.285 11.285-5.285-5.285 1.414-1.414 3.871 3.871 9.871-9.871z" />
           </svg>
         </div>
-
-        <h2 style={{ color: '#1677ff', fontSize: '24px' }}>Registration Completed</h2>
-        <p style={{ marginTop: '10px', fontSize: '16px', color: '#333' }}>
+        <h2 className="text-blue-600 text-2xl font-bold">Registration Completed</h2>
+        <p className="mt-2 text-base text-gray-700">
           Thanks! You’re successfully registered.
         </p>
-
         <button
           aria-label="Register another patient"
           onClick={handleRestart}
           disabled={loading}
-          style={{
-            marginTop: '24px',
-            backgroundColor: '#1677ff',
-            color: '#fff',
-            padding: '12px 24px',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1
-          }}
+          className={`mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold transition ${
+            loading ? 'bg-gray-300 cursor-not-allowed opacity-70' : 'hover:bg-blue-700'
+          }`}
         >
           {loading ? 'Processing...' : 'Register Another Patient'}
         </button>
-        {restartError && <div style={{ color: 'red', marginTop: 12 }}>{restartError}</div>}
+        {restartError && <div className="text-red-500 mt-3 text-sm">{restartError}</div>}
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '32px', textAlign: 'center' }}>
-      <h2>Submitting your information...</h2>
-      <p>Please wait a moment.</p>
+    <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-center items-center bg-gray-50 rounded-lg p-8 text-center">
+      <h2 className="text-lg font-semibold mb-2">Submitting your information...</h2>
+      <p className="mb-4">Please wait a moment.</p>
       {errorMessage && (
-        <div style={{
-          width: '100%',
-          maxWidth: '480px',
-          margin: '0 auto',
-          fontFamily: 'Arial',
-          backgroundColor: '#f9f9f9',
-          borderRadius: '8px',
-          minHeight: '100dvh', // 优化为100dvh
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'column',
-          padding: '32px',
-          boxSizing: 'border-box',
-          textAlign: 'center'
-        }}>
-          <div style={{ marginBottom: '16px' }}>
+        <div className="w-full flex flex-col justify-center items-center bg-gray-50 rounded-lg min-h-[320px]">
+          <div className="mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="120"
               height="120"
               viewBox="0 0 24 24"
               fill="none"
-              style={{
-                backgroundColor: '#ff4d4f',
-                borderRadius: '50%',
-                padding: '12px',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-              }}
+              className="bg-red-500 rounded-full p-3 shadow"
             >
               <line x1="7" y1="7" x2="17" y2="17" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
               <line x1="17" y1="7" x2="7" y2="17" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <h2 style={{ color: '#ff4d4f', fontSize: '24px' }}>{errorMessage}</h2>
+          <h2 className="text-red-500 text-2xl font-bold">{errorMessage}</h2>
         </div>
       )}
     </div>

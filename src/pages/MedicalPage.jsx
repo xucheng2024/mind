@@ -52,49 +52,28 @@ export default function MedicalPage() {
     navigate('/register/authorize');
   };
 
-  const labelStyle = {
-    fontWeight: '600',
-    marginTop: '12px',
-    display: 'block',
-    fontSize: '14px',
-    color: '#333',
-    marginBottom: '8px'
-  };
-
   return (
-    <div className="form-container" style={{
-      height: '100dvh',
-      minHeight: '100dvh',
-      overflowY: 'auto'
-    }}>
+    <div className="form-container min-h-screen flex flex-col overflow-y-auto">
       <form
-       onSubmit={handleSubmit} 
-       style={{
-          width: '100%',
-          maxWidth: '480px',
-          margin: '0 auto',
-          padding: '16px',
-          fontFamily: 'Arial',
-          backgroundColor: '#f9f9f9',
-          borderRadius: '8px',
-          minHeight: '100vh',
-          boxSizing: 'border-box'
-       }}
-      
+        onSubmit={handleSubmit}
+        className="w-full max-w-md mx-auto p-4 bg-gray-50 rounded-lg min-h-screen flex flex-col"
       >
         <RegistrationHeader title="Health Declaration" />
 
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`}>
-            <label style={labelStyle}>
+            <label className="font-semibold mt-3 block text-sm text-gray-800 mb-2">
               {item.replace(/([A-Z])/g, ' $1')}
             </label>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="flex gap-3">
               {['YES', 'NO', 'UNSURE'].map(opt => (
                 <button
                   key={opt}
                   type="button"
-                  className={`medical-option-button ${form[item] === opt ? 'selected' : ''}`}
+                  className={`px-4 py-2 rounded-full border text-sm font-medium transition
+                    ${form[item] === opt
+                      ? 'border-blue-600 bg-blue-50 text-blue-600'
+                      : 'border-gray-300 bg-white text-gray-800'}`}
                   onClick={() => handleSelect(item, opt)}
                 >
                   {opt}
@@ -102,53 +81,35 @@ export default function MedicalPage() {
               ))}
             </div>
             {optionErrors[item] && (
-              <div style={{
-                color: '#dc2626',
-                fontSize: '12px',
-                marginTop: '4px'
-              }}>
+              <div className="text-red-600 text-xs mt-1">
                 {optionErrors[item]}
               </div>
             )}
           </div>
         ))}
 
-        <div>
-          <label style={labelStyle}>
+        <div className="mt-4">
+          <label className="font-semibold block text-sm text-gray-800 mb-2">
             Other Health Notes (if any)
           </label>
           <textarea
             value={form.otherHealthNotes}
             onChange={(e) => setForm({ ...form, otherHealthNotes: e.target.value })}
-            className="medical-textarea"
+            className="w-full min-h-[80px] border border-gray-300 rounded-md p-2 text-sm resize-y"
             placeholder="e.g. Allergies, previous surgeries, medications..."
           />
         </div>
 
         {error && (
-          <div style={{
-            color: '#dc2626',
-            background: '#fff0f0',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            marginBottom: '12px',
-            textAlign: 'center'
-          }}>
+          <div className="text-red-600 bg-red-50 px-3 py-2 rounded mb-3 text-center">
             {error}
           </div>
         )}
 
-        <button type="submit" style={{
-          backgroundColor: '#1677ff',
-          color: '#fff',
-          padding: '14px 0',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: '600',
-          width: '100%',
-          marginTop: '24px'
-        }}>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold mt-6 hover:bg-blue-700"
+        >
           Next
         </button>
       </form>

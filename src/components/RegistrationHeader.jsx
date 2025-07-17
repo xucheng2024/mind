@@ -3,35 +3,16 @@ import React from 'react';
 
 export default function RegistrationHeader({ title }) {
   return (
-    <>
-      <h2 style={{
-        fontSize: '24px',
-        fontWeight: '700',
-        color: '#1a253c',
-        margin: '0 0 4px 0',
-        letterSpacing: '0.5px'
-      }}>
+    <div className="text-center mb-4">
+      <h2 className="text-2xl font-bold text-[#1a253c] tracking-wide mb-1">
         San TCM
       </h2>
-
-      <h3 style={{
-        fontSize: '18px',
-        fontWeight: '400',
-        color: '#6c757d',
-        margin: '0 0 16px 0',
-        letterSpacing: '0.2px'
-      }}>
+      <h3 className="text-lg font-normal text-gray-500 tracking-tight mb-4">
         Customer Registration
       </h3>
-
-      <h4 style={{
-        fontSize: '16px',
-        fontWeight: '500',
-        color: '#1677ff',
-        margin: '0 0 16px 0'
-      }}>
+      <h4 className="text-base font-medium text-blue-600 mb-4">
         {title}
       </h4>
-    </>
+    </div>
   );
 }
