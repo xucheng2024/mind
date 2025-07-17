@@ -97,7 +97,11 @@ export default function RegistrationForm() {
     if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) return false;
     // 严格校验日期
     const date = new Date(`${yyyy}-${mm}-${dd}`);
-    return date.getFullYear() === yyyy && date.getMonth() + 1 === mm && date.getDate() === dd;
+    return (
+      date.getFullYear() === yyyy &&
+      date.getMonth() + 1 === mm &&
+      date.getDate() === dd
+    );
   };
 
   const validate = () => {
@@ -339,9 +343,12 @@ export default function RegistrationForm() {
           if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) {
             err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
           } else {
-            // 严格校验日期
             const date = new Date(`${yyyy}-${mm}-${dd}`);
-            if (date.getFullYear() !== yyyy || date.getMonth() + 1 !== mm || date.getDate() !== dd) {
+            if (
+              date.getFullYear() !== yyyy ||
+              date.getMonth() + 1 !== mm ||
+              date.getDate() !== dd
+            ) {
               err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
             }
           }
