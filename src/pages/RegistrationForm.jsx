@@ -94,12 +94,13 @@ export default function RegistrationForm() {
     const dd = parseInt(form.dobDay, 10);
     const mm = parseInt(form.dobMonth, 10);
     const yyyy = parseInt(form.dobYear, 10);
-    if (!dd || !mm || !yyyy) return false; // 新增：有空值直接不通过
+    if (!dd || !mm || !yyyy) return false;
     if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) return false;
-    const date = new Date(`${yyyy}-${mm}-${dd}`);
+
+    const date = new Date(yyyy, mm - 1, dd);  // 更安全的日期构造
     return (
       date.getFullYear() === yyyy &&
-      date.getMonth() + 1 === mm &&
+      date.getMonth() === mm - 1 &&
       date.getDate() === dd
     );
   };
@@ -345,13 +346,14 @@ export default function RegistrationForm() {
           const dd = parseInt(form.dobDay, 10);
           const mm = parseInt(form.dobMonth, 10);
           const yyyy = parseInt(form.dobYear, 10);
+
           if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) {
             err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
           } else {
-            const date = new Date(`${yyyy}-${mm}-${dd}`);
+            const date = new Date(yyyy, mm - 1, dd); // 更稳妥
             if (
               date.getFullYear() !== yyyy ||
-              date.getMonth() + 1 !== mm ||
+              date.getMonth() !== mm - 1 ||
               date.getDate() !== dd
             ) {
               err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
@@ -359,8 +361,19 @@ export default function RegistrationForm() {
           }
           setErrors(prev => ({ ...prev, dob: err }));
         }}
+        inputMode="numeric"
+        type="tel"
         className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
-      />
+      >
+        {(inputProps) => (
+          <input
+            {...inputProps}
+            type="tel"
+            inputMode="numeric"
+            className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
+          />
+        )}
+      </InputMask>
       {errors.dob && <div className="text-red-500 text-xs">{errors.dob}</div>}
 
       <label className="font-semibold mt-4 block text-sm text-gray-800">
