@@ -3,7 +3,7 @@ import React from 'react';
 
 export default function RegistrationHeader({ title }) {
   return (
-    <div className="text-center mb-4">
+    <div className="text-left mb-4">
       <h2 className="text-2xl font-bold text-[#1a253c] tracking-wide mb-1">
         San TCM
       </h2>

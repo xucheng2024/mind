@@ -8,6 +8,50 @@ html, body, #root {
   margin: 0;
   padding: 0;
   font-family: Arial, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-  background: #f9f9f9;
+  background: #f3f4f6;
   color: #222;
+}
+
+.form-container {
+  @apply min-h-screen flex flex-col px-4 sm:px-8 max-w-md sm:max-w-lg mx-auto bg-white rounded-xl shadow-lg border border-gray-100 border-b border-gray-200;
+}
+
+input, select, textarea {
+  @apply w-full border border-gray-300 rounded-md p-3 text-base bg-white mb-4 focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-150;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  @apply ring-2 ring-blue-300;
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  @apply bg-gray-100 cursor-not-allowed opacity-70;
+}
+
+button {
+  @apply w-full bg-blue-600 text-white py-4 rounded-xl text-lg font-semibold mt-6 transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed;
+}
+
+.error-message {
+  @apply text-red-500 text-xs bg-red-50 px-2 py-1 rounded mb-2 transition-all duration-200;
+}
+
+.form-title {
+  @apply text-left text-2xl font-bold text-[#1a253c] mb-1;
+}
+
+.form-subtitle {
+  @apply text-left text-lg font-normal text-gray-500 mb-4;
+}
+
+.form-group {
+  @apply mb-6;
+}
+
+.form-hint {
+  @apply text-gray-500 text-xs mt-1;
+}
+
+.button-loading {
+  @apply animate-pulse;
 }
