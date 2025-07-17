@@ -7,10 +7,10 @@ export default function RegistrationHeader({ title }) {
       <h2 className="text-2xl font-bold text-[#1a253c] tracking-wide mb-1">
         San TCM
       </h2>
-      <h3 className="text-lg font-normal text-gray-500 tracking-tight mb-4">
+      <h3 className="text-lg font-normal text-gray-500 tracking-tight mb-2">
         Customer Registration
       </h3>
-      <h4 className="text-base font-medium text-blue-600 mb-4">
+      <h4 className="text-base font-medium text-blue-600 mb-2">
         {title}
       </h4>
     </div>
