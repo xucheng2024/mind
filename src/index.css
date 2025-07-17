@@ -28,8 +28,8 @@ input:disabled, select:disabled, textarea:disabled {
   @apply bg-gray-100 cursor-not-allowed opacity-70;
 }
 
-button {
-  @apply w-full bg-blue-600 text-white py-4 rounded-xl text-lg font-semibold mt-6 transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed;
+.primary-button {
+  @apply w-full bg-gray-800 text-white py-4 rounded-xl text-lg font-semibold mt-6 transition hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed;
 }
 
 .error-message {
