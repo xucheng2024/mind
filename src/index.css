@@ -13,7 +13,7 @@ html, body, #root {
 }
 
 .form-container {
-  @apply min-h-screen flex flex-col px-4 sm:px-8 max-w-md sm:max-w-lg mx-auto bg-white rounded-xl shadow-lg border border-gray-100 border-b border-gray-200 pt-6;
+  @apply min-h-screen flex flex-col px-4 sm:px-8 max-w-md sm:max-w-lg mx-auto bg-white rounded-xl shadow-lg border border-gray-100 border-b border-gray-200 pt-2;
 }
 
 input, select, textarea {
@@ -41,11 +41,11 @@ button {
 }
 
 .form-subtitle {
-  @apply text-left text-lg font-normal text-gray-500 mb-4;
+  @apply text-left text-lg font-normal text-gray-500 mb-2;
 }
 
 .form-group {
-  @apply mb-4;
+  @apply mb-3;
 }
 
 .form-hint {
@@ -55,3 +55,6 @@ button {
 .button-loading {
   @apply animate-pulse;
 }
+
+/* 移除重复和冗余的自定义类，统一用 form-group、form-title、form-subtitle 等复用类 */
+/* 只保留必要的辅助类，避免单独为每个 input 写类名 */
