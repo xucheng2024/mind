@@ -71,11 +71,12 @@ export default function MedicalPage() {
                   <button
                     key={opt}
                     type="button"
-                    className={`px-3 py-0.5 rounded-full border text-sm font-medium transition
+                    aria-label={`Select ${opt} for ${item.replace(/([A-Z])/g, ' $1')}`}
+                    className={`px-4 py-1 rounded-full border text-sm font-medium transition
                       ${form[item] === opt
                         ? 'border-blue-600 bg-blue-50 text-blue-600'
                         : 'border-gray-300 bg-white text-gray-800 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600'}
-                      active:border-blue-600 active:bg-blue-50 active:text-blue-600`}
+                      focus:outline-none focus:ring-2 focus:ring-blue-400`}
                     onClick={() => handleSelect(item, opt)}
                   >
                     {opt.charAt(0) + opt.slice(1).toLowerCase()}
