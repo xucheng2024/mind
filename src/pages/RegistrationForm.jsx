@@ -35,6 +35,7 @@ export default function RegistrationForm() {
   const streetRef = useRef();
   const floorRef = useRef();
   const unitRef = useRef();
+  const buildingRef = useRef();
 
   useEffect(() => {
     if (!clinicId) {
@@ -67,7 +68,8 @@ export default function RegistrationForm() {
             setErrors(prev => ({
               ...prev,
               blockNo: '',
-              street: ''
+              street: '',
+              building: ''
             }));
           } else {
             setAddressError('Address not found for this postal code');
@@ -496,6 +498,43 @@ export default function RegistrationForm() {
         disabled={loading}
       />
       {errors.blockNo && <div style={{ color: 'red', fontSize: '12px' }}>{errors.blockNo}</div>}
+
+      {/* Street Name */}
+      <label style={labelStyle}>
+        Street Name {requiredStar}
+      </label>
+      <input
+        ref={streetRef}
+        type="text"
+        value={form.street}
+        onChange={e => {
+          const val = e.target.value;
+          setForm({ ...form, street: val });
+          updateRegistrationData({ street: val });
+          if (val) setErrors(prev => ({ ...prev, street: '' }));
+        }}
+        style={inputStyle('street')}
+        disabled={loading}
+      />
+      {errors.street && <div style={{ color: 'red', fontSize: '12px' }}>{errors.street}</div>}
+
+      {/* Building Name */}
+      <label style={labelStyle}>
+        Building Name <span style={{ color: '#888', fontWeight: 400 }}>(Optional)</span>
+      </label>
+      <input
+        ref={buildingRef}
+        type="text"
+        value={form.building}
+        onChange={e => {
+          const val = e.target.value;
+          setForm({ ...form, building: val });
+          updateRegistrationData({ building: val });
+        }}
+        style={inputStyle('building')}
+        placeholder="Optional"
+        disabled={loading}
+      />
 
       {/* Floor Number */}
       <label style={labelStyle}>
