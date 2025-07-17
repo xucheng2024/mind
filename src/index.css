@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body, #root {
+  height: 100dvh;
+  min-height: 100dvh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: inherit;
+}
+
 .medical-option-button {
   background: #fff;
   color: #333;
