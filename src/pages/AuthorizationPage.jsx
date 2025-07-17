@@ -117,15 +117,13 @@ export default function AuthorizationPage() {
           onClick={handleClear}
           style={{
             position: 'absolute',
-            top: 8,
-            right: 8,
+            top: 0,
+            right: 0,
             background: '#fff',
             border: '1px solid #ccc',
             borderRadius: '50%',
             width: 28,
             height: 28,
-            minWidth: 28,
-            minHeight: 28,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

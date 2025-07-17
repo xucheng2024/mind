@@ -104,7 +104,7 @@ export default function SelfiePage() {
             alt="Your selfie preview"
             className="w-[260px] h-[260px] rounded-full object-cover mb-4"
           />
-          <div className="flex flex-col space-y-px w-full">
+          <div className="flex flex-col space-y-1 w-full">
             <button
               onClick={handleRetake}
               type="button"
