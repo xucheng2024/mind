@@ -56,7 +56,7 @@ export default function MedicalPage() {
     <div className="form-container min-h-screen flex flex-col overflow-y-auto">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md mx-auto p-4 bg-gray-50 rounded-lg min-h-screen flex flex-col"
+        className="w-full p-4 rounded-lg min-h-screen flex flex-col"
       >
         <RegistrationHeader title="Health Declaration" />
 
@@ -66,13 +66,13 @@ export default function MedicalPage() {
               <span className="text-sm font-semibold text-gray-800 leading-none align-middle">
                 {item.replace(/([A-Z])/g, ' $1')}
               </span>
-              <div className="flex gap-1 mt-0 -mb-1">
+              <div className="flex gap-1 mt-2">
                 {['YES', 'NO', 'UNSURE'].map(opt => (
                   <button
                     key={opt}
                     type="button"
                     aria-label={`Select ${opt} for ${item.replace(/([A-Z])/g, ' $1')}`}
-                    className={`px-4 py-1 rounded-full border text-sm font-medium transition-all
+                    className={`px-5 py-1.5 rounded-full border text-sm font-medium transition-all
                       ${form[item] === opt
                         ? 'border-gray-800 bg-gray-100 text-gray-900'
                         : 'border-gray-300 bg-white text-gray-800 hover:border-gray-400 hover:bg-gray-100'}
