@@ -68,7 +68,7 @@ export default function AuthorizationPage() {
         {[true, false].map((val) => (
           <button
             type="button"
-            key={val ? 'YES' : 'NO'}
+            key={val ? 'Yes' : 'No'}
             className={`px-3 py-1 rounded-full border text-sm font-medium transition
               ${isGuardian === val
                 ? 'border-blue-600 bg-blue-50 text-blue-600'

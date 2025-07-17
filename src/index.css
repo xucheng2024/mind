@@ -29,9 +29,7 @@ input:disabled, select:disabled, textarea:disabled {
 }
 
 .primary-button {
-  @apply w-full bg-blue-600 text-white py-4 rounded-xl text-lg font-semibold mt-6 shadow transition
-    hover:bg-blue-700 active:bg-blue-800
-    disabled:bg-blue-300 disabled:text-white disabled:cursor-not-allowed;
+  @apply w-full bg-gray-800 text-white py-4 rounded-xl text-lg font-semibold mt-6 transition hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed;
 }
 
 .error-message {
