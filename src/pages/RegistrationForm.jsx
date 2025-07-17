@@ -94,8 +94,8 @@ export default function RegistrationForm() {
     const dd = parseInt(form.dobDay, 10);
     const mm = parseInt(form.dobMonth, 10);
     const yyyy = parseInt(form.dobYear, 10);
+    if (!dd || !mm || !yyyy) return false; // 新增：有空值直接不通过
     if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) return false;
-    // 严格校验日期
     const date = new Date(`${yyyy}-${mm}-${dd}`);
     return (
       date.getFullYear() === yyyy &&
@@ -241,16 +241,21 @@ export default function RegistrationForm() {
     dd = dd || '';
     mm = mm || '';
     yyyy = yyyy || '';
-
-    // 实时校验
-    let dobError = '';
-    if (dd && (isNaN(dd) || +dd < 1 || +dd > 31)) dobError = 'Day must be 1-31';
-    else if (mm && (isNaN(mm) || +mm < 1 || +mm > 12)) dobError = 'Month must be 1-12';
-    else if (yyyy && (isNaN(yyyy) || +yyyy < 1900 || +yyyy > 2050)) dobError = 'Year must be 1900-2050';
-
     setForm({ ...form, dobDay: dd, dobMonth: mm, dobYear: yyyy });
-    if (!dobError) setErrors(prev => ({ ...prev, dob: '' }));
-    else setErrors(prev => ({ ...prev, dob: dobError }));
+
+    // 新增：输入不完整时不报错
+    if (!dd || !mm || !yyyy) {
+      setErrors(prev => ({ ...prev, dob: '' }));
+      return;
+    }
+
+    let dobError = '';
+    if (isNaN(dd) || +dd < 1 || +dd > 31) dobError = 'Day must be 1-31';
+    else if (isNaN(mm) || +mm < 1 || +mm > 12) dobError = 'Month must be 1-12';
+    else if (isNaN(yyyy) || +yyyy < 1900 || +yyyy > 2050) dobError = 'Year must be 1900-2050';
+    else if (!validateDOB()) dobError = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
+
+    setErrors(prev => ({ ...prev, dob: dobError }));
     updateRegistrationData({ dobDay: dd, dobMonth: mm, dobYear: yyyy });
   };
 
