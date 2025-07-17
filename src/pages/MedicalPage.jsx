@@ -62,23 +62,25 @@ export default function MedicalPage() {
 
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`} className="mb-6">
-            <span className="block text-sm font-semibold text-gray-800 mb-1 leading-tight">
-              {item.replace(/([A-Z])/g, ' $1')}
-            </span>
-            <div className="flex gap-2 justify-start">
-              {['YES', 'NO', 'UNSURE'].map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`px-3 py-0.5 rounded-full border text-sm font-medium transition
-                    ${form[item] === opt
-                      ? 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 bg-white text-gray-800'}`}
-                  onClick={() => handleSelect(item, opt)}
-                >
-                  {opt}
-                </button>
-              ))}
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-800 mb-px leading-tight">
+                {item.replace(/([A-Z])/g, ' $1')}
+              </span>
+              <div className="flex gap-1">
+                {['YES', 'NO', 'UNSURE'].map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`px-3 py-0.5 rounded-full border text-sm font-medium transition
+                      ${form[item] === opt
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 bg-white text-gray-800'}`}
+                    onClick={() => handleSelect(item, opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             {optionErrors[item] && (
               <div className="text-red-600 text-xs mt-1">

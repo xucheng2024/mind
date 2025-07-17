@@ -122,20 +122,27 @@ export default function AuthorizationPage() {
             top: 0,
             right: 0,
             background: '#fff',
-            border: 'none',
-            width: '24px',
-            height: '24px',
+            border: '1px solid #e5e7eb', // 浅灰色边框
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '18px',
+            fontSize: '22px',
+            fontWeight: 700,
+            color: '#2563eb', // 蓝色更醒目
             cursor: 'pointer',
             zIndex: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
             margin: 0,
             padding: 0,
+            transition: 'background 0.2s'
           }}
+          onMouseOver={e => (e.currentTarget.style.background = '#f3f4f6')}
+          onMouseOut={e => (e.currentTarget.style.background = '#fff')}
         >
-          <span style={{ fontWeight: 700, color: '#888', lineHeight: 1 }}>×</span>
+          ×
         </button>
       </div>
       {submitted && errors.signature && (
