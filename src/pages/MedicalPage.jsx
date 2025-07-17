@@ -62,16 +62,9 @@ export default function MedicalPage() {
   };
 
   return (
-    <div style={{
-      width: '100%',
-      maxWidth: '480px',
-      margin: '0 auto',
-      padding: '16px',
-      fontFamily: 'Arial',
-      backgroundColor: '#f9f9f9',
-      borderRadius: '8px',
-      minHeight: '100vh',
-      boxSizing: 'border-box',
+    <div className="form-container" style={{
+      height: '100dvh',
+      minHeight: '100dvh',
       overflowY: 'auto'
     }}>
       <form

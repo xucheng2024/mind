@@ -73,16 +73,14 @@ export default function SelfiePage() {
 
   return (
     <div
+      className="form-container"
       style={{
-        maxWidth: '480px',
-        margin: '0 auto',
-        padding: '16px',
-        fontFamily: 'Arial',
-        minHeight: '100vh',
-        boxSizing: 'border-box',
+        height: '100dvh',
+        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-start'
+        justifyContent: 'flex-start',
+        boxSizing: 'border-box'
       }}
     >
       <RegistrationHeader title="Selfie Photo" />

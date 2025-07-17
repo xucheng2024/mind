@@ -234,7 +234,7 @@ export default function SubmitPage() {
           fontFamily: 'Arial',
           backgroundColor: '#f9f9f9',
           borderRadius: '8px',
-          minHeight: '100vh',
+          minHeight: '100dvh', // 优化为100dvh
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

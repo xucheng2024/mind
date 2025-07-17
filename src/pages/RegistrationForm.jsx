@@ -264,11 +264,15 @@ export default function RegistrationForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{
-      width: '100%', maxWidth: '480px', margin: '0 auto', padding: '16px',
-      fontFamily: 'Arial', backgroundColor: '#f9f9f9', borderRadius: '8px',
-      height: '100%', minHeight: '100vh', overflowY: 'auto', boxSizing: 'border-box'
-    }}>
+    <form
+      onSubmit={handleSubmit}
+      className="form-container"
+      style={{
+        height: '100dvh',
+        minHeight: '100dvh',
+        overflowY: 'auto'
+      }}
+    >
       <RegistrationHeader title="Personal Information" />
 
       {fatalError && (
