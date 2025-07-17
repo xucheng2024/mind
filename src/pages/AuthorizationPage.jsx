@@ -93,7 +93,7 @@ export default function AuthorizationPage() {
         className={`relative rounded-md mb-2 w-full max-w-md mx-auto overflow-hidden border
           ${errors.signature ? 'border-red-500' : 'border-gray-300'}`}
         style={{
-          height: '120px',         // 固定高度
+          height: '160px',         // 黄金分割高度
           background: '#fff',
           position: 'relative'
         }}
@@ -107,9 +107,9 @@ export default function AuthorizationPage() {
               width: '100%',
               height: '100%',
               display: 'block',
-              margin: 0,         // ✅ 去掉外边距
-              padding: 0,        // ✅ 可加
-              border: 'none',    // ✅ 保险
+              margin: 0,
+              padding: 0,
+              border: 'none',
             }
           }}
         />
@@ -122,7 +122,7 @@ export default function AuthorizationPage() {
             top: 0,
             right: 0,
             background: '#fff',
-            border: '1px solid #e5e7eb', // 浅灰色边框
+            border: '1px solid #e5e7eb',
             borderRadius: '50%',
             width: '32px',
             height: '32px',
@@ -131,7 +131,7 @@ export default function AuthorizationPage() {
             justifyContent: 'center',
             fontSize: '22px',
             fontWeight: 700,
-            color: '#2563eb', // 蓝色更醒目
+            color: '#2563eb',
             cursor: 'pointer',
             zIndex: 20,
             boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
@@ -151,7 +151,7 @@ export default function AuthorizationPage() {
         </div>
       )}
 
-      <div className="flex justify-end mt-8">
+      <div className="flex justify-end mt-4">
         <button
           type="submit"
           disabled={loading}

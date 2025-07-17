@@ -3,16 +3,13 @@ import React from 'react';
 
 export default function RegistrationHeader({ title }) {
   return (
-    <div className="text-left mb-2">
-      <h2 className="text-2xl font-bold text-[#1a253c] tracking-wide mb-1">
-        San TCM
-      </h2>
-      <h3 className="text-lg font-normal text-gray-500 tracking-tight mb-1">
-        Customer Registration
-      </h3>
-      <h4 className="text-base font-medium text-blue-600">
+    <div className="text-left mb-4">
+      <div className="text-xl font-bold text-[#1a253c] tracking-wide">
+        San TCM <span className="font-normal text-gray-500 text-base ml-2">· Registration</span>
+      </div>
+      <div className="text-base font-semibold text-blue-600 mt-2">
         {title}
-      </h4>
+      </div>
     </div>
   );
 }
