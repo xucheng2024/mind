@@ -7,7 +7,7 @@ export default function RegistrationHeader({ title }) {
       <div className="text-xl font-bold text-[#1a253c] tracking-wide">
         San TCM Registration
       </div>
-      <div className="text-base font-semibold text-blue-600 mt-2">
+      <div className="text-lg font-normal text-blue-600 mt-2">
         {title}
       </div>
     </div>
