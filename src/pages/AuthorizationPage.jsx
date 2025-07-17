@@ -115,25 +115,9 @@ export default function AuthorizationPage() {
           type="button"
           aria-label="Clear signature"
           onClick={handleClear}
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: '50%',
-            width: 28,
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            cursor: 'pointer',
-            zIndex: 20,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
-          }}
+          className="absolute top-2 right-2 w-8 h-8 rounded-full border border-gray-300 bg-white shadow flex items-center justify-center text-xl text-gray-600"
         >
-          <span style={{ fontWeight: 700, color: '#888', fontSize: 18, lineHeight: 1 }}>×</span>
+          <span className="font-semibold leading-none">×</span>
         </button>
       </div>
       {submitted && errors.signature && (
