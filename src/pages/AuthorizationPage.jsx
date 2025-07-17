@@ -121,16 +121,18 @@ export default function AuthorizationPage() {
             position: 'absolute',
             top: 0,
             right: 0,
-            background: 'transparent',
+            background: '#fff',
             border: 'none',
-            width: '32px',
-            height: '32px',
+            width: '24px',
+            height: '24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '22px',
+            fontSize: '18px',
             cursor: 'pointer',
             zIndex: 20,
+            margin: 0,
+            padding: 0,
           }}
         >
           <span style={{ fontWeight: 700, color: '#888', lineHeight: 1 }}>×</span>
