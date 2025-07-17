@@ -75,10 +75,6 @@ export default function SelfiePage() {
     <div className="form-container min-h-screen flex flex-col">
       <RegistrationHeader title="Face Capture" />
 
-      <p className="text-sm text-gray-600 text-center mb-6 font-normal">
-        Take a selfie for future identification.
-      </p>
-
       {!imageSrc ? (
         <div className="flex flex-col items-center mb-4">
           <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-200 mx-auto">
@@ -108,11 +104,11 @@ export default function SelfiePage() {
             alt="Your selfie preview"
             className="w-[220px] h-[220px] rounded-full object-cover mb-4"
           />
-          <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-col gap-1 w-full">
             <button
               onClick={handleRetake}
               type="button"
-              className="w-full py-3 rounded-lg text-lg font-semibold bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+              className="w-full py-3 rounded-lg text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
             >
               Retake Photo
             </button>

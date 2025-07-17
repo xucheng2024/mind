@@ -62,7 +62,7 @@ export default function MedicalPage() {
 
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`} className="mb-4">
-            <label className="font-semibold block text-sm text-gray-800 mb-2">
+            <label className="block text-base font-medium text-gray-900 mb-1">
               {item.replace(/([A-Z])/g, ' $1')}
             </label>
             <div className="flex gap-3">
