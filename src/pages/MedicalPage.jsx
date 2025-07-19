@@ -31,6 +31,19 @@ export default function MedicalPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const formatSGTime = () => {
+    const now = new Date();
+    // 新加坡时间
+    const sgTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const yyyy = sgTime.getFullYear();
+    const MM = String(sgTime.getMonth() + 1).padStart(2, '0');
+    const dd = String(sgTime.getDate()).padStart(2, '0');
+    const hh = String(sgTime.getHours()).padStart(2, '0');
+    const mm = String(sgTime.getMinutes()).padStart(2, '0');
+    const ss = String(sgTime.getSeconds()).padStart(2, '0');
+    return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const errs = {};
@@ -48,7 +61,13 @@ export default function MedicalPage() {
       return;
     }
     setError('');
-    updateRegistrationData(form);
+
+    // 只在点击 Next 时处理备注内容
+    const prefix = formatSGTime();
+    let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : 'N/A';
+    notes = `${prefix}: ${notes} --self declare`;
+
+    updateRegistrationData({ ...form, otherHealthNotes: notes });
     navigate('/register/authorize');
   };
 
