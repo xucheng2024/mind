@@ -326,7 +326,6 @@ export default function RegistrationForm() {
         Date of Birth <span className="text-red-500">*</span>
       </label>
       <InputMask
-        ref={dobInputRef}
         mask="99/99/9999"
         maskChar=""
         placeholder="DD/MM/YYYY"
@@ -359,6 +358,7 @@ export default function RegistrationForm() {
         {(inputProps) => (
           <input
             {...inputProps}
+            ref={dobInputRef} // 把 ref 放在这里，传给原生 input
             type="tel"
             inputMode="numeric"
             className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}

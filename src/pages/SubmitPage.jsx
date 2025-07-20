@@ -177,16 +177,15 @@ export default function SubmitPage() {
           Thanks! You’re successfully registered.
         </p>
         <button
-          aria-label="Register another patient"
-          onClick={handleRestart}
+          aria-label="Back to Home"
+          onClick={() => navigate('/')}
           disabled={loading}
           className={`mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold transition ${
             loading ? 'bg-gray-300 cursor-not-allowed opacity-70' : 'hover:bg-blue-700'
           }`}
         >
-          {loading ? 'Processing...' : 'Register Another Patient'}
+          {loading ? 'Processing...' : 'Back to Home'}
         </button>
-        {restartError && <div className="text-red-500 mt-3 text-sm">{restartError}</div>}
       </div>
     );
   }
