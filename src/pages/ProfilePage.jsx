@@ -155,7 +155,12 @@ export default function ProfilePage() {
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
 
-  if (!user) return <div className="text-center py-12">No user found for this email.</div>;
+  if (!user) {
+    supabase.auth.signOut().then(() => {
+      window.location.href = '/login'; // Redirect to login page
+    });
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4 py-6">
