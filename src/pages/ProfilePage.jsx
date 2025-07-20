@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { useRegistration } from '../../context/RegistrationContext';
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -10,31 +9,35 @@ export default function ProfilePage() {
   const [transactions, setTransactions] = useState([]); // 存储交易信息
   const [selectedClinicId, setSelectedClinicId] = useState(null); // 当前选中的诊所
   const [transactionsLoading, setTransactionsLoading] = useState(false);
-  const { registrationData } = useRegistration(); // 从 Context 获取邮箱
-  const email = registrationData?.email || null;
 
   useEffect(() => {
     const fetchUserData = async () => {
       setLoading(true);
 
-      // 检查用户是否已登录
-      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError || !session?.session) {
-        console.error('User is not logged in:', sessionError);
+      if (sessionError || !session) {
+        console.error('Not logged in');
         setUser(null);
         setLoading(false);
         return;
       }
 
-      // 使用邮箱查询 users 表
+      const sessionEmail = session.user.email;
+      if (!sessionEmail) {
+        console.error('Session has no email');
+        setLoading(false);
+        return;
+      }
+
+      // 用 sessionEmail 查询用户
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select(
           'user_id, full_name, phone, email, postal_code, block_no, street, building, floor, unit, selfie, dob'
-        ) // 获取所需字段
-        .eq('email', email)
-        .limit(1); // 取第一条记录
+        )
+        .eq('email', sessionEmail)
+        .limit(1);
 
       if (usersError || !usersData || usersData.length === 0) {
         console.error('Error fetching user data:', usersError);
@@ -95,7 +98,7 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, [email]);
+  }, []);
 
   useEffect(() => {
     if (clinics.length > 0 && selectedClinicId === null) {
