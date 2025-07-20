@@ -18,19 +18,19 @@ export default function HomePage() {
           className="w-full border rounded-lg py-4 mb-6 text-lg font-semibold bg-white hover:bg-blue-50 transition"
           onClick={() => navigate(`/register?clinic_id=${clinicId}`)}
         >
-          New Patient Sign Up
+          New Visitor Registration
         </button>
         <button
           className="w-full border rounded-lg py-4 mb-6 text-lg font-semibold bg-white hover:bg-blue-50 transition"
           onClick={() => navigate(`/booking?clinic_id=${clinicId}`)}
         >
-          Existing Patient Booking
+          Returning Visitor Bookingg
         </button>
         <button
           className="w-full border rounded-lg py-4 text-lg font-semibold bg-white hover:bg-blue-50 transition"
           onClick={() => navigate('/profile')}
         >
-          My Profile
+          My Records
         </button>
       </div>
     </div>
