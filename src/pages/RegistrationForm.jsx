@@ -17,12 +17,12 @@ export default function RegistrationForm() {
     building: '', floor: '', unit: ''
   });
 
-  const postalRefs = Array.from({ length: 6 }, () => useRef());
   const [errors, setErrors] = useState({});
   const [addressError, setAddressError] = useState('');
   const [addressLoading, setAddressLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fatalError, setFatalError] = useState('');
+  const [debounceTimer, setDebounceTimer] = useState(null);
 
   // refs for all fields
   const fullNameRef = useRef();
@@ -38,59 +38,85 @@ export default function RegistrationForm() {
   const buildingRef = useRef();
 
   useEffect(() => {
+    let timeoutId;
     if (!clinicId) {
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
-      setTimeout(() => navigate('/'), 2000);
+      timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
       updateRegistrationData({ clinic_id: clinicId });
     }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [clinicId, navigate]);
 
+  // 防抖地址查询
   useEffect(() => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    
     if (typeof window !== 'undefined' && form.postalCode.length === 6) {
-      setAddressLoading(true);
-      const currentPostal = form.postalCode;
-      fetch(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${currentPostal}&returnGeom=Y&getAddrDetails=Y&pageNum=1`)
-        .then(res => res.json())
-        .then(data => {
-          if (form.postalCode !== currentPostal) return;
-          if (data.found > 0 && data.results.length > 0) {
-            const result = data.results[0];
-            const address = {
-              blockNo: result.BLK_NO || '',
-              street: result.ROAD_NAME || '',
-              building: result.BUILDING || ''
-            };
-            setForm(prev => ({ ...prev, ...address }));
-            updateRegistrationData(address);
-            setAddressError('');
-            // 清除 blockNo 和 street 的错误
-            setErrors(prev => ({
-              ...prev,
-              blockNo: '',
-              street: '',
-              building: ''
-            }));
-          } else {
-            setAddressError('Address not found for this postal code');
-          }
-        })
-        .catch(() => setAddressError('Address lookup failed, please check your network connection'))
-        .finally(() => setAddressLoading(false));
+      const timer = setTimeout(() => {
+        setAddressLoading(true);
+        const currentPostal = form.postalCode;
+        fetch(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${currentPostal}&returnGeom=Y&getAddrDetails=Y&pageNum=1`)
+          .then(res => res.json())
+          .then(data => {
+            if (form.postalCode !== currentPostal) return;
+            if (data.found > 0 && data.results.length > 0) {
+              const result = data.results[0];
+              const address = {
+                blockNo: result.BLK_NO || '',
+                street: result.ROAD_NAME || '',
+                building: result.BUILDING || ''
+              };
+              setForm(prev => ({ ...prev, ...address }));
+              updateRegistrationData(address);
+              setAddressError('');
+              // 清除 blockNo 和 street 的错误
+              setErrors(prev => ({
+                ...prev,
+                blockNo: '',
+                street: '',
+                building: ''
+              }));
+            } else {
+              setAddressError('Address not found for this postal code');
+            }
+          })
+          .catch(() => setAddressError('Address lookup failed, please check your network connection'))
+          .finally(() => setAddressLoading(false));
+      }, 500); // 500ms 防抖延迟
+      
+      setDebounceTimer(timer);
     }
+    
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [form.postalCode]);
 
-  const requiredStar = <span style={{ color: 'red' }}>*</span>;
+  // 自动保存表单数据到 localStorage
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('registrationFormDraft', JSON.stringify(form));
+    }, 1000); // 1秒后保存
+    
+    return () => clearTimeout(timeoutId);
+  }, [form]);
 
-  const labelStyle = {
-    fontWeight: '600', marginTop: '16px', display: 'block', fontSize: '14px', color: '#333'
-  };
-
-  const inputStyle = (field) => ({
-    border: errors[field] ? '1px solid red' : '1px solid #ccc',
-    padding: '12px', borderRadius: '6px', fontSize: '16px', width: '100%',
-    marginBottom: '6px', color: '#000', backgroundColor: '#fff', boxSizing: 'border-box'
-  });
+  // 页面加载时恢复表单数据
+  useEffect(() => {
+    const savedForm = localStorage.getItem('registrationFormDraft');
+    if (savedForm) {
+      try {
+        const parsedForm = JSON.parse(savedForm);
+        setForm(prev => ({ ...prev, ...parsedForm }));
+      } catch (error) {
+        console.error('Failed to parse saved form data:', error);
+      }
+    }
+  }, []);
 
   const validateDOB = () => {
     const dd = parseInt(form.dobDay, 10);
@@ -167,76 +193,11 @@ export default function RegistrationForm() {
       dobYear: form.dobYear
     });
 
+    // 清除草稿数据，因为已经成功提交
+    localStorage.removeItem('registrationFormDraft');
+    
     setLoading(false);
     navigate('/register/medical');
-  };
-
-  const handleSegmentedInput = (e, field, index, total, isAlphaNumeric = false) => {
-    const char = e.target.value.slice(-1);
-    const pattern = isAlphaNumeric ? /^[A-Za-z0-9]$/ : /^[0-9]$/;
-    if (!pattern.test(char)) return;
-
-    const current = form[field].split('');
-    current[index] = char;
-    setForm({ ...form, [field]: current.join('').slice(0, total) });
-
-    const refs = field === 'idLast4' ? idRefs : postalRefs;
-    if (index < total - 1) refs[index + 1].current?.focus();
-  };
-
-  const handleKeyDown = (e, field, index) => {
-    const refs = field === 'idLast4' ? idRefs : postalRefs;
-    const current = form[field].split('');
-
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      current[index] = '';
-      setForm({ ...form, [field]: current.join('') });
-      if (index > 0) refs[index - 1].current?.focus();
-    } else if (e.key === 'ArrowLeft' && index > 0) {
-      refs[index - 1].current?.focus();
-    } else if (e.key === 'ArrowRight' && index < refs.length - 1) {
-      refs[index + 1].current?.focus();
-    }
-  };
-
-  const renderSegmentedInput = (field, total, isAlphaNumeric = false) => {
-    const refs = field === 'idLast4' ? idRefs : postalRefs;
-    return (
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <input
-            key={i}
-            ref={refs[i]}
-            type="text"
-            maxLength={1}
-            inputMode={isAlphaNumeric ? 'text' : 'numeric'}
-            value={form[field][i] || ''}
-            onChange={(e) => handleSegmentedInput(e, field, i, total, isAlphaNumeric)}
-            onKeyDown={(e) => handleKeyDown(e, field, i)}
-            style={{
-              width: '38px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: '500',
-              fontFamily: 'Arial, sans-serif',
-              color: '#000',
-              border: errors[field] ? '1px solid red' : '1px solid #ccc',
-              borderRadius: '6px',
-              backgroundColor: '#fff',
-              padding: 0,
-              boxSizing: 'border-box',
-              lineHeight: 'normal',
-            }}
-
-          />
-        ))}
-      </div>
-    );
   };
 
   const handleDOBChange = (e) => {
@@ -264,10 +225,11 @@ export default function RegistrationForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="form-container min-h-screen flex flex-col overflow-y-auto"
-    >
+    <div className="min-h-screen bg-gray-50">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md mx-auto px-4 py-6 bg-white min-h-screen shadow-lg"
+      >
       <RegistrationHeader title="Personal Information" />
 
       {fatalError && (
@@ -436,52 +398,64 @@ export default function RegistrationForm() {
       <label className="font-semibold mt-4 block text-sm text-gray-800">
         Postal Code <span className="text-red-500">*</span>
       </label>
-      <input
-        ref={postalCodeRef}
-        type="text"
-        inputMode="numeric"
-        maxLength={6}
-        placeholder="eg. 679038"
-        value={form.postalCode}
-        onChange={e => {
-          const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
-          setForm({ ...form, postalCode: val });
-          updateRegistrationData({ postalCode: val });
-          if (/^\d{6}$/.test(val)) setErrors(prev => ({ ...prev, postalCode: '' }));
-        }}
-        onBlur={() => {
-          let err = '';
-          if (!/^\d{6}$/.test(form.postalCode)) err = 'Postal code must be exactly 6 digits';
-          setErrors(prev => ({ ...prev, postalCode: err }));
-        }}
-        className={`w-full border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
-        disabled={loading}
-      />
+      <div className="relative">
+        <input
+          ref={postalCodeRef}
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="eg. 679038"
+          value={form.postalCode}
+          onChange={e => {
+            const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+            setForm({ ...form, postalCode: val });
+            updateRegistrationData({ postalCode: val });
+            if (/^\d{6}$/.test(val)) setErrors(prev => ({ ...prev, postalCode: '' }));
+          }}
+          onBlur={() => {
+            let err = '';
+            if (!/^\d{6}$/.test(form.postalCode)) err = 'Postal code must be exactly 6 digits';
+            setErrors(prev => ({ ...prev, postalCode: err }));
+          }}
+          className={`w-full border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2 ${
+            addressLoading ? 'pr-10 cursor-not-allowed bg-gray-50' : ''
+          }`}
+          disabled={loading || addressLoading}
+        />
+        {/* 加载指示器 */}
+        {addressLoading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        )}
+      </div>
       {/* 红色错误：输入不是6位 */}
       {errors.postalCode && (
-        <div style={{ color: 'red', fontSize: '12px' }}>{errors.postalCode}</div>
+        <div className="text-red-500 text-xs">{errors.postalCode}</div>
       )}
       {/* 黄色提示：API没找到地址且输入已是6位 */}
       {!errors.postalCode && addressError === 'Address not found for this postal code' && (
-        <div style={{
-          color: '#b8860b',
-          background: '#fffbe6',
-          fontSize: '12px',
-          padding: '8px',
-          borderRadius: '6px',
-          marginTop: '4px'
-        }}>
+        <div className="text-yellow-700 bg-yellow-50 text-xs p-2 rounded-md mt-1">
           Postal code seems not right. Please check and continue.
         </div>
       )}
       {/* 查询中提示 */}
       {addressLoading && (
-        <div style={{ fontSize: '12px', color: '#888' }}>Looking up address...</div>
+        <div className="text-xs text-blue-600 flex items-center gap-1 mt-1 mb-2">
+          <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Looking up address...
+        </div>
       )}
 
       {/* Block Number */}
-      <label style={labelStyle}>
-        Block Number {requiredStar}
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Block Number <span className="text-red-500">*</span>
       </label>
       <input
         ref={fieldRefs.blockNo}
@@ -494,14 +468,16 @@ export default function RegistrationForm() {
           updateRegistrationData({ blockNo: val });
           if (val) setErrors(prev => ({ ...prev, blockNo: '' }));
         }}
-        style={inputStyle('blockNo')}
-        disabled={loading}
+        className={`w-full border ${errors.blockNo ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2 ${
+          addressLoading ? 'cursor-not-allowed bg-gray-50 text-gray-500' : ''
+        }`}
+        disabled={loading || addressLoading}
       />
-      {errors.blockNo && <div style={{ color: 'red', fontSize: '12px' }}>{errors.blockNo}</div>}
+      {errors.blockNo && <div className="text-red-500 text-xs">{errors.blockNo}</div>}
 
       {/* Street Name */}
-      <label style={labelStyle}>
-        Street Name {requiredStar}
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Street Name <span className="text-red-500">*</span>
       </label>
       <input
         ref={streetRef}
@@ -513,14 +489,16 @@ export default function RegistrationForm() {
           updateRegistrationData({ street: val });
           if (val) setErrors(prev => ({ ...prev, street: '' }));
         }}
-        style={inputStyle('street')}
-        disabled={loading}
+        className={`w-full border ${errors.street ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2 ${
+          addressLoading ? 'cursor-not-allowed bg-gray-50 text-gray-500' : ''
+        }`}
+        disabled={loading || addressLoading}
       />
-      {errors.street && <div style={{ color: 'red', fontSize: '12px' }}>{errors.street}</div>}
+      {errors.street && <div className="text-red-500 text-xs">{errors.street}</div>}
 
       {/* Building Name */}
-      <label style={labelStyle}>
-        Building Name <span style={{ color: '#888', fontWeight: 400 }}>(Optional)</span>
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Building Name <span className="text-gray-500 font-normal">(Optional)</span>
       </label>
       <input
         ref={buildingRef}
@@ -531,14 +509,16 @@ export default function RegistrationForm() {
           setForm({ ...form, building: val });
           updateRegistrationData({ building: val });
         }}
-        style={inputStyle('building')}
+        className={`w-full border border-gray-300 rounded-md p-3 text-base bg-white mb-2 ${
+          addressLoading ? 'cursor-not-allowed bg-gray-50 text-gray-500' : ''
+        }`}
         placeholder="Optional"
-        disabled={loading}
+        disabled={loading || addressLoading}
       />
 
       {/* Floor Number */}
-      <label style={labelStyle}>
-        Floor Number {requiredStar}
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Floor Number <span className="text-red-500">*</span>
       </label>
       <input
         ref={fieldRefs.floor}
@@ -551,14 +531,14 @@ export default function RegistrationForm() {
           updateRegistrationData({ floor: val });
           if (val) setErrors(prev => ({ ...prev, floor: '' }));
         }}
-        style={inputStyle('floor')}
+        className={`w-full border ${errors.floor ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.floor && <div style={{ color: 'red', fontSize: '12px' }}>{errors.floor}</div>}
+      {errors.floor && <div className="text-red-500 text-xs">{errors.floor}</div>}
 
       {/* Unit Number */}
-      <label style={labelStyle}>
-        Unit Number {requiredStar}
+      <label className="font-semibold mt-4 block text-sm text-gray-800">
+        Unit Number <span className="text-red-500">*</span>
       </label>
       <input
         ref={fieldRefs.unit}
@@ -571,20 +551,39 @@ export default function RegistrationForm() {
           updateRegistrationData({ unit: val });
           if (val) setErrors(prev => ({ ...prev, unit: '' }));
         }}
-        style={inputStyle('unit')}
+        className={`w-full border ${errors.unit ? 'border-red-500' : 'border-gray-300'} rounded-md p-3 text-base bg-white mb-2`}
         disabled={loading}
       />
-      {errors.unit && <div style={{ color: 'red', fontSize: '12px' }}>{errors.unit}</div>}
+      {errors.unit && <div className="text-red-500 text-xs">{errors.unit}</div>}
 
-      <div className="text-center mt-8">
+      <div className="text-center mt-8 mb-6">
         <button
           type="submit"
           disabled={loading}
-          className={`w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-semibold ${loading ? 'bg-gray-300 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+          className={`w-full h-12 rounded-lg text-lg font-semibold transition-all flex items-center justify-center ${
+            loading 
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+          }`}
         >
-          {loading ? 'Submitting...' : 'Next'}
+          {loading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting...
+            </>
+          ) : (
+            'Next'
+          )}
         </button>
+        {/* 自动保存提示 */}
+        <div className="text-xs text-gray-500 mt-2">
+          💾 Your progress is automatically saved
+        </div>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

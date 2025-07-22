@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function ProfilePage() {
+  console.log('ProfilePage component loaded');
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState({ phone: false, email: false, address: false });
@@ -14,29 +16,48 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       setLoading(true);
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // 首先检查 localStorage 中的会话
+      const localSession = localStorage.getItem('userSession');
+      let userEmail = null;
 
-      if (sessionError || !session) {
-        console.error('Not logged in');
-        setUser(null);
-        setLoading(false);
-        return;
+      if (localSession) {
+        try {
+          const sessionData = JSON.parse(localSession);
+          userEmail = sessionData.email;
+          console.log('Found email in localStorage:', userEmail);
+        } catch (error) {
+          console.error('Error parsing localStorage session:', error);
+        }
       }
 
-      const sessionEmail = session.user.email;
-      if (!sessionEmail) {
-        console.error('Session has no email');
-        setLoading(false);
-        return;
+      // 如果没有本地会话，尝试获取 Supabase 会话
+      if (!userEmail) {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('No valid session found');
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        userEmail = session.user.email;
+        if (!userEmail) {
+          console.error('Session has no email');
+          setLoading(false);
+          return;
+        }
       }
 
-      // 用 sessionEmail 查询用户
+      console.log('Using email for user lookup:', userEmail);
+
+      // 用 userEmail 查询用户
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select(
           'user_id, full_name, phone, email, postal_code, block_no, street, building, floor, unit, selfie, dob'
         )
-        .eq('email', sessionEmail)
+        .eq('email', userEmail)
         .limit(1);
 
       if (usersError || !usersData || usersData.length === 0) {
