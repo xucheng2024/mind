@@ -90,7 +90,7 @@ export default function CheckInPage() {
       .select('*')
       .eq('user_id', user.user_id)
       .eq('clinic_id', user.clinic_id)
-      .neq('status', 'done')
+      .neq('status', 'checked-in')
       .order('book_time', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -107,7 +107,7 @@ export default function CheckInPage() {
       console.log('[CheckIn] Updating visit:', visit.id);
       result = await supabase
         .from('visits')
-        .update({ visit_time: nowISO, status: 'done' })
+        .update({ visit_time: nowISO, status: 'checked-in' })
         .eq('id', visit.id);
       console.log('[CheckIn] Update visit result:', result);
     } else {
@@ -121,7 +121,7 @@ export default function CheckInPage() {
             clinic_id: user.clinic_id,
             visit_time: nowISO,
             book_time: nowISO,
-            status: 'done',
+            status: 'checked-in',
             is_first: false,
             is_paid: false,
           },
