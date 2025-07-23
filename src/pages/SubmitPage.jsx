@@ -139,6 +139,8 @@ export default function SubmitPage() {
       const visitPayload = {
         user_id,
         visit_time: new Date().toISOString(),
+        book_time: new Date().toISOString(),
+        status: 'checked-in',
         is_first: true,
         is_paid: false,
         clinic_id: registrationData.clinic_id,
