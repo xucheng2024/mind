@@ -14,14 +14,22 @@ export default function MedicalPage() {
   const [form, setForm] = useState(() => {
     const initial = {};
     healthItems.forEach(item => {
-      initial[item] = registrationData[item] || 'NO'; // 默认NO
+      initial[item] = registrationData[item] || ''; // 初始不选
     });
-    initial.otherHealthNotes = registrationData.otherHealthNotes || '';
+    initial.otherHealthNotes = '';
     return initial;
   });
 
   const [error, setError] = useState('');
   const [optionErrors, setOptionErrors] = useState({});
+
+  useEffect(() => {
+    const cleared = {};
+    healthItems.forEach(item => { cleared[item] = ''; });
+    cleared.otherHealthNotes = '';
+    setForm(cleared);
+    updateRegistrationData(cleared);
+  }, []);
 
   useEffect(() => {
     console.log('✅ MedicalPage mounted');
@@ -64,9 +72,12 @@ export default function MedicalPage() {
 
     // 只在点击 Next 时处理备注内容
     const prefix = formatSGTime();
-    let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : 'N/A';
-    notes = `${prefix}: ${notes} --self declare`;
-
+    let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : '';
+    if (!notes) {
+      notes = 'None reported';
+    } else {
+      notes = `${prefix}: ${notes}`;
+    }
     updateRegistrationData({ ...form, otherHealthNotes: notes });
     navigate('/register/authorize');
   };
@@ -74,66 +85,71 @@ export default function MedicalPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="form-container min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100"
     >
-      <RegistrationHeader title="Health Declaration" />
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
+        <RegistrationHeader title="Health Declaration" />
 
-      {healthItems.map(item => (
-        <div key={item} id={`option-${item}`} className="mb-6">
-          <div>
-            <span className="text-sm font-semibold text-gray-800 leading-none align-middle">
-              {item.replace(/([A-Z])/g, ' $1')}
-            </span>
-            <div className="flex gap-1 mt-2">
-              {['Yes', 'No', 'Unsure'].map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  aria-label={`Select ${opt} for ${item.replace(/([A-Z])/g, ' $1')}`}
-                  className={`px-5 py-1.5 rounded-full border text-sm font-medium transition-all
-                    ${form[item] === opt
-                      ? 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 bg-white text-gray-800 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600'}
-                    focus:outline-none`}
-                  onClick={() => handleSelect(item, opt)}
-                >
-                  {opt.charAt(0) + opt.slice(1).toLowerCase()}
-                </button>
-              ))}
+        {healthItems.map(item => (
+          <div key={item} id={`option-${item}`} className="mb-6">
+            <div>
+              <span className="block text-base font-semibold text-gray-800 mb-2">
+                {item.replace(/([A-Z])/g, ' $1')}
+              </span>
+              <div className="flex gap-2 mt-1">
+                {['Yes', 'No', 'Unsure'].map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    aria-label={`Select ${opt} for ${item.replace(/([A-Z])/g, ' $1')}`}
+                    className={`px-6 py-2 rounded-full border text-base font-medium transition-all
+                      ${form[item] === opt
+                        ? 'border-blue-600 bg-blue-50 text-blue-600 shadow'
+                        : 'border-gray-300 bg-white text-gray-800 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600'}
+                      focus:outline-none`}
+                    onClick={() => handleSelect(item, opt)}
+                  >
+                    {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
             </div>
+            {optionErrors[item] && (
+              <div className="text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-1 animate-shake">
+                {optionErrors[item]}
+              </div>
+            )}
           </div>
-          {optionErrors[item] && (
-            <div className="text-red-600 text-xs mt-1">
-              {optionErrors[item]}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
 
-      <div className="mt-4">
-        <label className="font-semibold block text-sm text-gray-800 mb-2">
-          Other Health Notes (if any)
-        </label>
-        <textarea
-          value={form.otherHealthNotes}
-          onChange={(e) => setForm({ ...form, otherHealthNotes: e.target.value })}
-          className="w-full min-h-[80px] border border-gray-300 rounded-md p-2 text-sm resize-y"
-          placeholder="e.g. Allergies, previous surgeries, medications..."
-        />
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Other Health Notes (if any)
+          </label>
+          <textarea
+            value={form.otherHealthNotes}
+            onChange={(e) => setForm({ ...form, otherHealthNotes: e.target.value })}
+            className="w-full min-h-[80px] border border-gray-300 rounded-xl p-4 text-base resize-y focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400"
+            placeholder="e.g. Allergies, previous surgeries, medications..."
+          />
+        </div>
+
+        {error && (
+          <div className="text-red-600 bg-red-50 px-4 py-3 rounded-xl mb-4 text-center border border-red-200 flex items-center gap-2 animate-shake">
+            <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 mt-2"
+        >
+          Next
+        </button>
       </div>
-
-      {error && (
-        <div className="text-red-600 bg-red-50 px-3 py-2 rounded mb-3 text-center">
-          {error}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold mt-6 hover:bg-blue-700"
-      >
-        Next
-      </button>
     </form>
   );
 }

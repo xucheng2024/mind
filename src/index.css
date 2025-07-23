@@ -56,5 +56,3 @@ input:disabled, select:disabled, textarea:disabled {
   @apply animate-pulse;
 }
 
-/* 移除重复和冗余的自定义类，统一用 form-group、form-title、form-subtitle 等复用类 */
-/* 只保留必要的辅助类，避免单独为每个 input 写类名 */

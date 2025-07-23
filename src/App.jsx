@@ -5,24 +5,24 @@ import MedicalPage from './pages/MedicalPage';
 import AuthorizationPage from './pages/AuthorizationPage';
 import SelfiePage from './pages/SelfiePage';
 import SubmitPage from './pages/SubmitPage';
-import HomePage from './pages/HomePage';      // 新增
-import LoginPage from './pages/LoginPage';    // 修正为邮箱登录页面
-import BookPage from './pages/BookPage';      // 新增预约页面
-import ProfilePage from './pages/ProfilePage';  // 新增
+import BookingPage from './pages/BookingPage';
+import CheckInPage from './pages/CheckInPage';      // 预约页面重命名
+import HomePage from './pages/HomePage';
+import CalendarPage from './pages/CalendarPage';
 import { RegistrationProvider } from '../context/RegistrationContext';
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />                {/* 首页选择注册/登录 */}
-      <Route path="/login" element={<LoginPage />} />          {/* 邮箱登录页面 */}
-      <Route path="/booking" element={<BookPage />} />         {/* 预约页面 */}
+      <Route path="/check-in" element={<CheckInPage />} />     {/* Check-in 页面 */}
+      <Route path="/booking" element={<BookingPage />} />      {/* 预约页面 */}
+      <Route path="/booking/slots" element={<CalendarPage />} /> {/* 预约日历页面 */}
       <Route path="/register" element={<RegistrationForm />} />
       <Route path="/register/medical" element={<MedicalPage />} />
       <Route path="/register/authorize" element={<AuthorizationPage />} />
       <Route path="/register/selfie" element={<SelfiePage />} />
       <Route path="/register/submit" element={<SubmitPage />} />
-      <Route path="/profile" element={<ProfilePage />} />        {/* 个人信息页面 */}
+      <Route path="/" element={<HomePage />} />
       {/* 其他路由 */}
     </Routes>
   );

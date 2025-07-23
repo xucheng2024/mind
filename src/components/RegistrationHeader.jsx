@@ -3,11 +3,11 @@ import React from 'react';
 
 export default function RegistrationHeader({ title }) {
   return (
-    <div className="text-left mb-4">
-      <div className="text-xl font-bold text-[#1a253c] tracking-wide">
+    <div className="text-left mb-6">
+      <div className="text-base font-semibold text-gray-400 tracking-wide uppercase mb-1">
         San TCM Registration
       </div>
-      <div className="text-lg font-normal text-blue-600 mt-2">
+      <div className="text-2xl font-bold text-gray-900 leading-tight">
         {title}
       </div>
     </div>

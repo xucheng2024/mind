@@ -10,6 +10,7 @@ export default function SelfiePage() {
   const navigate = useNavigate();
   const { registrationData, updateRegistrationData } = useRegistration();
   const [imageSrc, setImageSrc] = useState(null);
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [compressedBlob, setCompressedBlob] = useState(null);
@@ -53,82 +54,70 @@ export default function SelfiePage() {
     setError('');
   };
 
-  const handleFinish = async () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (!imageSrc) {
-      setError('Please take a photo');
+      setError('Please take a selfie first.');
       return;
     }
-
-    try {
-      setUploading(true);
-      // 直接存 base64 字符串
-      updateRegistrationData({ selfie: imageSrc });
-      navigate('/register/submit');
-    } catch (err) {
-      setError('Failed to save image. Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    updateRegistrationData({ selfie: imageSrc });
+    navigate('/register/authorize');
   };
 
   return (
-    <div className="form-container min-h-screen flex flex-col">
-      <RegistrationHeader title="Face Capture" />
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
+        <RegistrationHeader title="Face Capture" />
 
-      {!imageSrc ? (
-        <div className="flex flex-col items-center mb-4">
-          <div className="w-[260px] h-[260px] max-w-[90vw] max-h-[90vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-200 mx-auto">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{ facingMode: 'user' }}
-              className="w-full h-full object-cover rounded-full"
-              onUserMediaError={() => setError('Unable to access camera. Please check your browser permissions.')}
-            />
-          </div>
-          <div className="mt-6 w-full">
+        {!imageSrc ? (
+          <div className="flex flex-col items-center mb-4">
+            <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: 'user' }}
+                className="w-full h-full object-cover rounded-full"
+                onUserMediaError={() => setError('Unable to access camera. Please check your browser permissions.')}
+              />
+            </div>
             <button
               onClick={capture}
               disabled={capturing}
-              className={`w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold ${capturing ? 'bg-gray-300 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+              className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
             >
               {capturing ? 'Processing...' : 'Take a Photo'}
             </button>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center mb-4">
-          <img
-            src={imageSrc}
-            alt="Your selfie preview"
-            className="w-[260px] h-[260px] rounded-full object-cover mb-4"
-          />
-          <div className="flex flex-col space-y-3 w-full">
-            <button
-              onClick={handleRetake}
-              type="button"
-              className="w-full py-2 rounded-lg text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
-            >
-              Retake Photo
-            </button>
-            <button
-              onClick={handleFinish}
-              disabled={uploading}
-              type="button"
-              className={`w-full py-2 rounded-lg text-lg font-semibold ${uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-            >
-              {uploading ? 'Uploading...' : 'Finish'}
-            </button>
+        ) : (
+          <div className="flex flex-col items-center mb-4">
+            <img
+              src={imageSrc}
+              alt="Your selfie preview"
+              className="w-[220px] h-[220px] rounded-full object-cover mb-6 border-4 border-blue-100 shadow-inner"
+            />
+            <div className="flex flex-col space-y-3 w-full">
+              <button
+                onClick={handleRetake}
+                type="button"
+                className="w-full h-12 rounded-xl text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
+              >
+                Retake Photo
+              </button>
+              <form onSubmit={handleSubmit} className="w-full">
+                <button
+                  type="submit"
+                  className="w-full h-12 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+                  disabled={uploading}
+                >
+                  Next
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="text-red-600 text-sm mt-3 text-center">
-          {error}
-        </div>
-      )}
+        )}
+        {error && <div style={{ color: 'red', marginBottom: 8, fontSize: '0.97em' }}>{error}</div>}
+      </div>
     </div>
   );
 }
