@@ -63,15 +63,15 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   // 优先用URL参数，否则用localStorage
   let clinicId = searchParams.get('clinic_id');
-  let userId = searchParams.get('user_id');
+  let userRowId = searchParams.get('user_row_id');
   if (!clinicId) clinicId = localStorage.getItem('clinic_id');
-  if (!userId) userId = localStorage.getItem('user_id');
+  if (!userRowId) userRowId = localStorage.getItem('user_row_id');
   // 如果都没有，跳转回booking页
   React.useEffect(() => {
-    if (!clinicId || !userId) {
+    if (!clinicId || !userRowId) {
       navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
     }
-  }, [clinicId, userId, navigate]);
+  }, [clinicId, userRowId, navigate]);
 
   const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -137,19 +137,18 @@ export default function CalendarPage() {
       .from('visits')
       .select('*')
       .eq('clinic_id', clinicId)
+      .eq('user_row_id', userRowId)
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
           console.error('获取预约数据失败:', error);
           return;
         }
-        
         const evts = (data || [])
-          .filter(v => v.user_id === userId && v.status !== 'cancel')
+          .filter(v => v.status !== 'canceled')
           .map(v => {
             const startDate = v.book_time || v.visit_time ? new Date(v.book_time || v.visit_time) : null;
             if (!startDate) return null;
-            
             const timeStr = formatHourAmPm(startDate.getHours());
             return {
               id: v.id,
@@ -157,14 +156,13 @@ export default function CalendarPage() {
               start: startDate,
               end: new Date(startDate.getTime() + 60 * 60 * 1000),
               status: v.status,
-              userId: v.user_id,
+              userRowId: v.user_row_id,
             };
           })
           .filter(e => e && e.start);
-        
         setEvents(evts);
       });
-  }, [clinicId, refresh, userId]);
+  }, [clinicId, refresh, userRowId]);
 
   // 拉取诊所营业时间
   useEffect(() => {
@@ -189,7 +187,7 @@ export default function CalendarPage() {
     const year = date.getFullYear();
     
     const count = events.filter(e =>
-      e.status !== 'cancel' &&
+      e.status !== 'canceled' &&
       e.start.getFullYear() === year &&
       e.start.getMonth() === month &&
       e.start.getDate() === day &&
@@ -199,22 +197,24 @@ export default function CalendarPage() {
     return count >= 3;
   }, [events]);
 
-  // 解析营业时间段为小时数组
+  // 优化后的 getAvailableHoursForDate
   function getAvailableHoursForDate(date) {
     if (!businessHours || !date) return [];
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekday = weekdays[date.getDay()];
     const hoursStr = businessHours[weekday];
     if (!hoursStr || hoursStr === 'closed') return 'closed';
-    // 例：10:00-17:30
     const [start, end] = hoursStr.split('-');
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-    // 只整点预约，起止都包含
+    const [startH] = start.split(':').map(Number);
+    const [endH] = end.split(':').map(Number);
+    // 只返回当前下一个小时及之后
+    const now = new Date();
+    let minHour = startH;
+    if (date.toDateString() === now.toDateString()) {
+      minHour = Math.max(minHour, now.getHours() + 1);
+    }
     let hours = [];
-    for (let h = startH; h <= endH; h++) {
-      // 结束小时需判断分钟
-      if (h === endH && endM === 0) break;
+    for (let h = minHour; h <= endH; h++) {
       hours.push(h);
     }
     return hours;
@@ -222,6 +222,17 @@ export default function CalendarPage() {
 
   // 日历时段样式
   function slotPropGetter(date) {
+    const now = new Date();
+    if (date < now) {
+      return {
+        style: {
+          backgroundColor: '#f3f4f6',
+          color: '#d1d5db',
+          pointerEvents: 'none',
+          cursor: 'not-allowed',
+        },
+      };
+    }
     const hour = date.getHours();
     const dayOfWeek = date.getDay();
     
@@ -241,11 +252,24 @@ export default function CalendarPage() {
 
   // 事件样式
   function eventPropGetter(event) {
-    if (event.userId === userId) {
+    if (event.userRowId === userRowId) {
       return {
         style: {
           backgroundColor: '#3b82f6',
           color: 'white',
+          borderRadius: '8px',
+          border: 'none',
+          fontSize: '13px',
+          fontWeight: '600',
+        },
+      };
+    }
+    if (event.status === 'canceled') {
+      return {
+        style: {
+          backgroundColor: '#e5e7eb',
+          color: '#9ca3af',
+          textDecoration: 'line-through',
           borderRadius: '8px',
           border: 'none',
           fontSize: '13px',
@@ -258,6 +282,19 @@ export default function CalendarPage() {
 
   // 日期样式
   function dayPropGetter(date) {
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const isPast = date < now;
+    if (isPast) {
+      return {
+        style: {
+          backgroundColor: '#f3f4f6',
+          color: '#d1d5db',
+          pointerEvents: 'none',
+          cursor: 'not-allowed',
+        },
+      };
+    }
     const day = date.getDay();
     if (day === 0 || day === 1) {
       return {
@@ -274,6 +311,9 @@ export default function CalendarPage() {
   // 选择日期时动态生成可预约小时
   function handleSelectSlot(slotInfo) {
     const date = slotInfo.start;
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    if (date < now) return; // 禁止点击今天之前的日期弹窗
     if (!businessHours) return;
     // 排除周末
     if (date.getDay() === 0 || date.getDay() === 1) {
@@ -284,7 +324,7 @@ export default function CalendarPage() {
       e.start.toDateString() === date.toDateString()
     );
     // 检查用户当天是否已有预约
-    const myEvent = dayEvents.find(e => e.userId === userId);
+    const myEvent = dayEvents.find(e => e.userRowId === userRowId);
     if (myEvent) {
       const timeStr = formatHourAmPm(myEvent.start.getHours());
       setConfirmCancel({ eventId: myEvent.id, timeStr });
@@ -305,27 +345,23 @@ export default function CalendarPage() {
     }
   }
 
-  // 预约时间段
+  // 优化 handleBook，visit_time = book_time
   async function handleBook(hour) {
     const date = new Date(selectedDate);
     date.setHours(hour, 0, 0, 0);
     setClickedHour(hour);
-
     try {
       const { error } = await supabase
         .from('visits')
         .insert([{
-          user_id: userId,
+          user_row_id: userRowId,
           clinic_id: clinicId,
           book_time: date.toISOString(),
+          visit_time: date.toISOString(),
           status: 'booked',
           is_first: false,
-          is_paid: false
         }]);
-
       if (error) throw error;
-
-      // 更新本地状态
       setEvents(prev => [
         ...prev,
         {
@@ -334,17 +370,14 @@ export default function CalendarPage() {
           start: new Date(date),
           end: new Date(date.getTime() + 60 * 60 * 1000),
           status: 'booked',
-          userId,
+          userRowId: userRowId,
         },
       ]);
-
-      // 延时关闭弹窗，显示成功动效
       setTimeout(() => {
         setShowModal(false);
         setSelectedDate(null);
         setClickedHour(null);
       }, 800);
-
     } catch (error) {
       console.error('预约失败:', error);
       setClickedHour(null);
@@ -353,7 +386,7 @@ export default function CalendarPage() {
 
   // 点击预约事件
   function handleEventClick(event) {
-    if (event.userId === userId) {
+    if (event.userRowId === userRowId) {
       setConfirmCancel({ eventId: event.id, timeStr: event.title });
     }
   }
@@ -364,7 +397,7 @@ export default function CalendarPage() {
     
     await supabase
       .from('visits')
-      .update({ status: 'cancel' })
+      .update({ status: 'canceled' })
       .eq('id', confirmCancel.eventId);
     
     setConfirmCancel(null);
@@ -392,7 +425,7 @@ export default function CalendarPage() {
           <div className="relative">
             <Calendar
               localizer={localizer}
-              events={events.filter(e => e && e.status !== 'cancel')}
+              events={events.filter(e => e && e.status !== 'canceled')}
               startAccessor="start"
               endAccessor="end"
               style={{ height: 500 }}
@@ -492,7 +525,7 @@ export default function CalendarPage() {
                 </p>
               </div>
               {/* 时间选择流式按钮区 */}
-              <div className="flex flex-wrap gap-4 justify-center max-w-xl mx-auto mb-6">
+              <div className="grid grid-cols-3 gap-4 justify-items-center max-w-xl mx-auto mb-6">
                 {isClosedDay ? (
                   <div className="w-full text-center text-gray-400 py-8 text-lg font-semibold">
                     Closed today
@@ -500,12 +533,16 @@ export default function CalendarPage() {
                   </div>
                 ) : (
                   availableHours.map(hour => {
-                    const slotEvents = modalEvents.filter(e => 
-                      e.start.getHours() === hour && e.status !== 'cancel'
+                    // 只显示当前下一个小时及之后、在 business hour 内的小时
+                    const slotEvents = modalEvents.filter(e =>
+                      e.start.getHours() === hour &&
+                      e.status === 'booked'
                     );
                     const isFull = slotEvents.length >= 3;
-                    const myEvent = modalEvents.find(e => 
-                      e.userId === userId && e.start.getHours() === hour
+                    const myEvent = modalEvents.find(e =>
+                      e.userRowId === userRowId &&
+                      e.start.getHours() === hour &&
+                      e.status === 'booked'
                     );
                     const isClicked = clickedHour === hour;
                     const isBooked = !!myEvent;
@@ -513,14 +550,20 @@ export default function CalendarPage() {
                     return (
                       <button
                         key={hour}
-                        onClick={() => handleBook(hour)}
-                        disabled={isBooked}
+                        onClick={() => {
+                          if (isBooked) {
+                            setConfirmCancel({ eventId: myEvent.id, timeStr: formatHourAmPm(hour) });
+                          } else {
+                            handleBook(hour);
+                          }
+                        }}
+                        disabled={isFull}
                         className={
                           `px-6 py-2 rounded-full border font-semibold text-base shadow-sm transition-all duration-200
                           ${isClicked 
                             ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
                             : isBooked
-                              ? 'bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed'
+                              ? 'bg-gray-100 text-gray-400 border-gray-100 cursor-pointer'
                               : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
                           }
                           flex items-center justify-center relative overflow-hidden`

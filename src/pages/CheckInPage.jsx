@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import CryptoJS from 'crypto-js';
+import { hash, encrypt, isPhone, isEmail } from '../lib/utils';
 
 export default function CheckInPage() {
   // 防止自动 check-in 和手动 check-in 并发插入两条
@@ -16,176 +16,109 @@ export default function CheckInPage() {
   const navigate = useNavigate();
   // 优先用URL参数，否则用localStorage
   let clinicId = searchParams.get('clinic_id');
-  let userId = searchParams.get('user_id');
+  let userRowId = searchParams.get('user_row_id');
   if (!clinicId) clinicId = localStorage.getItem('clinic_id') || '';
-  if (!userId) userId = localStorage.getItem('user_id') || '';
+  if (!userRowId) userRowId = localStorage.getItem('user_row_id') || '';
   // 自动跳转回booking页
   // 自动check-in逻辑
+  async function checkInCore(user) {
+    const now = new Date();
+    const nowISO = now.toISOString();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const currentHourStart = new Date(now); currentHourStart.setMinutes(0,0,0);
+    const currentHourEnd = new Date(currentHourStart); currentHourEnd.setHours(currentHourEnd.getHours() + 1);
+    console.log('[checkInCore] user:', user);
+    // 查当天该用户在该 clinic 下所有预约
+    const { data: todayVisits, error: todayError } = await supabase
+      .from('visits')
+      .select('*')
+      .eq('clinic_id', user.clinic_id)
+      .eq('user_row_id', user.row_id)
+      .gte('book_time', today.toISOString())
+      .lt('book_time', tomorrow.toISOString());
+    console.log('[checkInCore] todayVisits:', todayVisits, todayError);
+    if (todayError) throw todayError;
+    // 1. 一天只能 checked-in 一次（无论预约还是 walk-in）
+    const alreadyCheckedInToday = (todayVisits || []).find(v => v.status === 'checked-in');
+    if (alreadyCheckedInToday) {
+      throw new Error('Already checked in today.');
+    }
+    // 2. 查当天该用户有无 status=booked 的记录（不再限制时间窗口）
+    const bookedVisit = (todayVisits || []).find(v => v.status === 'booked');
+    if (bookedVisit) {
+      await supabase.from('visits').update({ status: 'checked-in', visit_time: nowISO }).eq('id', bookedVisit.id);
+      return;
+    }
+    // 3. 其它情况，插入 walk-in（一天只能一次，已在前面判断）
+    await supabase.from('visits').insert([{
+      user_row_id: user.row_id,
+      clinic_id: user.clinic_id,
+      visit_time: nowISO,
+      book_time: nowISO,
+      status: 'checked-in',
+      is_first: false,
+    }]);
+  }
+
+  function setFriendlyError(setError, message) {
+    setError(message);
+  }
+
   useEffect(() => {
     async function autoCheckIn() {
-      if (userId && clinicId) {
-        setAutoChecking(true);
-        setLoading(true);
+      if (userRowId && clinicId) {
+        setAutoChecking(true); setLoading(true);
+        console.log('[autoCheckIn] start', { userRowId, clinicId });
         // 查询用户
         const { data, error: dbError } = await supabase
           .from('users')
-          .select('user_id, clinic_id, full_name')
+          .select('user_id, clinic_id, full_name, row_id')
           .eq('clinic_id', clinicId)
-          .eq('user_id', userId)
+          .eq('row_id', userRowId) // 这里用 row_id
           .limit(1);
+        console.log('[autoCheckIn] userQuery result:', { data, dbError });
         if (dbError || !data || data.length === 0) {
-          setLoading(false);
-          setAutoChecking(false);
-          return;
+          setLoading(false); setAutoChecking(false); return;
         }
         const user = data[0];
-        const now = new Date();
-        const nowISO = now.toISOString();
-        // 只查找今天状态为booked的预约
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        // 检查当前小时段是否已checked-in
-        const currentHourStart = new Date(now);
-        currentHourStart.setMinutes(0,0,0);
-        const currentHourEnd = new Date(currentHourStart);
-        currentHourEnd.setHours(currentHourEnd.getHours() + 1);
-        const { data: checkedInList, error: checkedInError } = await supabase
-          .from('visits')
-          .select('*')
-          .eq('user_id', user.user_id)
-          .eq('clinic_id', user.clinic_id)
-          .eq('status', 'checked-in')
-          .gte('visit_time', currentHourStart.toISOString())
-          .lt('visit_time', currentHourEnd.toISOString());
-        if (checkedInList && checkedInList.length > 0) {
-          setError('You have already checked in for this time slot.');
-          setLoading(false);
-          setAutoChecking(false);
-          return;
-        }
-        const { data: visit, error: visitError } = await supabase
-          .from('visits')
-          .select('*')
-          .eq('user_id', user.user_id)
-          .eq('clinic_id', user.clinic_id)
-          .eq('status', 'booked')
-          .gte('book_time', today.toISOString())
-          .lt('book_time', tomorrow.toISOString())
-          .order('book_time', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        let result;
-        if (visit) {
-          try {
-            // 再次插入前查一遍当前时段 checked-in
-            const { data: checkedAgain } = await supabase
-              .from('visits')
-              .select('*')
-              .eq('user_id', user.user_id)
-              .eq('clinic_id', user.clinic_id)
-              .eq('status', 'checked-in')
-              .gte('visit_time', currentHourStart.toISOString())
-              .lt('visit_time', currentHourEnd.toISOString());
-            if (checkedAgain && checkedAgain.length > 0) {
-              setError('You have already checked in for this time slot.');
-              setLoading(false);
-              setAutoChecking(false);
-              return;
-            }
-            result = await supabase
-              .from('visits')
-              .update({ visit_time: nowISO, status: 'checked-in' })
-              .eq('id', visit.id);
-          } catch (e) {
-            setError('You have already checked in for this time slot.');
-            setLoading(false);
-            setAutoChecking(false);
-            return;
-          }
-        } else {
-          try {
-            // 再次插入前查一遍当前时段 checked-in
-            const { data: checkedAgain } = await supabase
-              .from('visits')
-              .select('*')
-              .eq('user_id', user.user_id)
-              .eq('clinic_id', user.clinic_id)
-              .eq('status', 'checked-in')
-              .gte('visit_time', currentHourStart.toISOString())
-              .lt('visit_time', currentHourEnd.toISOString());
-            if (checkedAgain && checkedAgain.length > 0) {
-              setError('You have already checked in for this time slot.');
-              setLoading(false);
-              setAutoChecking(false);
-              return;
-            }
-            result = await supabase
-              .from('visits')
-              .insert([
-                {
-                  user_id: user.user_id,
-                  clinic_id: user.clinic_id,
-                  visit_time: nowISO,
-                  book_time: nowISO,
-                  status: 'checked-in',
-                  is_first: false,
-                  is_paid: false,
-                },
-              ]);
-            if (result.error && result.error.code === '23505') {
-              setError('You have already checked in for this time slot.');
-              setLoading(false);
-              setAutoChecking(false);
-              return;
-            }
-          } catch (e) {
-            setError('You have already checked in for this time slot.');
-            setLoading(false);
-            setAutoChecking(false);
-            return;
-          }
-        }
-        if (!result.error) {
+        try {
+          await checkInCore(user);
           if (user.user_id) localStorage.setItem('user_id', user.user_id);
+          if (user.row_id) localStorage.setItem('user_row_id', user.row_id);
           if (user.clinic_id) localStorage.setItem('clinic_id', user.clinic_id);
-          setCheckedInTime(now.toLocaleString());
+          setCheckedInTime(new Date().toLocaleString());
           setSuccess(true);
-          setAutoChecking(false);
-          // 自动 check-in 完成后，清空 userId/clinicId，防止页面未跳转时手动再提交
-          userId = '';
-          clinicId = '';
+          userRowId = ''; clinicId = '';
           // 自动跳转到首页，防止重复提交
           setTimeout(() => {
             navigate('/');
           }, 1200);
           return; // 关键：自动check-in后直接return
+        } catch (err) {
+          console.log('[autoCheckIn] error:', err);
+          if (err.message.includes('network')) {
+            setFriendlyError(setError, 'Network error.');
+          } else if (err.message.includes('already checked in today')) {
+            setFriendlyError(setError, 'Checked in today.');
+          } else if (err.message.includes('finished your consultation')) {
+            setFriendlyError(setError, 'Consultation finished.');
+          } else {
+            setFriendlyError(setError, 'Unexpected error.');
+          }
         }
-        setLoading(false);
-        setAutoChecking(false);
+        setLoading(false); setAutoChecking(false);
       }
     }
     // 只有userId和clinicId都有才自动check-in
-    if (userId && clinicId) {
+    if (userRowId && clinicId) {
       autoCheckIn();
     }
-  }, [userId, clinicId]);
-// ...existing code...
-
-  const isEmail = (val) => val.includes('@');
-  const isPhone = (val) => /^\d+$/.test(val);
-
-  function hash(val) {
-    return val ? CryptoJS.SHA256(val.trim().toLowerCase()).toString() : '';
-  }
+  }, [userRowId, clinicId]);
 
   const AES_KEY = import.meta.env.VITE_AES_KEY;
   if (!AES_KEY) {
     console.warn('AES_KEY未设置，请在环境变量VITE_AES_KEY中配置加密密钥！');
-  }
-  function encrypt(val) {
-    return val ? CryptoJS.AES.encrypt(val.toString(), AES_KEY).toString() : '';
   }
 
   const handleSubmit = async (e) => {
@@ -197,14 +130,14 @@ export default function CheckInPage() {
     setError('');
     setSuccess(false);
     setCheckedInTime(null);
-    console.log('[CheckIn] input:', input, 'clinicId:', clinicId);
+    console.log('[handleSubmit] input:', input, 'clinicId:', clinicId);
     if (!input.trim()) {
-      setError('Please enter your email or phone number.');
+      setFriendlyError(setError, 'Please enter your email or phone number.');
       console.log('[CheckIn][Error] Empty input');
       return;
     }
     if (!clinicId) {
-      setError('Clinic ID is missing.');
+      setFriendlyError(setError, 'Clinic ID is missing.');
       console.log('[CheckIn][Error] Missing clinicId');
       return;
     }
@@ -212,119 +145,62 @@ export default function CheckInPage() {
     let userQuery;
     if (isEmail(input)) {
       const emailHash = hash(input.trim().toLowerCase());
-      console.log('[CheckIn] Detected email hash:', emailHash);
+      console.log('[handleSubmit] Detected email hash:', emailHash);
       userQuery = supabase
         .from('users')
-        .select('user_id, clinic_id, full_name')
+        .select('user_id, clinic_id, full_name, row_id')
         .eq('clinic_id', clinicId)
         .eq('email_hash', emailHash)
         .limit(1);
     } else if (isPhone(input)) {
       const phoneHash = hash(input);
-      console.log('[CheckIn] Detected phone hash:', phoneHash);
+      console.log('[handleSubmit] Detected phone hash:', phoneHash);
       userQuery = supabase
         .from('users')
-        .select('user_id, clinic_id, full_name')
+        .select('user_id, clinic_id, full_name, row_id')
         .eq('clinic_id', clinicId)
         .eq('phone_hash', phoneHash)
         .limit(1);
     } else {
-      setError('Please enter a valid email (must contain @) or a phone number (digits only).');
+      setFriendlyError(setError, 'Please enter a valid email (must contain @) or a phone number (digits only).');
       setLoading(false);
       console.log('[CheckIn][Error] Invalid input format:', input);
       return;
     }
     const { data, error: dbError } = await userQuery;
-    console.log('[CheckIn] 查询结果:', { data, dbError });
+    console.log('[handleSubmit] userQuery result:', { data, dbError });
 
     if (dbError || !data || data.length === 0) {
-      setError('No user found. Please check your input. If this is your first visit, please register first.');
+      setFriendlyError(setError, 'No user found. Please check your input. If this is your first visit, please register first.');
       setLoading(false);
       return;
     }
 
     const user = data[0];
-    const now = new Date();
-    const nowISO = now.toISOString();
-    // 检查当前小时段是否已checked-in
-    const currentHourStart = new Date(now);
-    currentHourStart.setMinutes(0,0,0);
-    const currentHourEnd = new Date(currentHourStart);
-    currentHourEnd.setHours(currentHourEnd.getHours() + 1);
-    const { data: checkedInList, error: checkedInError } = await supabase
-      .from('visits')
-      .select('*')
-      .eq('user_id', user.user_id)
-      .eq('clinic_id', user.clinic_id)
-      .eq('status', 'checked-in')
-      .gte('visit_time', currentHourStart.toISOString())
-      .lt('visit_time', currentHourEnd.toISOString());
-    if (checkedInList && checkedInList.length > 0) {
-      setError('You have already checked in for this time slot.');
-      setLoading(false);
-      return;
+    try {
+      await checkInCore(user);
+      if (user.user_id) localStorage.setItem('user_id', user.user_id);
+      if (user.row_id) localStorage.setItem('user_row_id', user.row_id);
+      if (user.clinic_id) localStorage.setItem('clinic_id', user.clinic_id);
+      setCheckedInTime(new Date().toLocaleString());
+      setSuccess(true);
+    } catch (err) {
+      console.log('[handleSubmit] error:', err);
+      if (err.message.includes('network')) {
+        setFriendlyError(setError, 'Network error.');
+      } else if (err.message.includes('already checked in today')) {
+        setFriendlyError(setError, 'Checked in today.');
+      } else if (err.message.includes('finished your consultation')) {
+        setFriendlyError(setError, 'Consultation finished.');
+      } else {
+        setFriendlyError(setError, 'Unexpected error.');
+      }
     }
-    // 不再需要当天已 done 的判断，只查未完成的预约/到访记录
-    const { data: visit, error: visitError } = await supabase
-      .from('visits')
-      .select('*')
-      .eq('user_id', user.user_id)
-      .eq('clinic_id', user.clinic_id)
-      .neq('status', 'checked-in')
-      .order('book_time', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    console.log('[CheckIn] visitQuery result:', { visit, visitError });
-    if (visitError) {
-      setError('Failed to check visit record. Please try again.');
-      setLoading(false);
-      console.log('[CheckIn][Error] visitError:', visitError);
-      return;
-    }
-    let result;
-    if (visit) {
-      // 已有预约/到访，更新visittime和status
-      console.log('[CheckIn] Updating visit:', visit.id);
-      result = await supabase
-        .from('visits')
-        .update({ visit_time: nowISO, status: 'checked-in' })
-        .eq('id', visit.id);
-      console.log('[CheckIn] Update visit result:', result);
-    } else {
-      // 没有预约，插入新记录
-      console.log('[CheckIn] Inserting new visit record');
-      result = await supabase
-        .from('visits')
-        .insert([
-          {
-            user_id: user.user_id,
-            clinic_id: user.clinic_id,
-            visit_time: nowISO,
-            book_time: nowISO,
-            status: 'checked-in',
-            is_first: false,
-            is_paid: false,
-          },
-        ]);
-      console.log('[CheckIn] Insert visit result:', result);
-    }
-    if (result.error) {
-      setError('Check-in failed. Please try again.');
-      setLoading(false);
-      console.log('[CheckIn][Error] visit update/insert error:', result.error);
-      return;
-    }
-    // 保存user_id和clinic_id到localStorage，实现免登录体验
-    if (user.user_id) localStorage.setItem('user_id', user.user_id);
-    if (user.clinic_id) localStorage.setItem('clinic_id', user.clinic_id);
-    setCheckedInTime(now.toLocaleString());
-    setSuccess(true);
     setLoading(false);
-    console.log('[CheckIn] Check-in success at:', now.toLocaleString());
   };
 
   // 如果已存在 userId 和 clinicId，且未出错或未手动退出，则不显示表单，直接走自动 check-in 流程（UI 只显示 loading 或结果）
-  const shouldShowForm = !(userId && clinicId);
+  const shouldShowForm = !(userRowId && clinicId);
   // 新增：自动 check-in 时如果有 error，显示 error 信息和返回首页按钮
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -369,13 +245,21 @@ export default function CheckInPage() {
               )}
             </button>
             {error && (
-              <div className="text-red-600 text-sm p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 animate-shake">
-                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {error}
+              <div className="flex justify-center w-full">
+                <div className="text-red-500 text-xs mt-1 text-center max-w-xs w-full animate-fade-in">
+                  {error}
+                </div>
               </div>
             )}
+            <div className="flex justify-center mt-4">
+              <button
+                className="text-gray-400 text-xs underline hover:text-blue-600 transition"
+                type="button"
+                onClick={() => navigate('/')}
+              >
+                Back to Home
+              </button>
+            </div>
           </form>
         ) : error ? (
           // 自动 check-in 时如果有 error，显示错误信息和返回首页按钮
@@ -383,7 +267,12 @@ export default function CheckInPage() {
             <div className="text-red-600 text-lg font-semibold mb-4">{error}</div>
             <button
               className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold shadow hover:bg-blue-700 transition"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_row_id');
+                localStorage.removeItem('clinic_id');
+                window.location.reload();
+              }}
             >
               Return to Home
             </button>

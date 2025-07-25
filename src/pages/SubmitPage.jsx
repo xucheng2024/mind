@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
-import CryptoJS from 'crypto-js';
+import { hash, encrypt } from '../lib/utils';
 
 export default function SubmitPage() {
   const navigate = useNavigate();
@@ -68,12 +68,67 @@ export default function SubmitPage() {
         return;
       }
 
-      console.log('[SubmitPage] 查询visit:', { user_id, clinic_id: registrationData.clinic_id });
+      let selfiePath = registrationData.selfie || '';
+
+      // 只加密姓名、生日、地址、电话、邮箱、签名、自拍、id_last4
+      const AES_KEY = import.meta.env.VITE_AES_KEY;
+      if (!AES_KEY) {
+        console.warn('AES_KEY未设置，请在环境变量VITE_AES_KEY中配置加密密钥！');
+      }
+      // 使用 encrypt(val, AES_KEY) 和 hash(val) 进行加密/哈希
+      const userPayload = {
+        full_name: encrypt(registrationData.fullName || '', AES_KEY),
+        id_last4: encrypt(registrationData.idLast4 || '', AES_KEY),
+        dob: encrypt(registrationData.dob || `${registrationData.dobDay}/${registrationData.dobMonth}/${registrationData.dobYear}`, AES_KEY),
+        phone: encrypt(registrationData.phone || '', AES_KEY),
+        phone_hash: hash(registrationData.phone || ''),
+        email: encrypt(registrationData.email || '', AES_KEY),
+        email_hash: hash(registrationData.email || ''),
+        postal_code: encrypt(registrationData.postalCode || '', AES_KEY),
+        block_no: encrypt(registrationData.blockNo || '', AES_KEY),
+        street: encrypt(registrationData.street || '', AES_KEY),
+        building: encrypt(registrationData.building || '', AES_KEY),
+        floor: encrypt(registrationData.floor || '', AES_KEY),
+        unit: encrypt(registrationData.unit || '', AES_KEY),
+        health_declaration: JSON.stringify(
+          Object.fromEntries(
+            Object.entries(registrationData).filter(
+              ([key, value]) =>
+                /^[A-Z][a-zA-Z]+$/.test(key) &&
+                ['yes', 'no', 'unsure'].includes((value || '').toString().toLowerCase())
+            )
+          )
+        ),
+        other_health_notes: registrationData.otherHealthNotes || '',
+        is_guardian: !!registrationData.is_guardian,
+        signature: encrypt(registrationData.signature || '', AES_KEY),
+        selfie: encrypt(selfiePath, AES_KEY),
+        clinic_id: registrationData.clinic_id, // 不加密
+        user_id, // 不加密
+        created_at: new Date().toISOString(), // 不加密
+      };
+
+      // 插入 users，返回 row_id
+      const { data: insertedUser, error: userError } = await supabase
+        .from('users')
+        .insert([userPayload])
+        .select('row_id')
+        .single();
+
+      if (userError) {
+        setErrorMessage(userError.message || 'Failed to save user information. Please try again later.');
+        submittedRef.current = false;
+        setLoading(false);
+        return;
+      }
+      const user_row_id = insertedUser.row_id;
+
+      // 查询是否已到访
       const { data: existingVisit, error: visitQueryError } = await supabase
         .from('visits')
         .select('id')
         .match({
-          user_id: user_id,
+          user_row_id: user_row_id,
           clinic_id: registrationData.clinic_id,
         })
         .maybeSingle();
@@ -85,7 +140,6 @@ export default function SubmitPage() {
         return;
       }
 
-      // 查询是否已到访
       if (existingVisit) {
         console.log('[SubmitPage][Error] 已有visit:', existingVisit);
         setErrorMessage('This patient already has a visit record.');
@@ -93,71 +147,15 @@ export default function SubmitPage() {
         return;
       }
 
-      let selfiePath = registrationData.selfie || '';
-
-      // 只加密姓名、生日、地址、电话、邮箱、签名、自拍、id_last4
-      const AES_KEY = import.meta.env.VITE_AES_KEY;
-      if (!AES_KEY) {
-        console.warn('AES_KEY未设置，请在环境变量VITE_AES_KEY中配置加密密钥！');
-      }
-      function encrypt(val) {
-        return val ? CryptoJS.AES.encrypt(val.toString(), AES_KEY).toString() : '';
-      }
-      function hash(val) {
-        return val ? CryptoJS.SHA256(val.trim().toLowerCase()).toString() : '';
-      }
-      const userPayload = {
-        full_name: encrypt(registrationData.fullName || ''),
-        id_last4: encrypt(registrationData.idLast4 || ''),
-        dob: encrypt(registrationData.dob || `${registrationData.dobDay}/${registrationData.dobMonth}/${registrationData.dobYear}`),
-        phone: encrypt(registrationData.phone || ''),
-        phone_hash: hash(registrationData.phone || ''),
-        email: encrypt(registrationData.email || ''),
-        email_hash: hash(registrationData.email || ''),
-        postal_code: encrypt(registrationData.postalCode || ''),
-        block_no: encrypt(registrationData.blockNo || ''),
-        street: encrypt(registrationData.street || ''),
-        building: encrypt(registrationData.building || ''),
-        floor: encrypt(registrationData.floor || ''),
-        unit: encrypt(registrationData.unit || ''),
-        health_declaration: JSON.stringify(
-          Object.fromEntries(
-            Object.entries(registrationData).filter(
-              ([key, value]) => /^[A-Z][a-zA-Z]+$/.test(key) && ['YES', 'NO', 'UNSURE'].includes(value)
-            )
-          )
-        ),
-        other_health_notes: registrationData.otherHealthNotes || '',
-        is_guardian: registrationData.is_guardian ? 'true' : 'false',
-        signature: encrypt(registrationData.signature || ''),
-        selfie: encrypt(selfiePath),
-        clinic_id: registrationData.clinic_id, // 不加密
-        user_id, // 不加密
-        created_at: new Date().toISOString(), // 不加密
-      };
-
+      // visits payload
       const visitPayload = {
-        user_id,
+        user_row_id, // 用 row_id 作为外键
         visit_time: new Date().toISOString(),
         book_time: new Date().toISOString(),
         status: 'checked-in',
         is_first: true,
-        is_paid: false,
         clinic_id: registrationData.clinic_id,
       };
-
-      console.log('[SubmitPage] 即将插入用户:', userPayload);
-      console.log('[SubmitPage] 即将插入visit:', visitPayload);
-      // 插入
-      const { error: userError } = await supabase.from('users').insert([userPayload]);
-      console.log('[SubmitPage] 用户插入结果:', userError);
-      if (userError) {
-        setErrorMessage(userError.message || 'Failed to save user information. Please try again later.');
-        submittedRef.current = false;
-        setLoading(false);
-        return;
-      }
-
       const { error: visitError } = await supabase.from('visits').insert([visitPayload]);
       console.log('[SubmitPage] visit插入结果:', visitError);
       if (visitError) {
@@ -167,8 +165,9 @@ export default function SubmitPage() {
         return;
       }
 
-      // 注册成功后保存user_id和clinic_id到localStorage，实现注册即登录体验
+      // 注册成功后保存user_id、user_row_id和clinic_id到localStorage，实现注册即登录体验
       if (user_id) localStorage.setItem('user_id', user_id);
+      if (user_row_id) localStorage.setItem('user_row_id', user_row_id);
       if (registrationData.clinic_id) localStorage.setItem('clinic_id', registrationData.clinic_id);
       // 只有全部成功才显示注册成功
       setSubmitted(true);
@@ -209,7 +208,7 @@ export default function SubmitPage() {
             onClick={() => navigate('/')}
             className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
           >
-            Back to Home
+            Back Home
           </button>
         </div>
       </div>
@@ -236,11 +235,11 @@ export default function SubmitPage() {
             </svg>
             <h2 className="text-red-600 text-xl font-bold mb-2">{errorMessage}</h2>
             <button
-              aria-label="Back to Home"
+              aria-label="Back Home"
               onClick={() => navigate('/')}
               className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 mt-4"
             >
-              Back to Home
+              Back Home
             </button>
           </div>
         )}

@@ -4,11 +4,7 @@ import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import RegistrationHeader from '../components/RegistrationHeader';
 import InputMask from 'react-input-mask';
-import CryptoJS from 'crypto-js';
-
-function hash(val) {
-  return val ? CryptoJS.SHA256(val.trim().toLowerCase()).toString() : '';
-}
+import { hash, encrypt } from '../lib/utils';
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
@@ -189,11 +185,17 @@ export default function RegistrationForm() {
     console.log('[Register] 检查是否已注册:', { clinicId, phone: form.phone, email: form.email });
     const phoneHash = hash(form.phone);
     const emailHash = hash(form.email);
-    // 同时查手机号和邮箱
+    // 只查 hash 字段，不查明文
     const { data: phoneUsers, error: phoneError } = await supabase
-      .from('users').select('user_id').eq('phone_hash', phoneHash).limit(1);
+      .from('users').select('user_id')
+      .eq('clinic_id', clinicId)
+      .eq('phone_hash', phoneHash)
+      .limit(1);
     const { data: emailUsers, error: emailError } = await supabase
-      .from('users').select('user_id').eq('email_hash', emailHash).limit(1);
+      .from('users').select('user_id')
+      .eq('clinic_id', clinicId)
+      .eq('email_hash', emailHash)
+      .limit(1);
     console.log('[Register] 查到的手机号用户:', phoneUsers, phoneError);
     console.log('[Register] 查到的邮箱用户:', emailUsers, emailError);
 

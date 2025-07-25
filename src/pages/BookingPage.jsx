@@ -2,16 +2,7 @@ import React, { useState } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-
-// SHA-256 hash helper
-async function sha256Hex(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str.trim().toLowerCase());
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+import { sha256Hex, isPhone, isEmail } from '../lib/utils';
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
@@ -20,10 +11,6 @@ export default function BookingPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  // 判断输入类型
-  const isPhone = (val) => /^\d+$/.test(val);
-  const isEmail = (val) => val.includes('@');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +31,7 @@ export default function BookingPage() {
         hashValue = await sha256Hex(input);
         query = supabase
           .from('users')
-          .select('user_id')
+          .select('user_id, row_id')
           .eq('clinic_id', clinicId)
           .eq('phone_hash', hashValue)
           .single();
@@ -52,7 +39,7 @@ export default function BookingPage() {
         hashValue = await sha256Hex(input);
         query = supabase
           .from('users')
-          .select('user_id')
+          .select('user_id, row_id')
           .eq('clinic_id', clinicId)
           .eq('email_hash', hashValue)
           .single();
@@ -69,8 +56,9 @@ export default function BookingPage() {
       }
       // 保存user_id和clinic_id到localStorage，实现免登录体验
       if (data.user_id) localStorage.setItem('user_id', data.user_id);
+      if (data.row_id) localStorage.setItem('user_row_id', data.row_id);
       if (clinicId) localStorage.setItem('clinic_id', clinicId);
-      navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}`);
+      navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}&user_row_id=${data.row_id}`);
     } catch (err) {
       setLoading(false);
       setError('An unexpected error occurred. Please try again.');
@@ -135,7 +123,16 @@ export default function BookingPage() {
               {error}
             </div>
           )}
-        </form>
+          <div className="flex justify-center mt-4">
+            <button
+              className="text-gray-400 text-xs underline hover:text-blue-600 transition"
+              type="button"
+              onClick={() => navigate('/')}
+            >
+              Back Home
+            </button>
+          </div>
+        </form> 
       </div>
     </div>
   );
