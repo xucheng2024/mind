@@ -384,12 +384,16 @@ export default function CalendarPage() {
               startAccessor="start"
               endAccessor="end"
               style={{ height: 500 }}
-              selectable={true}
+              selectable="ignoreEvents"
+              longPressThreshold={1}
               views={{ month: true }}
               view="month"
               onView={() => {}}
               components={{ toolbar: CustomToolbar }}
-              onSelectSlot={handleSelectSlot}
+              onSelectSlot={slotInfo => {
+                console.log('onSelectSlot', slotInfo);
+                handleSelectSlot(slotInfo);
+              }}
               eventPropGetter={eventPropGetter}
               slotPropGetter={slotPropGetter}
               dayPropGetter={dayPropGetter}
