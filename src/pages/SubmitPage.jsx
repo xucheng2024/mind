@@ -167,6 +167,9 @@ export default function SubmitPage() {
         return;
       }
 
+      // 注册成功后保存user_id和clinic_id到localStorage，实现注册即登录体验
+      if (user_id) localStorage.setItem('user_id', user_id);
+      if (registrationData.clinic_id) localStorage.setItem('clinic_id', registrationData.clinic_id);
       // 只有全部成功才显示注册成功
       setSubmitted(true);
       setLoading(false);

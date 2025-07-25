@@ -56,10 +56,22 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+import { useNavigate } from 'react-router-dom';
+
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
-  const clinicId = searchParams.get('clinic_id');
-  const userId = searchParams.get('user_id');
+  const navigate = useNavigate();
+  // 优先用URL参数，否则用localStorage
+  let clinicId = searchParams.get('clinic_id');
+  let userId = searchParams.get('user_id');
+  if (!clinicId) clinicId = localStorage.getItem('clinic_id');
+  if (!userId) userId = localStorage.getItem('user_id');
+  // 如果都没有，跳转回booking页
+  React.useEffect(() => {
+    if (!clinicId || !userId) {
+      navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
+    }
+  }, [clinicId, userId, navigate]);
 
   const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -545,6 +557,15 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+      {/* 返回首页按钮 */}
+      <div className="w-full flex justify-center mt-8 mb-4">
+        <button
+          onClick={() => window.location.href = '/'}
+          className="px-8 py-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+        >
+          Back Home
+        </button>
+      </div>
     </div>
   );
 }

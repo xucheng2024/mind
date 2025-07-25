@@ -67,6 +67,9 @@ export default function BookingPage() {
         setError('No user found with this email or phone number in this clinic.');
         return;
       }
+      // 保存user_id和clinic_id到localStorage，实现免登录体验
+      if (data.user_id) localStorage.setItem('user_id', data.user_id);
+      if (clinicId) localStorage.setItem('clinic_id', clinicId);
       navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}`);
     } catch (err) {
       setLoading(false);
