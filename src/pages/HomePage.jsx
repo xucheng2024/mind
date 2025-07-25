@@ -70,10 +70,11 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      {/* 显眼的 logout 按钮，底部居中 */}
-      <div className="w-full flex justify-center mt-10 mb-4">
+      {/* 更低调的 logout/switch 按钮，缩小并上移 */}
+      <div className="w-full flex justify-center mt-4 mb-2">
         <button
-          className="px-6 py-3 bg-blue-100 text-blue-700 font-bold rounded-xl shadow hover:bg-blue-600 hover:text-white transition text-base border border-blue-300 focus:outline-none"
+          className="px-4 py-2 bg-gray-100 text-gray-500 font-medium rounded-lg shadow-sm hover:bg-gray-200 hover:text-gray-700 transition text-sm border border-gray-200 focus:outline-none"
+          style={{ minWidth: 0 }}
           onClick={() => {
             localStorage.removeItem('user_id');
             localStorage.removeItem('clinic_id');

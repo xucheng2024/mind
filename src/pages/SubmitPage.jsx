@@ -205,7 +205,7 @@ export default function SubmitPage() {
           <h2 className="text-green-600 text-2xl font-bold mb-2">Registration Completed</h2>
           <p className="mb-8 text-base text-gray-700">Thank you! You’re successfully registered.</p>
           <button
-            aria-label="Back to Home"
+            aria-label="Back Home"
             onClick={() => navigate('/')}
             className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
           >
