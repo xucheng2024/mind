@@ -79,7 +79,7 @@ export default function MedicalPage() {
       notes = `${prefix}: ${notes}`;
     }
     updateRegistrationData({ ...form, otherHealthNotes: notes });
-    navigate('/register/authorize');
+    navigate('/register/selfie');
   };
 
   return (
