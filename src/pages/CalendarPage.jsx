@@ -198,15 +198,16 @@ export default function CalendarPage() {
   }, [events]);
 
   // 优化后的 getAvailableHoursForDate
+  // 新 businessHours 格式支持 { open, close, closed }
   function getAvailableHoursForDate(date) {
     if (!businessHours || !date) return [];
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekday = weekdays[date.getDay()];
-    const hoursStr = businessHours[weekday];
-    if (!hoursStr || hoursStr === 'closed') return 'closed';
-    const [start, end] = hoursStr.split('-');
-    const [startH] = start.split(':').map(Number);
-    const [endH] = end.split(':').map(Number);
+    const dayConfig = businessHours[weekday];
+    if (!dayConfig || dayConfig.closed) return 'closed';
+    // open/close 格式如 "09:00"
+    const [startH] = dayConfig.open.split(':').map(Number);
+    const [endH] = dayConfig.close.split(':').map(Number);
     // 只返回当前下一个小时及之后
     const now = new Date();
     let minHour = startH;
