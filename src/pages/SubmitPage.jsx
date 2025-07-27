@@ -78,17 +78,17 @@ export default function SubmitPage() {
       
       // Format current time as prefix
       const now = new Date();
-      const datetimePrefix = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const datetimePrefix = `[${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}]`;
       
       // Combine health declaration and notes
       const healthItems = ['HeartDisease', 'Diabetes', 'Hypertension', 'Cancer', 'Asthma', 'MentalIllness', 'Epilepsy', 'Stroke', 'KidneyDisease', 'LiverDisease'];
       let combinedHealthNotes = '';
       
-      // Add health declarations
+      // Add health declarations (only Yes and Unsure)
       const healthDeclarations = [];
       healthItems.forEach(item => {
         const value = registrationData[item];
-        if (value && ['Yes', 'No', 'Unsure'].includes(value)) {
+        if (value && ['Yes', 'Unsure'].includes(value)) {
           const displayName = item.replace(/([A-Z])/g, ' $1').trim();
           healthDeclarations.push(`${displayName}(${value})`);
         }
@@ -108,11 +108,11 @@ export default function SubmitPage() {
         }
       }
       
-      // Add time prefix
+      // Add time prefix and suffix
       if (combinedHealthNotes) {
-        combinedHealthNotes = `${datetimePrefix}: ${combinedHealthNotes}`;
+        combinedHealthNotes = `${datetimePrefix}: ${combinedHealthNotes} - self declare`;
       } else {
-        combinedHealthNotes = `${datetimePrefix}: None reported`;
+        combinedHealthNotes = `${datetimePrefix}: None reported - self declare`;
       }
       
       // Use encrypt(val, AES_KEY) and hash(val) for encryption/hashing
