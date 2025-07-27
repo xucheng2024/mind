@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
-// CSS动画样式
+// CSS animations
 const styles = `
   @keyframes fadeInScale {
     0% {
@@ -36,7 +36,7 @@ const styles = `
   }
 `;
 
-// 插入样式到页面
+// Insert styles into page
 if (typeof document !== 'undefined') {
   const styleSheet = document.createElement("style");
   styleSheet.type = "text/css";
@@ -61,12 +61,12 @@ import { useNavigate } from 'react-router-dom';
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // 优先用URL参数，否则用localStorage
+  // Use URL params first, then localStorage
   let clinicId = searchParams.get('clinic_id');
   let userRowId = searchParams.get('user_row_id');
   if (!clinicId) clinicId = localStorage.getItem('clinic_id');
   if (!userRowId) userRowId = localStorage.getItem('user_row_id');
-  // 如果都没有，跳转回booking页
+  // Redirect to booking if missing
   React.useEffect(() => {
     if (!clinicId || !userRowId) {
       navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
@@ -79,17 +79,20 @@ export default function CalendarPage() {
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(null);
-  // 移除 showRebookPrompt
   const [clickedHour, setClickedHour] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [businessHours, setBusinessHours] = useState(null);
   const [availableHours, setAvailableHours] = useState([]);
   const [isClosedDay, setIsClosedDay] = useState(false);
+  const [userHasOtherBooking, setUserHasOtherBooking] = useState(false);
+  const [changeAppointment, setChangeAppointment] = useState(null);
+  const [activeTab, setActiveTab] = useState('am'); // 'am' or 'pm'
+  const [notification, setNotification] = useState(null); // { type: 'success'|'error'|'warning', message: string }
 
-  // 可预约时间范围（9点到20点）
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9); // 9-20点
+  // Available time range (9am to 8pm)
+  const hours = Array.from({ length: 12 }, (_, i) => i + 9);
 
-  // 获取小时显示格式
+  // Get hour display format
   function getDisplayHourPeriod(hour) {
     const period = hour < 12 ? 'am' : 'pm';
     let displayHour = hour % 12;
@@ -97,13 +100,12 @@ export default function CalendarPage() {
     return { displayHour, period };
   }
 
-  // 格式化小时为 "10am" 格式
-  function formatHourAmPm(hour) {
-    const { displayHour, period } = getDisplayHourPeriod(hour);
-    return `${displayHour}${period}`;
+  // Format time to "9:00" format
+  function formatTime(hour, minute = 0) {
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   }
 
-  // 自定义日历工具栏
+  // Custom calendar toolbar
   function CustomToolbar({ label, onNavigate }) {
     return (
       <div className="flex items-center justify-center mb-6">
@@ -128,7 +130,17 @@ export default function CalendarPage() {
     );
   }
 
-  // 获取预约数据
+  // Auto-close notifications
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Fetch appointment data
   useEffect(() => {
     if (!clinicId) return;
     
@@ -141,20 +153,20 @@ export default function CalendarPage() {
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
-          console.error('获取预约数据失败:', error);
+          console.error('Failed to fetch appointments:', error);
           return;
         }
         const evts = (data || [])
-          .filter(v => v.status !== 'canceled')
+          .filter(v => v.status === 'booked') // Only show booked appointments
           .map(v => {
             const startDate = v.book_time || v.visit_time ? new Date(v.book_time || v.visit_time) : null;
             if (!startDate) return null;
-            const timeStr = formatHourAmPm(startDate.getHours());
+            const timeStr = formatTime(startDate.getHours(), startDate.getMinutes());
             return {
               id: v.id,
               title: timeStr,
               start: startDate,
-              end: new Date(startDate.getTime() + 60 * 60 * 1000),
+              end: new Date(startDate.getTime() + 30 * 60 * 1000), // 30-minute appointment
               status: v.status,
               userRowId: v.user_row_id,
             };
@@ -164,7 +176,7 @@ export default function CalendarPage() {
       });
   }, [clinicId, refresh, userRowId]);
 
-  // 拉取诊所营业时间
+  // Fetch clinic business hours
   useEffect(() => {
     if (!clinicId) return;
     supabase
@@ -179,52 +191,77 @@ export default function CalendarPage() {
       });
   }, [clinicId]);
 
-  // 判断某时间段是否已满
+  // Check if a time slot is full - supports half-hour slots
   const isSlotFull = useCallback((date) => {
     const hour = date.getHours();
+    const minute = date.getMinutes();
     const day = date.getDate();
     const month = date.getMonth();
     const year = date.getFullYear();
     
-    const count = events.filter(e =>
-      e.status !== 'canceled' &&
-      e.start.getFullYear() === year &&
-      e.start.getMonth() === month &&
-      e.start.getDate() === day &&
-      e.start.getHours() === hour
-    ).length;
+    const count = events.filter(e => {
+      const eventHour = e.start.getHours();
+      const eventMinute = e.start.getMinutes();
+      return e.status === 'booked' &&
+             e.start.getFullYear() === year &&
+             e.start.getMonth() === month &&
+             e.start.getDate() === day &&
+             eventHour === hour &&
+             eventMinute === minute;
+    }).length;
     
     return count >= 3;
   }, [events]);
 
-  // 优化后的 getAvailableHoursForDate
-  // 新 businessHours 格式支持 { open, close, closed }
+  // Optimized getAvailableHoursForDate - supports half-hour slots
+  // New businessHours format supports { open, close, closed }
   function getAvailableHoursForDate(date) {
     if (!businessHours || !date) return [];
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekday = weekdays[date.getDay()];
     const dayConfig = businessHours[weekday];
     if (!dayConfig || dayConfig.closed) return 'closed';
-    // open/close 格式如 "09:00"
-    const [startH] = dayConfig.open.split(':').map(Number);
-    const [endH] = dayConfig.close.split(':').map(Number);
-    // 只返回当前下一个小时及之后
+    
+    // Parse open and close times (supports "09:00" and "09:30" format)
+    const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+    const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+    
+    // Convert to minutes for easier calculation
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    
+    // Only return the next half-hour and after
     const now = new Date();
-    let minHour = startH;
+    let minMinutes = startMinutes;
     if (date.toDateString() === now.toDateString()) {
-      minHour = Math.max(minHour, now.getHours() + 1);
+      // Add 30 minutes to current time to ensure appointment is at least 30 minutes after
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      // If current time + 30 minutes exceeds business hours, return empty array
+      if (currentMinutes + 30 >= endMinutes) {
+        return [];
+      }
+      minMinutes = Math.max(minMinutes, currentMinutes + 30);
     }
-    let hours = [];
-    for (let h = minHour; h <= endH; h++) {
-      hours.push(h);
+    
+    // Generate half-hour intervals
+    let slots = [];
+    for (let minutes = minMinutes; minutes < endMinutes; minutes += 30) {
+      const hour = Math.floor(minutes / 60);
+      const minute = minutes % 60;
+      slots.push({ hour, minute });
     }
-    return hours;
+    
+    return slots;
   }
 
-  // 日历时段样式
+  // Calendar slot style - supports half-hour slots
   function slotPropGetter(date) {
     const now = new Date();
-    if (date < now) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const slotMinutes = date.getHours() * 60 + date.getMinutes();
+    
+    // If it's a past date or past time, disable
+    if (date < now || (date.toDateString() === now.toDateString() && slotMinutes <= currentMinutes)) {
       return {
         style: {
           backgroundColor: '#f3f4f6',
@@ -234,24 +271,61 @@ export default function CalendarPage() {
         },
       };
     }
+    
     const hour = date.getHours();
+    const minute = date.getMinutes();
     const dayOfWeek = date.getDay();
     
-    // 周末或非工作时间
-    if (dayOfWeek === 0 || dayOfWeek === 1 || hour < 9 || hour > 20) {
-      return {
-        style: {
-          backgroundColor: '#f9fafb',
-          color: '#d1d5db',
-          cursor: 'not-allowed',
-        },
-      };
+    // Use businessHours data to determine if open
+    if (businessHours) {
+      const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const weekday = weekdays[dayOfWeek];
+      const dayConfig = businessHours[weekday];
+      
+      if (!dayConfig || dayConfig.closed) {
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            color: '#d1d5db',
+            cursor: 'not-allowed',
+          },
+        };
+      }
+      
+      // Check if within business hours (supports half-hour)
+      const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+      const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+      
+      const currentMinutes = hour * 60 + minute;
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+      
+      if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            color: '#d1d5db',
+            cursor: 'not-allowed',
+          },
+        };
+      }
+    } else {
+      // If no businessHours data, use default logic
+      if (dayOfWeek === 0 || dayOfWeek === 1 || hour < 9 || hour > 20) {
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            color: '#d1d5db',
+            cursor: 'not-allowed',
+          },
+        };
+      }
     }
     
     return {};
   }
 
-  // 事件样式
+  // Event style
   function eventPropGetter(event) {
     if (event.userRowId === userRowId) {
       return {
@@ -281,7 +355,7 @@ export default function CalendarPage() {
     return {};
   }
 
-  // 日期样式
+  // Day style
   function dayPropGetter(date) {
     const now = new Date();
     now.setHours(0,0,0,0);
@@ -296,44 +370,94 @@ export default function CalendarPage() {
         },
       };
     }
-    const day = date.getDay();
-    if (day === 0 || day === 1) {
-      return {
-        style: {
-          backgroundColor: '#f9fafb',
-          color: '#d1d5db',
-          pointerEvents: 'none',
-        },
-      };
+    
+    // Use businessHours data to determine if open
+    if (businessHours) {
+      const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const weekday = weekdays[date.getDay()];
+      const dayConfig = businessHours[weekday];
+      
+      if (!dayConfig || dayConfig.closed) {
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            color: '#d1d5db',
+            pointerEvents: 'none',
+            cursor: 'not-allowed',
+          },
+        };
+      }
+    } else {
+      // If no businessHours data, use default logic
+      const day = date.getDay();
+      if (day === 0 || day === 1) {
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            color: '#d1d5db',
+            pointerEvents: 'none',
+            cursor: 'not-allowed',
+          },
+        };
+      }
     }
+    
     return {};
   }
 
-  // 选择日期时动态生成可预约小时
+  // Dynamically generate available hours when selecting a date
   function handleSelectSlot(slotInfo) {
     const date = slotInfo.start;
     const now = new Date();
     now.setHours(0,0,0,0);
-    if (date < now) return; // 禁止点击今天之前的日期弹窗
-    if (!businessHours) return;
-    // 排除周末
-    if (date.getDay() === 0 || date.getDay() === 1) {
-      return;
+    if (date < now) return; // Disable clicking on dates before today's popup
+    
+    // Extra check: if today, check if clicked on past time
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) {
+      const currentMinutes = today.getHours() * 60 + today.getMinutes();
+      const slotMinutes = date.getHours() * 60 + date.getMinutes();
+      if (slotMinutes <= currentMinutes) {
+        return; // Disable clicking on current half-hour slot and before
+      }
     }
-    // 获取当天所有预约
+    
+    if (!businessHours) return;
+    
+    // Use businessHours data to determine if open
+    const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const weekday = weekdays[date.getDay()];
+    const dayConfig = businessHours[weekday];
+    
+    if (!dayConfig || dayConfig.closed) {
+      return; // If not open today, don't show popup
+    }
+    
+    // Get all appointments for the day
     const dayEvents = events.filter(e =>
       e.start.toDateString() === date.toDateString()
     );
-    // 检查用户当天是否已有预约
-    const myEvent = dayEvents.find(e => e.userRowId === userRowId);
+    
+    // Check if user already has an appointment today
+    const myEvent = dayEvents.find(e => e.userRowId === userRowId && e.status === 'booked');
+    
     if (myEvent) {
-      const timeStr = formatHourAmPm(myEvent.start.getHours());
+      // If user already has an appointment today, show cancel confirmation
+      const timeStr = formatTime(myEvent.start.getHours(), myEvent.start.getMinutes());
       setConfirmCancel({ eventId: myEvent.id, timeStr });
     } else {
       setSelectedDate(date);
       setModalEvents(dayEvents);
       setClickedHour(null);
-      // 动态生成可预约小时
+      
+      // Check if user already has other appointments today
+      const userHasOtherBookingToday = dayEvents.some(e => 
+        e.userRowId === userRowId && 
+        e.status === 'booked'
+      );
+      setUserHasOtherBooking(userHasOtherBookingToday);
+      
+      // Dynamically generate available hours
       const result = getAvailableHoursForDate(date);
       if (result === 'closed') {
         setIsClosedDay(true);
@@ -341,17 +465,79 @@ export default function CalendarPage() {
       } else {
         setIsClosedDay(false);
         setAvailableHours(result);
+        
+        // Automatically switch to the tab with available slots
+        const { amSlots, pmSlots } = separateAmPmSlots(result);
+        if (amSlots.length > 0) {
+          setActiveTab('am');
+        } else if (pmSlots.length > 0) {
+          setActiveTab('pm');
+        }
       }
       setShowModal(true);
     }
   }
 
-  // 优化 handleBook，visit_time = book_time
-  async function handleBook(hour) {
-    const date = new Date(selectedDate);
-    date.setHours(hour, 0, 0, 0);
-    setClickedHour(hour);
+  // Validate user existence
+  async function validateUser() {
+    if (!clinicId || !userRowId) return false;
+    
     try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('row_id')
+        .eq('clinic_id', clinicId)
+        .eq('row_id', userRowId)
+        .single();
+      
+      if (error || !data) {
+        console.error('User validation failed:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('User validation failed:', error);
+      return false;
+    }
+  }
+
+  // Optimized handleBook, supports half-hour slots
+  async function handleBook(hour, minute = 0) {
+    const date = new Date(selectedDate);
+    date.setHours(hour, minute, 0, 0);
+    setClickedHour(`${hour}:${minute.toString().padStart(2, '0')}`);
+    
+    try {
+      // Validate user existence
+      const userExists = await validateUser();
+      if (!userExists) {
+        setNotification({ type: 'error', message: 'User validation failed. Please try logging in again.' });
+        setTimeout(() => navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`), 2000);
+        return;
+      }
+      
+      // Check if user already has an appointment today
+      const today = new Date(selectedDate);
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      
+      const { data: existingBookings } = await supabase
+        .from('visits')
+        .select('id')
+        .eq('clinic_id', clinicId)
+        .eq('user_row_id', userRowId)
+        .eq('status', 'booked')
+        .gte('book_time', today.toISOString())
+        .lt('book_time', tomorrow.toISOString());
+      
+      if (existingBookings && existingBookings.length > 0) {
+        setNotification({ type: 'warning', message: 'You already have an appointment today. Please cancel your existing appointment first.' });
+        setClickedHour(null);
+        return;
+      }
+      
       const { error } = await supabase
         .from('visits')
         .insert([{
@@ -367,32 +553,39 @@ export default function CalendarPage() {
         ...prev,
         {
           id: Date.now(),
-          title: formatHourAmPm(hour),
+          title: formatTime(hour, minute),
           start: new Date(date),
-          end: new Date(date.getTime() + 60 * 60 * 1000),
+          end: new Date(date.getTime() + 30 * 60 * 1000), // 30-minute appointment
           status: 'booked',
           userRowId: userRowId,
         },
       ]);
+      setNotification({ type: 'success', message: `Appointment booked successfully for ${formatTime(hour, minute)}!` });
       setTimeout(() => {
         setShowModal(false);
         setSelectedDate(null);
         setClickedHour(null);
       }, 800);
     } catch (error) {
-      console.error('预约失败:', error);
+      console.error('Booking failed:', error);
+      if (error.code === '23503') {
+        setNotification({ type: 'error', message: 'User not found. Please try logging in again.' });
+        setTimeout(() => navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`), 2000);
+      } else {
+        setNotification({ type: 'error', message: 'Booking failed. Please try again.' });
+      }
       setClickedHour(null);
     }
   }
 
-  // 点击预约事件
+  // Click on appointment event
   function handleEventClick(event) {
     if (event.userRowId === userRowId) {
       setConfirmCancel({ eventId: event.id, timeStr: event.title });
     }
   }
 
-  // 确认取消预约
+  // Confirm cancel appointment
   async function confirmCancelBooking() {
     if (!confirmCancel) return;
     
@@ -405,28 +598,150 @@ export default function CalendarPage() {
     setRefresh(r => r + 1);
   }
 
-  // 时间范围设置
-  const minTime = new Date();
-  minTime.setHours(9, 0, 0, 0);
-  const maxTime = new Date();
-  maxTime.setHours(20, 0, 0, 0);
+  // Handle appointment change
+  async function handleChangeAppointment() {
+    if (!changeAppointment) return;
+    
+    try {
+      // 1. Find today's appointment and cancel it
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      
+      const { data: todayVisits } = await supabase
+        .from('visits')
+        .select('id')
+        .eq('clinic_id', clinicId)
+        .eq('user_row_id', userRowId)
+        .eq('status', 'booked')
+        .gte('book_time', today.toISOString())
+        .lt('book_time', tomorrow.toISOString());
+      
+      if (todayVisits && todayVisits.length > 0) {
+        // Cancel all today's appointments
+        for (const visit of todayVisits) {
+          await supabase
+            .from('visits')
+            .update({ status: 'canceled' })
+            .eq('id', visit.id);
+        }
+      }
+      
+      // 2. Create new appointment
+      const newDate = new Date(selectedDate);
+      newDate.setHours(changeAppointment.hour, changeAppointment.minute, 0, 0);
+      
+      const { error } = await supabase
+        .from('visits')
+        .insert([{
+          user_row_id: userRowId,
+          clinic_id: clinicId,
+          book_time: newDate.toISOString(),
+          visit_time: newDate.toISOString(),
+          status: 'booked',
+          is_first: false,
+        }]);
+      
+      if (error) throw error;
+      
+      // 3. Update local state
+      setEvents(prev => [
+        ...prev.filter(e => e.userRowId !== userRowId || e.status === 'canceled'),
+        {
+          id: Date.now(),
+          title: formatTime(changeAppointment.hour, changeAppointment.minute),
+          start: new Date(newDate),
+          end: new Date(newDate.getTime() + 30 * 60 * 1000),
+          status: 'booked',
+          userRowId: userRowId,
+        },
+      ]);
+      
+      // 4. Close modal and reset state
+      setChangeAppointment(null);
+      setShowModal(false);
+      setSelectedDate(null);
+      setClickedHour(null);
+      setUserHasOtherBooking(false);
+      setActiveTab('am'); // Reset to AM tab
+      setRefresh(r => r + 1);
+      setNotification({ type: 'success', message: `Appointment changed successfully to ${formatTime(changeAppointment.hour, changeAppointment.minute)}!` });
+      
+    } catch (error) {
+      console.error('Failed to change appointment:', error);
+      setNotification({ type: 'error', message: 'Failed to change appointment. Please try again.' });
+    }
+  }
+
+  // Separate AM and PM slots
+  function separateAmPmSlots(slots) {
+    const amSlots = slots.filter(slot => slot.hour < 12);
+    const pmSlots = slots.filter(slot => slot.hour >= 12);
+    return { amSlots, pmSlots };
+  }
+
+  // Get dynamic time range - supports different business hours for different days
+  function getTimeRange() {
+    if (!businessHours) {
+      // Default time range
+      const minTime = new Date();
+      minTime.setHours(9, 0, 0, 0);
+      const maxTime = new Date();
+      maxTime.setHours(20, 0, 0, 0);
+      return { minTime, maxTime };
+    }
+    
+    // Find the earliest and latest business hours from businessHours
+    let earliestMinutes = 24 * 60; // Convert 24 hours to minutes
+    let latestMinutes = 0;
+    
+    Object.values(businessHours).forEach(dayConfig => {
+      if (dayConfig && !dayConfig.closed) {
+        const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+        const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+        
+        const startMinutes = startH * 60 + startM;
+        const endMinutes = endH * 60 + endM;
+        
+        earliestMinutes = Math.min(earliestMinutes, startMinutes);
+        latestMinutes = Math.max(latestMinutes, endMinutes);
+      }
+    });
+    
+    // If no valid business hours found, use default values
+    if (earliestMinutes === 24 * 60 || latestMinutes === 0) {
+      earliestMinutes = 9 * 60; // 9:00 AM
+      latestMinutes = 20 * 60;   // 8:00 PM
+    }
+    
+    const minTime = new Date();
+    minTime.setHours(Math.floor(earliestMinutes / 60), earliestMinutes % 60, 0, 0);
+    const maxTime = new Date();
+    maxTime.setHours(Math.floor(latestMinutes / 60), latestMinutes % 60, 0, 0);
+    
+    return { minTime, maxTime };
+  }
+
+  // Time range settings
+  const { minTime, maxTime } = getTimeRange();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      {/* 日历大容器 */}
+      {/* Calendar main container */}
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8">
         <h2 className="text-3xl font-extrabold text-center mb-8 text-gray-800">
           My Appointment
         </h2>
         {loading ? (
           <div className="text-center py-20">
-            <div className="text-blue-600 font-medium animate-pulse">加载中...</div>
+            <div className="text-blue-600 font-medium animate-pulse">Loading...</div>
           </div>
         ) : (
           <div className="relative">
             <Calendar
               localizer={localizer}
-              events={events.filter(e => e && e.status !== 'canceled')}
+              events={events.filter(e => e && e.status === 'booked')}
               startAccessor="start"
               endAccessor="end"
               style={{ height: 500 }}
@@ -450,7 +765,7 @@ export default function CalendarPage() {
             />
           </div>
         )}
-        {/* 取消预约确认弹窗 */}
+        {/* Cancel appointment confirmation modal */}
         {confirmCancel && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-md p-4">
             <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-gray-200 transform transition-all duration-300">
@@ -463,7 +778,10 @@ export default function CalendarPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 mb-3">Cancel Appointment</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Are you sure you want to cancel the appointment at <span className="font-semibold text-red-600">{confirmCancel.timeStr}</span>?
+                    Are you sure you want to cancel your appointment at <span className="font-semibold text-red-600">{confirmCancel.timeStr}</span>?
+                  </p>
+                  <p className="text-sm text-gray-500 mt-3">
+                    You can book a new appointment after cancellation.
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -471,13 +789,13 @@ export default function CalendarPage() {
                     onClick={confirmCancelBooking}
                     className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
                   >
-                    Yes
+                    Yes, Cancel
                   </button>
                   <button
                     onClick={() => setConfirmCancel(null)}
                     className="flex-1 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 border border-gray-200"
                   >
-                    No
+                    Keep Appointment
                   </button>
                 </div>
               </div>
@@ -485,7 +803,44 @@ export default function CalendarPage() {
           </div>
         )}
       </div>
-      {/* 时间选择弹窗，始终在日历之上 */}
+      {/* Change appointment confirmation modal */}
+      {changeAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-md p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-gray-200 transform transition-all duration-300">
+            <div className="p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-3">Change Appointment</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Do you want to change your appointment to <span className="font-semibold text-blue-600">{formatTime(changeAppointment.hour, changeAppointment.minute)}</span>?
+                </p>
+                <p className="text-sm text-gray-500 mt-3">
+                  Your current appointment will be cancelled and replaced with this new time.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleChangeAppointment}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Yes, Change
+                </button>
+                <button
+                  onClick={() => setChangeAppointment(null)}
+                  className="flex-1 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 border border-gray-200"
+                >
+                  Keep Current
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Time selection modal, always on top of calendar */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
           <div 
@@ -497,12 +852,15 @@ export default function CalendarPage() {
               padding: 0
             }}
           >
-            {/* 关闭按钮 */}
+            {/* Close button */}
             <button
               onClick={() => {
                 setShowModal(false);
                 setSelectedDate(null);
                 setClickedHour(null);
+                setUserHasOtherBooking(false);
+                setChangeAppointment(null);
+                setActiveTab('am'); // Reset to AM tab
               }}
               className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200 text-gray-500 hover:text-gray-700 z-10"
               style={{ fontSize: '20px', lineHeight: '1' }}
@@ -510,7 +868,7 @@ export default function CalendarPage() {
               ×
             </button>
             <div className="px-10 py-12">
-              {/* 标题区域 */}
+              {/* Title area */}
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
                   Select Appointment Time
@@ -525,73 +883,182 @@ export default function CalendarPage() {
                   })}
                 </p>
               </div>
-              {/* 时间选择流式按钮区 */}
-              <div className="grid grid-cols-3 gap-4 justify-items-center max-w-xl mx-auto mb-6">
+              {/* Time selection fluid button area */}
+              <div className="max-w-xl mx-auto mb-6">
                 {isClosedDay ? (
                   <div className="w-full text-center text-gray-400 py-8 text-lg font-semibold">
                     Closed today
                     <div className="text-sm text-gray-400 mt-3 font-normal">Closed on holidays. For appointments, please call the clinic first.</div>
                   </div>
+                ) : userHasOtherBooking ? (
+                  <div className="w-full text-center text-blue-600 py-8 text-lg font-semibold">
+                    You already have an appointment today
+                    <div className="text-sm text-blue-500 mt-3 font-normal">Click "Change" on any available slot to reschedule your appointment.</div>
+                  </div>
+                ) : availableHours.length === 0 ? (
+                  <div className="w-full text-center text-gray-400 py-8 text-lg font-semibold">
+                    No available slots
+                    <div className="text-sm text-gray-400 mt-3 font-normal">All time slots for today have been booked or are in the past.</div>
+                  </div>
                 ) : (
-                  availableHours.map(hour => {
-                    // 只显示当前下一个小时及之后、在 business hour 内的小时
-                    const slotEvents = modalEvents.filter(e =>
-                      e.start.getHours() === hour &&
-                      e.status === 'booked'
-                    );
-                    const isFull = slotEvents.length >= 3;
-                    const myEvent = modalEvents.find(e =>
-                      e.userRowId === userRowId &&
-                      e.start.getHours() === hour &&
-                      e.status === 'booked'
-                    );
-                    const isClicked = clickedHour === hour;
-                    const isBooked = !!myEvent;
-                    if (isFull) return null;
-                    return (
-                      <button
-                        key={hour}
-                        onClick={() => {
-                          if (isBooked) {
-                            setConfirmCancel({ eventId: myEvent.id, timeStr: formatHourAmPm(hour) });
-                          } else {
-                            handleBook(hour);
-                          }
-                        }}
-                        disabled={isFull}
-                        className={
-                          `px-6 py-2 rounded-full border font-semibold text-base shadow-sm transition-all duration-200
-                          ${isClicked 
-                            ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
-                            : isBooked
-                              ? 'bg-gray-100 text-gray-400 border-gray-100 cursor-pointer'
-                              : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
-                          }
-                          flex items-center justify-center relative overflow-hidden`
+                  <div>
+                    {/* AM/PM tabs */}
+                    <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+                      {(() => {
+                        const { amSlots, pmSlots } = separateAmPmSlots(availableHours);
+                        const hasAmSlots = amSlots.length > 0;
+                        const hasPmSlots = pmSlots.length > 0;
+                        
+                        return (
+                          <>
+                            <button
+                              onClick={() => setActiveTab('am')}
+                              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                                activeTab === 'am'
+                                  ? 'bg-white text-blue-600 shadow-sm'
+                                  : 'text-gray-600 hover:text-gray-800'
+                              } ${!hasAmSlots ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              disabled={!hasAmSlots}
+                            >
+                              Morning
+                              {hasAmSlots && <span className="ml-1 text-xs">({amSlots.length})</span>}
+                            </button>
+                            <button
+                              onClick={() => setActiveTab('pm')}
+                              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                                activeTab === 'pm'
+                                  ? 'bg-white text-blue-600 shadow-sm'
+                                  : 'text-gray-600 hover:text-gray-800'
+                              } ${!hasPmSlots ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              disabled={!hasPmSlots}
+                            >
+                              Afternoon
+                              {hasPmSlots && <span className="ml-1 text-xs">({pmSlots.length})</span>}
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    
+                    {/* Time slots display */}
+                    <div className="grid grid-cols-3 gap-4 justify-items-center">
+                      {(() => {
+                        const { amSlots, pmSlots } = separateAmPmSlots(availableHours);
+                        const currentSlots = activeTab === 'am' ? amSlots : pmSlots;
+                        
+                        if (currentSlots.length === 0) {
+                          return (
+                            <div className="col-span-3 text-center text-gray-400 py-8 text-lg font-semibold">
+                              No {activeTab === 'am' ? 'morning' : 'afternoon'} slots available
+                            </div>
+                          );
                         }
-                        style={{
-                          minWidth: 80,
-                          marginBottom: 0,
-                          animation: isClicked ? 'successPulse 0.6s ease-in-out' : 'none'
-                        }}
-                      >
-                        {isClicked ? (
-                          <div className="flex items-center justify-center">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        ) : (
-                          <span className="font-medium">
-                            {formatHourAmPm(hour)}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })
+                        
+                        return currentSlots.map(slot => {
+                          // Check if the slot is full (supports half-hour)
+                          const slotEvents = modalEvents.filter(e => {
+                            const eventHour = e.start.getHours();
+                            const eventMinute = e.start.getMinutes();
+                            return eventHour === slot.hour && 
+                                   eventMinute === slot.minute &&
+                                   e.status === 'booked';
+                          });
+                          const isFull = slotEvents.length >= 3; // More than 2 bookings means full
+                          const myEvent = modalEvents.find(e => {
+                            const eventHour = e.start.getHours();
+                            const eventMinute = e.start.getMinutes();
+                            return e.userRowId === userRowId &&
+                                   eventHour === slot.hour &&
+                                   eventMinute === slot.minute &&
+                                   e.status === 'booked';
+                          });
+                          const isClicked = clickedHour === `${slot.hour}:${slot.minute.toString().padStart(2, '0')}`;
+                          const isBooked = !!myEvent;
+                          
+                          // Check if user already has other appointments today
+                          const userHasOtherBooking = modalEvents.some(e => 
+                            e.userRowId === userRowId && 
+                            e.status === 'booked' && 
+                            !(e.start.getHours() === slot.hour && e.start.getMinutes() === slot.minute)
+                          );
+                          
+                          // If full, show "Full"
+                          if (isFull) {
+                            return (
+                              <div
+                                key={`${slot.hour}:${slot.minute}`}
+                                className="px-6 py-2 rounded-full border font-semibold text-base bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed flex items-center justify-center"
+                                style={{ minWidth: 80 }}
+                              >
+                                <span className="font-medium">Full</span>
+                              </div>
+                            );
+                          }
+                          
+                          // If user already has other appointment today, and not the current slot, show "Change" option
+                          if (userHasOtherBooking && !isBooked) {
+                            return (
+                              <button
+                                key={`${slot.hour}:${slot.minute}`}
+                                onClick={() => {
+                                  setChangeAppointment({ hour: slot.hour, minute: slot.minute });
+                                }}
+                                className="px-6 py-2 rounded-full border font-semibold text-base bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-800 hover:border-yellow-400 transition-all duration-200 flex items-center justify-center"
+                                style={{ minWidth: 80 }}
+                              >
+                                <span className="font-medium">Change</span>
+                              </button>
+                            );
+                          }
+                          
+                          return (
+                            <button
+                              key={`${slot.hour}:${slot.minute}`}
+                              onClick={() => {
+                                if (isBooked) {
+                                  setConfirmCancel({ eventId: myEvent.id, timeStr: formatTime(slot.hour, slot.minute) });
+                                } else {
+                                  handleBook(slot.hour, slot.minute);
+                                }
+                              }}
+                              className={
+                                `px-6 py-2 rounded-full border font-semibold text-base shadow-sm transition-all duration-200
+                                ${isClicked 
+                                  ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
+                                  : isBooked
+                                    ? 'bg-red-100 text-red-600 border-red-300 hover:bg-red-200 hover:text-red-700 hover:border-red-400'
+                                    : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
+                                }
+                                flex items-center justify-center relative overflow-hidden`
+                              }
+                              style={{
+                                minWidth: 80,
+                                marginBottom: 0,
+                                animation: isClicked ? 'successPulse 0.6s ease-in-out' : 'none'
+                              }}
+                            >
+                              {isClicked ? (
+                                <div className="flex items-center justify-center">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              ) : isBooked ? (
+                                <span className="font-medium">Cancel</span>
+                              ) : (
+                                <span className="font-medium">
+                                  {formatTime(slot.hour, slot.minute)}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
                 )}
               </div>
-              {/* 底部提示 */}
+              {/* Bottom hint */}
               <div className="text-center mt-8">
                 <p className="text-xs text-gray-400">
                   Click to select your appointment time
@@ -601,7 +1068,62 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-      {/* 返回首页按钮 */}
+      {/* Notification component */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className={`max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 p-4 transform transition-all duration-300 ${
+            notification.type === 'success' ? 'border-green-500' :
+            notification.type === 'error' ? 'border-red-500' :
+            'border-yellow-500'
+          }`}>
+            <div className="flex items-start">
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                notification.type === 'success' ? 'bg-green-100' :
+                notification.type === 'error' ? 'bg-red-100' :
+                'bg-yellow-100'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : notification.type === 'error' ? (
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <p className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' :
+                  notification.type === 'error' ? 'text-red-800' :
+                  'text-yellow-800'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <div className="ml-4 flex-shrink-0">
+                <button
+                  onClick={() => setNotification(null)}
+                  className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    notification.type === 'success' ? 'text-green-400 hover:text-green-500 focus:ring-green-500' :
+                    notification.type === 'error' ? 'text-red-400 hover:text-red-500 focus:ring-red-500' :
+                    'text-yellow-400 hover:text-yellow-500 focus:ring-yellow-500'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Back to home button */}
       <div className="w-full flex justify-center mt-8 mb-4">
         <button
           onClick={() => window.location.href = '/'}

@@ -5,22 +5,124 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { hash, encrypt, isPhone, isEmail } from '../lib/utils';
 
 export default function CheckInPage() {
-  // 防止自动 check-in 和手动 check-in 并发插入两条
+  // Prevent concurrent auto check-in and manual check-in
   const [autoChecking, setAutoChecking] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkedInTime, setCheckedInTime] = useState(null);
   const [input, setInput] = useState('');
+  const [businessHours, setBusinessHours] = useState(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // 优先用URL参数，否则用localStorage
+  // Use URL params first, then localStorage
   let clinicId = searchParams.get('clinic_id');
   let userRowId = searchParams.get('user_row_id');
   if (!clinicId) clinicId = localStorage.getItem('clinic_id') || '';
   if (!userRowId) userRowId = localStorage.getItem('user_row_id') || '';
-  // 自动跳转回booking页
-  // 自动check-in逻辑
+  
+  // Default business hours format when no database data
+  const defaultBusinessHours = {
+    "friday": {"open": "09:00", "close": "18:00", "closed": false},
+    "monday": {"open": "09:00", "close": "18:00", "closed": true},
+    "sunday": {"open": "09:00", "close": "18:00", "closed": true},
+    "tuesday": {"open": "09:00", "close": "18:00", "closed": false},
+    "saturday": {"open": "09:00", "close": "18:00", "closed": false},
+    "thursday": {"open": "09:00", "close": "18:00", "closed": false},
+    "wednesday": {"open": "09:00", "close": "18:00", "closed": false}
+  };
+  
+  // Fetch clinic business hours
+  useEffect(() => {
+    console.log('[CheckInPage] Fetching business hours for clinicId:', clinicId);
+    if (!clinicId) {
+      console.log('[CheckInPage] No clinicId, skipping business hours fetch');
+      return;
+    }
+    supabase
+      .from('clinics')
+      .select('business_hours')
+      .eq('id', clinicId)
+      .single()
+      .then(({ data, error }) => {
+        console.log('[CheckInPage] Business hours query result:', { data, error });
+        if (!error && data && data.business_hours) {
+          console.log('[CheckInPage] Setting business hours:', data.business_hours);
+          setBusinessHours(data.business_hours);
+        } else {
+          console.log('[CheckInPage] No business hours data found or error:', error);
+          setBusinessHours(defaultBusinessHours);
+        }
+      });
+  }, [clinicId]);
+
+  // Check if current time is within business hours
+  function isWithinBusinessHours() {
+    console.log('[isWithinBusinessHours] businessHours:', businessHours);
+    
+    if (!businessHours) {
+      console.log('[isWithinBusinessHours] No business hours data, using default');
+      return false;
+    }
+    
+    const now = new Date();
+    const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const weekday = weekdays[now.getDay()];
+    const dayConfig = businessHours[weekday];
+    
+    console.log('[isWithinBusinessHours] Current day:', weekday, 'Day config:', dayConfig);
+    
+    if (!dayConfig || dayConfig.closed) {
+      console.log('[isWithinBusinessHours] Day is closed or no config');
+      return false;
+    }
+    
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentMinutes = currentHour * 60 + currentMinute;
+    
+    const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+    const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+    
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    
+    console.log('[isWithinBusinessHours] Current time:', `${currentHour}:${currentMinute}`, `(${currentMinutes} minutes)`);
+    console.log('[isWithinBusinessHours] Business hours:', `${dayConfig.open}-${dayConfig.close}`, `(${startMinutes}-${endMinutes} minutes)`);
+    
+    const isWithin = currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    console.log('[isWithinBusinessHours] Is within business hours:', isWithin);
+    
+    return isWithin;
+  }
+
+  // Early validation - check business hours immediately
+  useEffect(() => {
+    // Check business hours every minute to ensure real-time validation
+    const checkBusinessHours = () => {
+      if (!isWithinBusinessHours()) {
+        setError('Clinic is currently closed. Please check-in during business hours.');
+        setSuccess(false);
+        setCheckedInTime(null);
+      } else {
+        // Clear error if business hours are now valid
+        if (error && error.includes('currently closed')) {
+          setError('');
+        }
+      }
+    };
+    
+    // Check immediately
+    checkBusinessHours();
+    
+    // Check every minute
+    const interval = setInterval(checkBusinessHours, 60000);
+    
+    return () => clearInterval(interval);
+  }, [businessHours, error]);
+
+  // Auto redirect to booking page
+  // Auto check-in logic
   async function checkInCore(user) {
     const now = new Date();
     const nowISO = now.toISOString();
@@ -29,7 +131,21 @@ export default function CheckInPage() {
     const currentHourStart = new Date(now); currentHourStart.setMinutes(0,0,0);
     const currentHourEnd = new Date(currentHourStart); currentHourEnd.setHours(currentHourEnd.getHours() + 1);
     console.log('[checkInCore] user:', user);
-    // 查当天该用户在该 clinic 下所有预约
+    console.log('[checkInCore] Current time:', now.toLocaleString());
+    
+    // Check if within business hours
+    console.log('[checkInCore] Checking business hours...');
+    const withinBusinessHours = isWithinBusinessHours();
+    console.log('[checkInCore] Within business hours:', withinBusinessHours);
+    
+    if (!withinBusinessHours) {
+      console.log('[checkInCore] Check-in denied - outside business hours');
+      throw new Error('Clinic is currently closed. Please check-in during business hours.');
+    }
+    
+    console.log('[checkInCore] Business hours validation passed, proceeding with check-in');
+    
+    // Query all appointments for this user at this clinic today
     const { data: todayVisits, error: todayError } = await supabase
       .from('visits')
       .select('*')
@@ -39,18 +155,18 @@ export default function CheckInPage() {
       .lt('book_time', tomorrow.toISOString());
     console.log('[checkInCore] todayVisits:', todayVisits, todayError);
     if (todayError) throw todayError;
-    // 1. 一天只能 checked-in 一次（无论预约还是 walk-in）
+    // 1. Can only check-in once per day (regardless of appointment or walk-in)
     const alreadyCheckedInToday = (todayVisits || []).find(v => v.status === 'checked-in');
     if (alreadyCheckedInToday) {
       throw new Error('Already checked in today.');
     }
-    // 2. 查当天该用户有无 status=booked 的记录（不再限制时间窗口）
+    // 2. Check if user has status=booked record today (no longer restrict time window)
     const bookedVisit = (todayVisits || []).find(v => v.status === 'booked');
     if (bookedVisit) {
       await supabase.from('visits').update({ status: 'checked-in', visit_time: nowISO }).eq('id', bookedVisit.id);
       return;
     }
-    // 3. 其它情况，插入 walk-in（一天只能一次，已在前面判断）
+    // 3. Other cases, insert walk-in (only once per day, already checked above)
     await supabase.from('visits').insert([{
       user_row_id: user.row_id,
       clinic_id: user.clinic_id,
@@ -70,12 +186,12 @@ export default function CheckInPage() {
       if (userRowId && clinicId) {
         setAutoChecking(true); setLoading(true);
         console.log('[autoCheckIn] start', { userRowId, clinicId });
-        // 查询用户
+        // Query user
         const { data, error: dbError } = await supabase
           .from('users')
           .select('user_id, clinic_id, full_name, row_id')
           .eq('clinic_id', clinicId)
-          .eq('row_id', userRowId) // 这里用 row_id
+          .eq('row_id', userRowId) // Use row_id here
           .limit(1);
         console.log('[autoCheckIn] userQuery result:', { data, dbError });
         if (dbError || !data || data.length === 0) {
@@ -90,11 +206,11 @@ export default function CheckInPage() {
           setCheckedInTime(new Date().toLocaleString());
           setSuccess(true);
           userRowId = ''; clinicId = '';
-          // 自动跳转到首页，防止重复提交
+          // Auto redirect to home page to prevent duplicate submission
           setTimeout(() => {
             navigate('/');
           }, 1200);
-          return; // 关键：自动check-in后直接return
+          return; // Key: return directly after auto check-in
         } catch (err) {
           console.log('[autoCheckIn] error:', err);
           if (err.message.includes('network')) {
@@ -103,6 +219,8 @@ export default function CheckInPage() {
             setFriendlyError(setError, 'Checked in today.');
           } else if (err.message.includes('finished your consultation')) {
             setFriendlyError(setError, 'Consultation finished.');
+          } else if (err.message.includes('currently closed')) {
+            setFriendlyError(setError, 'Clinic is currently closed. Please check-in during business hours.');
           } else {
             setFriendlyError(setError, 'Unexpected error.');
           }
@@ -110,7 +228,7 @@ export default function CheckInPage() {
         setLoading(false); setAutoChecking(false);
       }
     }
-    // 只有userId和clinicId都有才自动check-in
+    // Only auto check-in if both userId and clinicId are available
     if (userRowId && clinicId) {
       autoCheckIn();
     }
@@ -118,11 +236,11 @@ export default function CheckInPage() {
 
   const AES_KEY = import.meta.env.VITE_AES_KEY;
   if (!AES_KEY) {
-    console.warn('AES_KEY未设置，请在环境变量VITE_AES_KEY中配置加密密钥！');
+    console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
   }
 
   const handleSubmit = async (e) => {
-    // 如果正在自动 check-in，禁止手动提交
+    // If auto check-in is in progress, prevent manual submission
     if (autoChecking) {
       return;
     }
@@ -192,6 +310,8 @@ export default function CheckInPage() {
         setFriendlyError(setError, 'Checked in today.');
       } else if (err.message.includes('finished your consultation')) {
         setFriendlyError(setError, 'Consultation finished.');
+      } else if (err.message.includes('currently closed')) {
+        setFriendlyError(setError, 'Clinic is currently closed. Please check-in during business hours.');
       } else {
         setFriendlyError(setError, 'Unexpected error.');
       }

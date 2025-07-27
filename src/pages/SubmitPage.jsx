@@ -14,36 +14,36 @@ export default function SubmitPage() {
   const [restartError, setRestartError] = useState('');
   const submittedRef = useRef(false);
 
-  console.log('[SubmitPage] 页面加载，registrationData:', registrationData);
+  console.log('[SubmitPage] Page loaded, registrationData:', registrationData);
 
   useEffect(() => {
-    console.log('[SubmitPage] useEffect 执行');
+    console.log('[SubmitPage] useEffect executed');
     const saveToSupabase = async () => {
-      console.log('[SubmitPage] saveToSupabase 执行');
+      console.log('[SubmitPage] saveToSupabase executed');
       if (submittedRef.current || submitted) return;
       submittedRef.current = true;
       setLoading(true);
 
       if (!registrationData || !registrationData.fullName) {
-        console.log('[SubmitPage][Error] registrationData 缺失:', registrationData);
+        console.log('[SubmitPage][Error] registrationData missing:', registrationData);
         setErrorMessage('Registration data missing. Please fill in the form again.');
         setLoading(false);
         return;
       }
 
-      // 自动生成 user_id
+      // Auto-generate user_id
       const user_id = registrationData.user_id || uuidv4();
 
-      // 检查 clinic_id 是否有效
+      // Check if clinic_id is valid
       if (!registrationData.clinic_id) {
-        console.log('[SubmitPage][Error] clinic_id 缺失:', registrationData);
+        console.log('[SubmitPage][Error] clinic_id missing:', registrationData);
         setErrorMessage('Clinic ID missing.');
         setLoading(false);
         return;
       }
 
-      console.log('[SubmitPage] 查询用户:', { user_id, clinic_id: registrationData.clinic_id });
-      // 查询
+      console.log('[SubmitPage] Query user:', { user_id, clinic_id: registrationData.clinic_id });
+      // Query
       const { data: existingUser, error } = await supabase
         .from('users')
         .select('user_id')
@@ -52,7 +52,7 @@ export default function SubmitPage() {
           clinic_id: registrationData.clinic_id,
         })
         .maybeSingle();
-      console.log('[SubmitPage] 用户查询结果:', { existingUser, error });
+      console.log('[SubmitPage] User query result:', { existingUser, error });
 
       if (error) {
         setErrorMessage('Failed to check existing user. Please try again later.');
@@ -60,9 +60,9 @@ export default function SubmitPage() {
         return;
       }
 
-      // 查询是否已注册
+      // Check if already registered
       if (existingUser) {
-        console.log('[SubmitPage][Error] 已注册:', existingUser);
+        console.log('[SubmitPage][Error] Already registered:', existingUser);
         setErrorMessage('This patient is already registered.');
         setLoading(false);
         return;
@@ -70,12 +70,52 @@ export default function SubmitPage() {
 
       let selfiePath = registrationData.selfie || '';
 
-      // 只加密姓名、生日、地址、电话、邮箱、签名、自拍、id_last4
+      // Only encrypt name, birthday, address, phone, email, signature, selfie, id_last4
       const AES_KEY = import.meta.env.VITE_AES_KEY;
       if (!AES_KEY) {
-        console.warn('AES_KEY未设置，请在环境变量VITE_AES_KEY中配置加密密钥！');
+        console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
       }
-      // 使用 encrypt(val, AES_KEY) 和 hash(val) 进行加密/哈希
+      
+      // Format current time as prefix
+      const now = new Date();
+      const datetimePrefix = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      
+      // Combine health declaration and notes
+      const healthItems = ['HeartDisease', 'Diabetes', 'Hypertension', 'Cancer', 'Asthma', 'MentalIllness', 'Epilepsy', 'Stroke', 'KidneyDisease', 'LiverDisease'];
+      let combinedHealthNotes = '';
+      
+      // Add health declarations
+      const healthDeclarations = [];
+      healthItems.forEach(item => {
+        const value = registrationData[item];
+        if (value && ['Yes', 'No', 'Unsure'].includes(value)) {
+          const displayName = item.replace(/([A-Z])/g, ' $1').trim();
+          healthDeclarations.push(`${displayName}(${value})`);
+        }
+      });
+      
+      if (healthDeclarations.length > 0) {
+        combinedHealthNotes = healthDeclarations.join(', ');
+      }
+      
+      // Add other health notes
+      if (registrationData.otherHealthNotes && registrationData.otherHealthNotes.trim()) {
+        const otherNotes = registrationData.otherHealthNotes.trim();
+        if (combinedHealthNotes) {
+          combinedHealthNotes += ` | ${otherNotes}`;
+        } else {
+          combinedHealthNotes = otherNotes;
+        }
+      }
+      
+      // Add time prefix
+      if (combinedHealthNotes) {
+        combinedHealthNotes = `${datetimePrefix}: ${combinedHealthNotes}`;
+      } else {
+        combinedHealthNotes = `${datetimePrefix}: None reported`;
+      }
+      
+      // Use encrypt(val, AES_KEY) and hash(val) for encryption/hashing
       const userPayload = {
         full_name: encrypt(registrationData.fullName || '', AES_KEY),
         id_last4: encrypt(registrationData.idLast4 || '', AES_KEY),
@@ -90,25 +130,16 @@ export default function SubmitPage() {
         building: encrypt(registrationData.building || '', AES_KEY),
         floor: encrypt(registrationData.floor || '', AES_KEY),
         unit: encrypt(registrationData.unit || '', AES_KEY),
-        health_declaration: JSON.stringify(
-          Object.fromEntries(
-            Object.entries(registrationData).filter(
-              ([key, value]) =>
-                /^[A-Z][a-zA-Z]+$/.test(key) &&
-                ['yes', 'no', 'unsure'].includes((value || '').toString().toLowerCase())
-            )
-          )
-        ),
-        other_health_notes: registrationData.otherHealthNotes || '',
+        other_health_notes: encrypt(combinedHealthNotes, AES_KEY),
         is_guardian: !!registrationData.is_guardian,
         signature: encrypt(registrationData.signature || '', AES_KEY),
         selfie: encrypt(selfiePath, AES_KEY),
-        clinic_id: registrationData.clinic_id, // 不加密
-        user_id, // 不加密
-        created_at: new Date().toISOString(), // 不加密
+        clinic_id: registrationData.clinic_id, // Not encrypted
+        user_id, // Not encrypted
+        created_at: new Date().toISOString(), // Not encrypted
       };
 
-      // 插入 users，返回 row_id
+      // Insert users, return row_id
       const { data: insertedUser, error: userError } = await supabase
         .from('users')
         .insert([userPayload])
@@ -123,7 +154,7 @@ export default function SubmitPage() {
       }
       const user_row_id = insertedUser.row_id;
 
-      // 查询是否已到访
+      // Query if already visited
       const { data: existingVisit, error: visitQueryError } = await supabase
         .from('visits')
         .select('id')
@@ -132,7 +163,7 @@ export default function SubmitPage() {
           clinic_id: registrationData.clinic_id,
         })
         .maybeSingle();
-      console.log('[SubmitPage] visit查询结果:', { existingVisit, visitQueryError });
+      console.log('[SubmitPage] visit query result:', { existingVisit, visitQueryError });
 
       if (visitQueryError) {
         setErrorMessage('Failed to check existing visit. Please try again later.');
@@ -141,7 +172,7 @@ export default function SubmitPage() {
       }
 
       if (existingVisit) {
-        console.log('[SubmitPage][Error] 已有visit:', existingVisit);
+        console.log('[SubmitPage][Error] Already visited:', existingVisit);
         setErrorMessage('This patient already has a visit record.');
         setLoading(false);
         return;
@@ -149,7 +180,7 @@ export default function SubmitPage() {
 
       // visits payload
       const visitPayload = {
-        user_row_id, // 用 row_id 作为外键
+        user_row_id, // Use row_id as foreign key
         visit_time: new Date().toISOString(),
         book_time: new Date().toISOString(),
         status: 'checked-in',
@@ -157,7 +188,7 @@ export default function SubmitPage() {
         clinic_id: registrationData.clinic_id,
       };
       const { error: visitError } = await supabase.from('visits').insert([visitPayload]);
-      console.log('[SubmitPage] visit插入结果:', visitError);
+      console.log('[SubmitPage] visit insertion result:', visitError);
       if (visitError) {
         setErrorMessage(visitError.message || 'Failed to save visit information. Please try again later.');
         submittedRef.current = false;
@@ -165,14 +196,14 @@ export default function SubmitPage() {
         return;
       }
 
-      // 注册成功后保存user_id、user_row_id和clinic_id到localStorage，实现注册即登录体验
+      // After successful registration, save user_id, user_row_id, and clinic_id to localStorage to achieve registered-as-logged-in experience
       if (user_id) localStorage.setItem('user_id', user_id);
       if (user_row_id) localStorage.setItem('user_row_id', user_row_id);
       if (registrationData.clinic_id) localStorage.setItem('clinic_id', registrationData.clinic_id);
-      // 只有全部成功才显示注册成功
+      // Only show successful registration if all are successful
       setSubmitted(true);
       setLoading(false);
-      console.log('[SubmitPage] 注册成功');
+      console.log('[SubmitPage] Registration successful');
     };
 
     saveToSupabase();

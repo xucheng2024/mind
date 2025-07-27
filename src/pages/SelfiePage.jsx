@@ -42,7 +42,7 @@ export default function SelfiePage() {
             }
           });
         })
-        .finally(() => setCapturing(false)); // 保证状态复原
+        .finally(() => setCapturing(false)); // Ensure state is restored
     } else {
       setCapturing(false);
     }

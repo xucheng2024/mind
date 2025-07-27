@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -11,6 +11,46 @@ export default function BookingPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Check for saved login info
+  useEffect(() => {
+    const savedClinicId = localStorage.getItem('clinic_id');
+    const savedUserRowId = localStorage.getItem('user_row_id');
+    
+    // Use URL clinic_id if available, otherwise use saved
+    const currentClinicId = clinicId || savedClinicId;
+    
+    if (currentClinicId && savedUserRowId) {
+      // Validate if user is still valid
+      const validateAndRedirect = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('row_id')
+            .eq('clinic_id', currentClinicId)
+            .eq('row_id', savedUserRowId)
+            .single();
+          
+          if (!error && data) {
+            // User valid, redirect to calendar
+            navigate(`/booking/slots?clinic_id=${currentClinicId}&user_row_id=${savedUserRowId}`);
+          } else {
+            // User invalid, clear saved info
+            localStorage.removeItem('clinic_id');
+            localStorage.removeItem('user_row_id');
+            localStorage.removeItem('user_id');
+          }
+        } catch (err) {
+          // Validation failed, clear saved info
+          localStorage.removeItem('clinic_id');
+          localStorage.removeItem('user_row_id');
+          localStorage.removeItem('user_id');
+        }
+      };
+      
+      validateAndRedirect();
+    }
+  }, [clinicId, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,7 +94,7 @@ export default function BookingPage() {
         setError('No user found with this email or phone number in this clinic.');
         return;
       }
-      // 保存user_id和clinic_id到localStorage，实现免登录体验
+      // Save user_id and clinic_id to localStorage for free login
       if (data.user_id) localStorage.setItem('user_id', data.user_id);
       if (data.row_id) localStorage.setItem('user_row_id', data.row_id);
       if (clinicId) localStorage.setItem('clinic_id', clinicId);
@@ -65,7 +105,7 @@ export default function BookingPage() {
     }
   };
 
-  // UI: clinic_id 缺失时直接显示错误
+  // UI: show error if clinic_id is missing
   if (!clinicId) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">

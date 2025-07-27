@@ -187,9 +187,10 @@ export default function HomePage() {
             className="px-4 py-2 bg-gray-100 text-gray-500 font-medium rounded-lg shadow-sm hover:bg-gray-200 hover:text-gray-700 transition text-sm border border-gray-200 focus:outline-none"
             style={{ minWidth: 0 }}
             onClick={() => {
-              localStorage.removeItem('user_id');
-              localStorage.removeItem('user_row_id');
-              localStorage.removeItem('clinic_id');
+              // Clear all localStorage data
+              localStorage.clear();
+              // Also clear any sessionStorage if used
+              sessionStorage.clear();
               window.location.reload();
             }}
           >
