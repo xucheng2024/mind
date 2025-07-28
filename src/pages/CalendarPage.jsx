@@ -230,8 +230,13 @@ export default function CalendarPage() {
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
     
-    // 只允许预约结束时间 > 当前时间的 slot
+    // 只允许预约结束时间 > 当前时间的 slot，且不超过最大预约日期
     const now = new Date();
+    const maxDate = new Date(now);
+    maxDate.setDate(now.getDate() + 13);
+    maxDate.setHours(23,59,59,999);
+    // 如果选中的日期超过最大预约日期，直接返回空数组
+    if (date > maxDate) return [];
     let slots = [];
     for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
       const hour = Math.floor(minutes / 60);
@@ -939,7 +944,7 @@ export default function CalendarPage() {
                         }
                         
                         return currentSlots.map(slot => {
-                          // Check if the slot is full (supports half-hour)
+                          // ...existing code...
                           const slotEvents = modalEvents.filter(e => {
                             const eventHour = e.start.getHours();
                             const eventMinute = e.start.getMinutes();
@@ -947,7 +952,7 @@ export default function CalendarPage() {
                                    eventMinute === slot.minute &&
                                    e.status === 'booked';
                           });
-                          const isFull = slotEvents.length >= 3; // More than 2 bookings means full
+                          const isFull = slotEvents.length >= 3;
                           const myEvent = modalEvents.find(e => {
                             const eventHour = e.start.getHours();
                             const eventMinute = e.start.getMinutes();
@@ -958,15 +963,41 @@ export default function CalendarPage() {
                           });
                           const isClicked = clickedHour === `${slot.hour}:${slot.minute.toString().padStart(2, '0')}`;
                           const isBooked = !!myEvent;
-                          
-                          // Check if user already has other appointments today
+                          // ...existing code...
                           const userHasOtherBooking = modalEvents.some(e => 
                             e.userRowId === userRowId && 
                             e.status === 'booked' && 
                             !(e.start.getHours() === slot.hour && e.start.getMinutes() === slot.minute)
                           );
-                          
-                          // If full, show "Full"
+                          // 判断是否为禁用 slot（灰色且不可点）
+                          // 逻辑与 slotPropGetter 保持一致
+                          const slotDate = new Date(selectedDate);
+                          slotDate.setHours(slot.hour, slot.minute, 0, 0);
+                          const slotEnd = new Date(slotDate);
+                          slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+                          const now = new Date();
+                          let isDisabled = false;
+                          // 超过最大预约日期（今天+13天）禁用
+                          const maxDate = new Date(now);
+                          maxDate.setDate(now.getDate() + 13);
+                          maxDate.setHours(23,59,59,999);
+                          if (slotDate > maxDate) isDisabled = true;
+                          if (slotEnd <= now) isDisabled = true;
+                          if (isFull) isDisabled = true;
+                          if (!businessHours) isDisabled = false;
+                          else {
+                            const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+                            const weekday = weekdays[slotDate.getDay()];
+                            const dayConfig = businessHours[weekday];
+                            if (!dayConfig || dayConfig.closed) isDisabled = true;
+                            const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+                            const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+                            const currentMinutes = slot.hour * 60 + slot.minute;
+                            const startMinutes = startH * 60 + startM;
+                            const endMinutes = endH * 60 + endM;
+                            if (currentMinutes < startMinutes || currentMinutes >= endMinutes) isDisabled = true;
+                          }
+                          // 禁用 slot 用 disabled 属性
                           if (isFull) {
                             return (
                               <div
@@ -978,9 +1009,7 @@ export default function CalendarPage() {
                               </div>
                             );
                           }
-                          
-                          // If user already has other appointment today, and not the current slot, show "Change" option
-                          if (userHasOtherBooking && !isBooked) {
+                          if (userHasOtherBooking && !isBooked && !isDisabled) {
                             return (
                               <button
                                 key={`${slot.hour}:${slot.minute}`}
@@ -989,12 +1018,12 @@ export default function CalendarPage() {
                                 }}
                                 className="px-6 py-2 rounded-full border font-semibold text-base bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-800 hover:border-yellow-400 transition-all duration-200 flex items-center justify-center"
                                 style={{ minWidth: 80 }}
+                                disabled={isDisabled}
                               >
                                 <span className="font-medium">Change</span>
                               </button>
                             );
                           }
-                          
                           return (
                             <button
                               key={`${slot.hour}:${slot.minute}`}
@@ -1011,15 +1040,19 @@ export default function CalendarPage() {
                                   ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
                                   : isBooked
                                     ? 'bg-red-100 text-red-600 border-red-300 hover:bg-red-200 hover:text-red-700 hover:border-red-400'
-                                    : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
+                                    : isDisabled
+                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                      : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
                                 }
                                 flex items-center justify-center relative overflow-hidden`
                               }
                               style={{
                                 minWidth: 80,
                                 marginBottom: 0,
-                                animation: isClicked ? 'successPulse 0.6s ease-in-out' : 'none'
+                                animation: isClicked ? 'successPulse 0.6s ease-in-out' : 'none',
+                                pointerEvents: isDisabled ? 'none' : undefined
                               }}
+                              disabled={isDisabled}
                             >
                               {isClicked ? (
                                 <div className="flex items-center justify-center">
