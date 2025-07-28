@@ -230,27 +230,20 @@ export default function CalendarPage() {
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
     
-    // Only return the next half-hour and after
+    // 只允许预约结束时间 > 当前时间的 slot
     const now = new Date();
-    let minMinutes = startMinutes;
-    if (date.toDateString() === now.toDateString()) {
-      // Add 30 minutes to current time to ensure appointment is at least 30 minutes after
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      // If current time + 30 minutes exceeds business hours, return empty array
-      if (currentMinutes + 30 >= endMinutes) {
-        return [];
-      }
-      minMinutes = Math.max(minMinutes, currentMinutes + 30);
-    }
-    
-    // Generate half-hour intervals
     let slots = [];
-    for (let minutes = minMinutes; minutes < endMinutes; minutes += 30) {
+    for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
       const hour = Math.floor(minutes / 60);
       const minute = minutes % 60;
+      // slot 结束时间
+      const slotEnd = new Date(date);
+      slotEnd.setHours(hour, minute + 30, 0, 0);
+      if (date.toDateString() === now.toDateString()) {
+        if (slotEnd <= now) continue; // 结束时间早于当前时间，不可预约
+      }
       slots.push({ hour, minute });
     }
-    
     return slots;
   }
 
@@ -260,8 +253,10 @@ export default function CalendarPage() {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const slotMinutes = date.getHours() * 60 + date.getMinutes();
     
-    // If it's a past date or past time, disable
-    if (date < now || (date.toDateString() === now.toDateString() && slotMinutes <= currentMinutes)) {
+    // 禁用结束时间 <= 当前时间的 slot
+    const slotEnd = new Date(date);
+    slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+    if (slotEnd <= now) {
       return {
         style: {
           backgroundColor: '#f3f4f6',
@@ -360,7 +355,12 @@ export default function CalendarPage() {
     const now = new Date();
     now.setHours(0,0,0,0);
     const isPast = date < now;
-    if (isPast) {
+    // 限制只能预约今天起14天内
+    const maxDate = new Date(now);
+    maxDate.setDate(now.getDate() + 13); // 今天+13=共14天
+    maxDate.setHours(23,59,59,999);
+    const isTooFar = date > maxDate;
+    if (isPast || isTooFar) {
       return {
         style: {
           backgroundColor: '#f3f4f6',
@@ -370,13 +370,11 @@ export default function CalendarPage() {
         },
       };
     }
-    
-    // Use businessHours data to determine if open
+    // 仅根据 business_hours 判断休息日
     if (businessHours) {
       const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
       const weekday = weekdays[date.getDay()];
       const dayConfig = businessHours[weekday];
-      
       if (!dayConfig || dayConfig.closed) {
         return {
           style: {
@@ -387,21 +385,7 @@ export default function CalendarPage() {
           },
         };
       }
-    } else {
-      // If no businessHours data, use default logic
-      const day = date.getDay();
-      if (day === 0 || day === 1) {
-        return {
-          style: {
-            backgroundColor: '#f9fafb',
-            color: '#d1d5db',
-            pointerEvents: 'none',
-            cursor: 'not-allowed',
-          },
-        };
-      }
     }
-    
     return {};
   }
 
