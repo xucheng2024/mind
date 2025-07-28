@@ -209,8 +209,7 @@ export default function CalendarPage() {
              eventHour === hour &&
              eventMinute === minute;
     }).length;
-    
-    return count >= 3;
+    return count >= 2;
   }, [events]);
 
   // Optimized getAvailableHoursForDate - supports half-hour slots
@@ -952,7 +951,7 @@ export default function CalendarPage() {
                                    eventMinute === slot.minute &&
                                    e.status === 'booked';
                           });
-                          const isFull = slotEvents.length >= 3;
+                          const isFull = slotEvents.length >= 2;
                           const myEvent = modalEvents.find(e => {
                             const eventHour = e.start.getHours();
                             const eventMinute = e.start.getMinutes();
