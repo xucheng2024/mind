@@ -126,27 +126,18 @@ export default defineConfig({
   build: {
     minify: 'terser',
     target: 'esnext',
-    chunkSizeWarningLimit: 1000, // 提高警告阈值
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
-          // 核心库
           vendor: ['react', 'react-dom'],
-          // 路由
           router: ['react-router-dom'],
-          // 图标
           icons: ['react-icons'],
-          // 工具库
           utils: ['date-fns', 'uuid', 'crypto-js'],
-          // UI组件
           ui: ['react-hot-toast', 'framer-motion'],
-          // 表单相关
           forms: ['react-input-mask', 'react-signature-canvas'],
-          // 媒体相关
           media: ['react-webcam', 'compressorjs'],
-          // 日历
           calendar: ['react-big-calendar'],
-          // Supabase
           supabase: ['@supabase/supabase-js']
         }
       }
@@ -167,6 +158,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['@supabase/supabase-js'] // 避免预构建Supabase
+    exclude: ['@supabase/supabase-js']
   }
 })
