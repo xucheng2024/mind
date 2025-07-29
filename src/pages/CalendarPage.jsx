@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import enUS from 'date-fns/locale/en-US';
+import { Calendar, dayjsLocalizer } from 'react-big-calendar';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+
+// Set dayjs locale
+dayjs.locale('en');
 
 // CSS animations
 const styles = `
@@ -44,17 +47,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 }
 
-const locales = {
-  'en-US': enUS,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
+const localizer = dayjsLocalizer(dayjs);
 
 import { useNavigate } from 'react-router-dom';
 
