@@ -66,61 +66,62 @@ module.exports = defineConfig({
           }
         ]
       }
-    }),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          }
-        ]
-      },
-      manifest: {
-        name: 'Clinic App',
-        short_name: 'Clinic',
-        description: 'Modern clinic management and appointment booking app',
-        theme_color: '#3b82f6',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: '/logo.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/logo.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
     })
+    // Temporarily disabled PWA plugin to fix build issues
+    // VitePWA({
+    //   registerType: 'autoUpdate',
+    //   workbox: {
+    //     runtimeCaching: [
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'google-fonts-cache',
+    //           expiration: {
+    //             maxEntries: 10,
+    //             maxAgeSeconds: 60 * 60 * 24 * 365
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'gstatic-fonts-cache',
+    //           expiration: {
+    //             maxEntries: 10,
+    //             maxAgeSeconds: 60 * 60 * 24 * 365
+    //           }
+    //         }
+    //       }
+    //     ]
+    //   },
+    //   manifest: {
+    //     name: 'Clinic App',
+    //     short_name: 'Clinic',
+    //     description: 'Modern clinic management and appointment booking app',
+    //     theme_color: '#3b82f6',
+    //     background_color: '#ffffff',
+    //     display: 'standalone',
+    //     orientation: 'portrait-primary',
+    //     scope: '/',
+    //     start_url: '/',
+    //     icons: [
+    //       {
+    //         src: '/logo.png',
+    //         sizes: '192x192',
+    //         type: 'image/png',
+    //         purpose: 'any maskable'
+    //       },
+    //       {
+    //         src: '/logo.png',
+    //         sizes: '512x512',
+    //         type: 'image/png',
+    //         purpose: 'any maskable'
+    //       }
+    //     ]
+    //   }
+    // })
   ],
   build: {
     minify: 'terser',
