@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabaseClient';
 import RegistrationHeader from '../components/RegistrationHeader';
 import InputMask from 'react-input-mask';
 import { hash, encrypt } from '../lib/utils';
+import toast from 'react-hot-toast';
+import { debounce } from '../lib/performance';
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
@@ -163,7 +165,8 @@ export default function RegistrationForm() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  // 使用防抖的提交函数
+  const handleSubmit = debounce(async (e) => {
     e.preventDefault();
     console.log('[Register][Submit] 当前表单内容:', form, 'clinicId:', clinicId);
     if (!validate()) {
@@ -178,9 +181,11 @@ export default function RegistrationForm() {
           break;
         }
       }
+      toast.error('Please fix the errors above.');
       return;
     }
     setLoading(true);
+    const loadingToast = toast.loading('Processing registration...');
 
     console.log('[Register] 检查是否已注册:', { clinicId, phone: form.phone, email: form.email });
     const phoneHash = hash(form.phone);
@@ -201,17 +206,23 @@ export default function RegistrationForm() {
 
     if (phoneError || emailError) {
       console.error('❌ 查询失败:', phoneError || emailError);
+      toast.dismiss(loadingToast);
+      toast.error('Server error, please try again later.');
       setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
       setLoading(false);
       return;
     }
 
     if (phoneUsers?.length > 0) {
+      toast.dismiss(loadingToast);
+      toast.error('This phone number has already been registered.');
       setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
       setLoading(false);
       return;
     }
     if (emailUsers?.length > 0) {
+      toast.dismiss(loadingToast);
+      toast.error('This email has already been registered.');
       setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
       setLoading(false);
       return;
@@ -230,9 +241,11 @@ export default function RegistrationForm() {
     // 清除草稿数据，因为已经成功提交
     localStorage.removeItem('registrationFormDraft');
     
+    toast.dismiss(loadingToast);
+    toast.success('Registration successful!');
     setLoading(false);
     navigate('/register/medical');
-  };
+  }, 300);
 
   const handleDOBChange = (e) => {
     let [dd, mm, yyyy] = e.target.value.split('/');

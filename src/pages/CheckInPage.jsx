@@ -3,6 +3,8 @@ import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { hash, encrypt, isPhone, isEmail } from '../lib/utils';
+import toast from 'react-hot-toast';
+import { debounce } from '../lib/performance';
 
 export default function CheckInPage() {
   // Prevent concurrent auto check-in and manual check-in
@@ -133,6 +135,8 @@ export default function CheckInPage() {
     console.log('[checkInCore] user:', user);
     console.log('[checkInCore] Current time:', now.toLocaleString());
     
+
+    
     // Check if within business hours
     console.log('[checkInCore] Checking business hours...');
     const withinBusinessHours = isWithinBusinessHours();
@@ -239,7 +243,8 @@ export default function CheckInPage() {
     console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
   }
 
-  const handleSubmit = async (e) => {
+  // 使用防抖的提交函数
+  const handleSubmit = debounce(async (e) => {
     // If auto check-in is in progress, prevent manual submission
     if (autoChecking) {
       return;
@@ -249,17 +254,23 @@ export default function CheckInPage() {
     setSuccess(false);
     setCheckedInTime(null);
     console.log('[handleSubmit] input:', input, 'clinicId:', clinicId);
+    
     if (!input.trim()) {
+      toast.error('Please enter your email or phone number.');
       setFriendlyError(setError, 'Please enter your email or phone number.');
       console.log('[CheckIn][Error] Empty input');
       return;
     }
     if (!clinicId) {
+      toast.error('Clinic ID is missing.');
       setFriendlyError(setError, 'Clinic ID is missing.');
       console.log('[CheckIn][Error] Missing clinicId');
       return;
     }
+    
     setLoading(true);
+    const loadingToast = toast.loading('Processing check-in...');
+    
     let userQuery;
     if (isEmail(input)) {
       const emailHash = hash(input.trim().toLowerCase());
@@ -280,15 +291,20 @@ export default function CheckInPage() {
         .eq('phone_hash', phoneHash)
         .limit(1);
     } else {
+      toast.dismiss(loadingToast);
+      toast.error('Please enter a valid email or phone number.');
       setFriendlyError(setError, 'Please enter a valid email (must contain @) or a phone number (digits only).');
       setLoading(false);
       console.log('[CheckIn][Error] Invalid input format:', input);
       return;
     }
+    
     const { data, error: dbError } = await userQuery;
     console.log('[handleSubmit] userQuery result:', { data, dbError });
 
     if (dbError || !data || data.length === 0) {
+      toast.dismiss(loadingToast);
+      toast.error('No user found. Please check your input.');
       setFriendlyError(setError, 'No user found. Please check your input. If this is your first visit, please register first.');
       setLoading(false);
       return;
@@ -302,22 +318,26 @@ export default function CheckInPage() {
       if (user.clinic_id) localStorage.setItem('clinic_id', user.clinic_id);
       setCheckedInTime(new Date().toLocaleString());
       setSuccess(true);
+      toast.dismiss(loadingToast);
+      toast.success('Check-in successful!');
     } catch (err) {
       console.log('[handleSubmit] error:', err);
+      toast.dismiss(loadingToast);
+      let errorMsg = 'Unexpected error.';
       if (err.message.includes('network')) {
-        setFriendlyError(setError, 'Network error.');
+        errorMsg = 'Network error.';
       } else if (err.message.includes('already checked in today')) {
-        setFriendlyError(setError, 'Checked in today.');
+        errorMsg = 'You have already checked in today.';
       } else if (err.message.includes('finished your consultation')) {
-        setFriendlyError(setError, 'Consultation finished.');
+        errorMsg = 'Consultation finished.';
       } else if (err.message.includes('currently closed')) {
-        setFriendlyError(setError, 'Clinic is currently closed. Please check-in during business hours.');
-      } else {
-        setFriendlyError(setError, 'Unexpected error.');
+        errorMsg = 'Clinic is currently closed. Please check-in during business hours.';
       }
+      toast.error(errorMsg);
+      setFriendlyError(setError, errorMsg);
     }
     setLoading(false);
-  };
+  }, 300);
 
   // 如果已存在 userId 和 clinicId，且未出错或未手动退出，则不显示表单，直接走自动 check-in 流程（UI 只显示 loading 或结果）
   const shouldShowForm = !(userRowId && clinicId);
