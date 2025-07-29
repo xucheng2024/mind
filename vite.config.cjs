@@ -129,17 +129,18 @@ module.exports = defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          icons: ['react-icons'],
-          utils: ['uuid', 'crypto-js'],
-          ui: ['react-hot-toast', 'framer-motion'],
-          forms: ['react-input-mask', 'react-signature-canvas'],
-          media: ['react-webcam', 'compressorjs'],
-          calendar: ['react-big-calendar'],
-          supabase: ['@supabase/supabase-js']
-        }
+        // Temporarily disabled manualChunks to avoid package resolution issues
+        // manualChunks: {
+        //   vendor: ['react', 'react-dom'],
+        //   router: ['react-router-dom'],
+        //   icons: ['react-icons'],
+        //   utils: ['uuid', 'crypto-js'],
+        //   ui: ['react-hot-toast', 'framer-motion'],
+        //   forms: ['react-input-mask', 'react-signature-canvas'],
+        //   media: ['react-webcam', 'compressorjs'],
+        //   calendar: ['react-big-calendar'],
+        //   supabase: ['@supabase/supabase-js']
+        // }
       }
     },
     terserOptions: {
