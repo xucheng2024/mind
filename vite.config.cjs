@@ -133,7 +133,7 @@ module.exports = defineConfig({
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           icons: ['react-icons'],
-          utils: ['date-fns', 'uuid', 'crypto-js'],
+          utils: ['uuid', 'crypto-js'],
           ui: ['react-hot-toast', 'framer-motion'],
           forms: ['react-input-mask', 'react-signature-canvas'],
           media: ['react-webcam', 'compressorjs'],
