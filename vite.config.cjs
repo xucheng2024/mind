@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
-import legacy from '@vitejs/plugin-legacy'
-import compression from 'vite-plugin-compression'
-import imagemin from 'vite-plugin-imagemin'
+const { defineConfig } = require('vite')
+const react = require('@vitejs/plugin-react')
+const { VitePWA } = require('vite-plugin-pwa')
+const legacy = require('@vitejs/plugin-legacy')
+const compression = require('vite-plugin-compression')
+const imagemin = require('vite-plugin-imagemin')
 
-export default defineConfig({
+module.exports = defineConfig({
   plugins: [
     react(),
     legacy({
