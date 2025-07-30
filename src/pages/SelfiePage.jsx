@@ -18,8 +18,6 @@ export default function SelfiePage() {
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const [fileInputRef] = useState(() => React.createRef());
 
   // 检查相机权限 - 简化版本
@@ -156,24 +154,7 @@ export default function SelfiePage() {
     }
   };
 
-  // input file change handler for iOS PWA
-  const handleFileChange = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    setCapturing(true);
-    setError('');
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImageSrc(reader.result);
-      setCompressedBlob(file);
-      setCapturing(false);
-    };
-    reader.onerror = () => {
-      setError('Failed to read image. Please try again.');
-      setCapturing(false);
-    };
-    reader.readAsDataURL(file);
-  };
+
 
   const handleRetake = () => {
     console.log('🔄 Retaking photo...');
@@ -258,71 +239,46 @@ export default function SelfiePage() {
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
-              {/* iOS PWA 用 input file，其它用 Camera */}
-              {isIOS && isPWA ? (
-                <>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="user"
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                  />
-                </>
-              ) : (
-                <Camera
-                  ref={cameraRef}
-                  aspectRatio={1}
-                  facingMode="user"
-                  idealResolution={{ width: 640, height: 480 }}
-                  errorMessages={{
-                    noCameraAccessible: 'No camera accessible',
-                    permissionDenied: 'Permission denied',
-                    switchCamera: 'Switch camera',
-                    canvas: 'Canvas is not supported'
-                  }}
-                  videoReadyCallback={() => {
-                    console.log('✅ Camera ready callback triggered');
-                    setCameraReady(true);
-                    setCameraLoading(false);
-                    setError('');
-                  }}
-                  videoErrorCallback={(error) => {
-                    console.error('❌ Camera error callback:', error);
-                    setError('Camera error. Please check permissions and try again.');
-                    setCameraReady(false);
-                    setCameraLoading(false);
-                  }}
-                  onTakePhotoAnimationDone={() => {
-                    console.log('📸 Photo animation done');
-                  }}
-                  disablePicture={false}
-                  disableVideo={true}
-                  showResolutionIndicator={false}
-                />
-              )}
+              <Camera
+                ref={cameraRef}
+                aspectRatio={1}
+                facingMode="user"
+                idealResolution={{ width: 640, height: 480 }}
+                errorMessages={{
+                  noCameraAccessible: 'No camera accessible',
+                  permissionDenied: 'Permission denied',
+                  switchCamera: 'Switch camera',
+                  canvas: 'Canvas is not supported'
+                }}
+                videoReadyCallback={() => {
+                  console.log('✅ Camera ready callback triggered');
+                  setCameraReady(true);
+                  setCameraLoading(false);
+                  setError('');
+                }}
+                videoErrorCallback={(error) => {
+                  console.error('❌ Camera error callback:', error);
+                  setError('Camera error. Please check permissions and try again.');
+                  setCameraReady(false);
+                  setCameraLoading(false);
+                }}
+                onTakePhotoAnimationDone={() => {
+                  console.log('📸 Photo animation done');
+                }}
+                disablePicture={false}
+                disableVideo={true}
+                showResolutionIndicator={false}
+              />
             </div>
             {/* 拍照按钮移到圆框下方，风格一致 */}
             <div className="w-full flex flex-col items-center">
-              {isIOS && isPWA ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                  className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-                  disabled={capturing}
-                >
-                  {capturing ? 'Processing...' : 'Take a Photo'}
-                </button>
-              ) : (
-                <button
-                  onClick={capture}
-                  disabled={capturing || !cameraReady}
-                  className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-                >
-                  {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
-                </button>
-              )}
+              <button
+                onClick={capture}
+                disabled={capturing || !cameraReady}
+                className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+              >
+                {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
+              </button>
             </div>
           </div>
         ) : (
