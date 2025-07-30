@@ -17,49 +17,51 @@ export default function SelfiePage() {
   const [capturing, setCapturing] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraLoading, setCameraLoading] = useState(true);
+  const [cameraReady, setCameraReady] = useState(false);
 
   // 检查相机权限
-  useEffect(() => {
+  const checkCamera = async () => {
     console.log('🎥 Checking camera permission...');
-    async function checkCamera() {
-      try {
-        // 先检查是否支持getUserMedia
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error('Camera API not supported');
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        
-        console.log('✅ Camera permission granted');
-        setHasCamera(true);
-        setError('');
-        // 记得关闭流
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        console.error('❌ Camera error:', err);
-        setHasCamera(false);
-        
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('Camera access denied. Please allow camera access in your browser settings and refresh the page.');
-        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-          setError('No camera found. Please make sure your device has a camera.');
-        } else if (err.name === 'NotSupportedError') {
-          setError('Camera not supported in this browser. Please try a different browser.');
-        } else if (err.message === 'Camera API not supported') {
-          setError('Camera not supported in this browser. Please try a different browser.');
-        } else {
-          setError('Unable to access camera. Please check your browser permissions and try again.');
-        }
-      } finally {
-        setCameraLoading(false);
+    try {
+      // 先检查是否支持getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported');
       }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      console.log('✅ Camera permission granted');
+      setHasCamera(true);
+      setError('');
+      // 记得关闭流
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.error('❌ Camera error:', err);
+      setHasCamera(false);
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Camera access denied. Please allow camera access in your browser settings and refresh the page.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('No camera found. Please make sure your device has a camera.');
+      } else if (err.name === 'NotSupportedError') {
+        setError('Camera not supported in this browser. Please try a different browser.');
+      } else if (err.message === 'Camera API not supported') {
+        setError('Camera not supported in this browser. Please try a different browser.');
+      } else {
+        setError('Unable to access camera. Please check your browser permissions and try again.');
+      }
+    } finally {
+      setCameraLoading(false);
     }
+  };
+
+  useEffect(() => {
     checkCamera();
   }, []);
 
@@ -67,62 +69,71 @@ export default function SelfiePage() {
     setCapturing(true);
     console.log('📸 Taking photo...');
     
-    if (cameraRef.current) {
-      const image = cameraRef.current.takePhoto();
-      console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
-      
-      if (image) {
-        setError('');
-        console.log('📸 Starting image processing...');
-        
-        // Convert base64 to blob
-        fetch(image)
-          .then(res => {
-            console.log('📸 Fetch response:', res);
-            return res.blob();
-          })
-          .then(blob => {
-            console.log('📸 Blob created:', blob.size, 'bytes');
-            console.log('🖼️ Compressing image...');
-            new Compressor(blob, {
-              quality: 0.6,
-              convertSize: 1000000,
-              success(result) {
-                console.log('✅ Image compressed successfully:', result.size, 'bytes');
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  console.log('✅ Image converted to data URL');
-                  setImageSrc(reader.result);
-                  setCompressedBlob(result);
-                };
-                reader.readAsDataURL(result);
-              },
-              error(err) {
-                console.error('❌ Compression failed:', err.message);
-                console.log('📸 Using original image without compression');
-                setImageSrc(image);
-                setCompressedBlob(blob);
-              }
-            });
-          })
-          .catch(err => {
-            console.error('❌ Image processing failed:', err);
-            setError('Failed to process image. Please try again.');
-          })
-          .finally(() => {
-            console.log('📸 Photo capture process completed');
+    // Add a small delay to ensure camera is fully ready
+    setTimeout(() => {
+      if (cameraRef.current) {
+        try {
+          const image = cameraRef.current.takePhoto();
+          console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
+          
+          if (image) {
+            setError('');
+            console.log('📸 Starting image processing...');
+            
+            // Convert base64 to blob
+            fetch(image)
+              .then(res => {
+                console.log('📸 Fetch response:', res);
+                return res.blob();
+              })
+              .then(blob => {
+                console.log('📸 Blob created:', blob.size, 'bytes');
+                console.log('🖼️ Compressing image...');
+                new Compressor(blob, {
+                  quality: 0.6,
+                  convertSize: 1000000,
+                  success(result) {
+                    console.log('✅ Image compressed successfully:', result.size, 'bytes');
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      console.log('✅ Image converted to data URL');
+                      setImageSrc(reader.result);
+                      setCompressedBlob(result);
+                    };
+                    reader.readAsDataURL(result);
+                  },
+                  error(err) {
+                    console.error('❌ Compression failed:', err.message);
+                    console.log('📸 Using original image without compression');
+                    setImageSrc(image);
+                    setCompressedBlob(blob);
+                  }
+                });
+              })
+              .catch(err => {
+                console.error('❌ Image processing failed:', err);
+                setError('Failed to process image. Please try again.');
+              })
+              .finally(() => {
+                console.log('📸 Photo capture process completed');
+                setCapturing(false);
+              });
+          } else {
+            console.error('❌ Failed to take photo');
+            setError('Failed to take photo. Please try again.');
             setCapturing(false);
-          });
+          }
+        } catch (error) {
+          console.error('❌ Camera capture error:', error);
+          setError('Camera error. Please try again.');
+          setCapturing(false);
+        }
       } else {
-        console.error('❌ Failed to take photo');
-        setError('Failed to take photo. Please try again.');
+        console.error('❌ Camera ref not available');
+        setError('Camera not ready. Please wait and try again.');
         setCapturing(false);
       }
-    } else {
-      console.error('❌ Camera ref not available');
-      setError('Camera not ready. Please wait and try again.');
-      setCapturing(false);
-    }
+    }, 500); // Add 500ms delay to ensure camera is ready
   };
 
   const handleRetake = () => {
@@ -130,6 +141,16 @@ export default function SelfiePage() {
     setImageSrc(null);
     setCompressedBlob(null);
     setError('');
+    setCameraReady(false); // Reset camera ready state
+  };
+
+  const handleRetryCamera = () => {
+    console.log('🔄 Retrying camera...');
+    setError('');
+    setCameraLoading(true);
+    setCameraReady(false);
+    // Re-check camera permissions
+    checkCamera();
   };
 
   const handleSubmit = (e) => {
@@ -156,7 +177,13 @@ export default function SelfiePage() {
         ) : !hasCamera ? (
           <div className="flex flex-col items-center justify-center h-[220px] text-center">
             <div className="text-red-500 mb-4">⚠️ Camera not available</div>
-            <div className="text-gray-600">{error}</div>
+            <div className="text-gray-600 mb-4">{error}</div>
+            <button
+              onClick={handleRetryCamera}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Retry Camera
+            </button>
           </div>
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
@@ -173,6 +200,7 @@ export default function SelfiePage() {
                 }}
                 videoReadyCallback={() => {
                   console.log('✅ Camera video ready');
+                  setCameraReady(true);
                 }}
                 videoErrorCallback={(error) => {
                   console.error('❌ Camera video error:', error);
@@ -182,10 +210,10 @@ export default function SelfiePage() {
             </div>
             <button
               onClick={capture}
-              disabled={capturing}
-              className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+              disabled={capturing || !cameraReady}
+              className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
             >
-              {capturing ? 'Processing...' : 'Take a Photo'}
+              {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
             </button>
           </div>
         ) : (
