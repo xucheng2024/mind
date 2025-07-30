@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import RegistrationHeader from '../components/RegistrationHeader';
-import InputMask from 'react-input-mask';
+import { IMaskInput } from 'react-imask';
 import { hash, encrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
@@ -492,22 +492,11 @@ export default function RegistrationForm() {
               Date of Birth <span className="text-red-500">*</span>
               <span className="text-xs text-gray-500 ml-2">(DD/MM/YYYY)</span>
             </label>
-            <InputMask
+            <IMaskInput
               mask="00/00/0000"
               placeholder="DD/MM/YYYY"
               value={`${form.dobDay}/${form.dobMonth}/${form.dobYear}`}
-              onChange={(e) => {
-                const value = e.target.value;
-                const parts = value.split('/');
-                if (parts.length === 3) {
-                  setForm(prev => ({
-                    ...prev,
-                    dobDay: parts[0] || '',
-                    dobMonth: parts[1] || '',
-                    dobYear: parts[2] || ''
-                  }));
-                }
-              }}
+              onAccept={handleDOBChange}
               onBlur={() => {
                 // onBlur 时进行最终验证
                 if (form.dobDay && form.dobMonth && form.dobYear) {
