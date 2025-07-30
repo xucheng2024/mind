@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
@@ -15,19 +15,52 @@ export default function SelfiePage() {
   const [uploading, setUploading] = useState(false);
   const [compressedBlob, setCompressedBlob] = useState(null);
   const [capturing, setCapturing] = useState(false);
+  const [hasCamera, setHasCamera] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(true);
+
+  // 检查相机权限
+  useEffect(() => {
+    console.log('🎥 Checking camera permission...');
+    async function checkCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        console.log('✅ Camera permission granted');
+        setHasCamera(true);
+        setError('');
+        // 记得关闭流
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.error('❌ Camera error:', err);
+        setHasCamera(false);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('Camera access denied. Please allow camera access in your browser settings.');
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError('No camera found. Please make sure your device has a camera.');
+        } else {
+          setError('Unable to access camera. Please check your browser permissions.');
+        }
+      } finally {
+        setCameraLoading(false);
+      }
+    }
+    checkCamera();
+  }, []);
 
   const capture = () => {
     setCapturing(true);
+    console.log('📸 Taking photo...');
     const imageDataUrl = webcamRef.current?.getScreenshot?.();
     if (imageDataUrl) {
       setError('');
       fetch(imageDataUrl)
         .then(res => res.blob())
         .then(blob => {
+          console.log('🖼️ Compressing image...');
           new Compressor(blob, {
             quality: 0.6,
             convertSize: 1000000,
             success(result) {
+              console.log('✅ Image compressed successfully');
               const reader = new FileReader();
               reader.onloadend = () => {
                 setImageSrc(reader.result);
@@ -36,19 +69,22 @@ export default function SelfiePage() {
               reader.readAsDataURL(result);
             },
             error(err) {
-              console.error('Compression failed:', err.message);
+              console.error('❌ Compression failed:', err.message);
               setImageSrc(imageDataUrl);
               setCompressedBlob(blob);
             }
           });
         })
-        .finally(() => setCapturing(false)); // Ensure state is restored
+        .finally(() => setCapturing(false));
     } else {
+      console.error('❌ Failed to take photo');
+      setError('Failed to take photo. Please try again.');
       setCapturing(false);
     }
   };
 
   const handleRetake = () => {
+    console.log('🔄 Retaking photo...');
     setImageSrc(null);
     setCompressedBlob(null);
     setError('');
@@ -56,6 +92,7 @@ export default function SelfiePage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('📤 Submitting photo...');
     if (!imageSrc) {
       setError('Please take a selfie first.');
       return;
@@ -69,7 +106,17 @@ export default function SelfiePage() {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
         <RegistrationHeader title="Face Capture" />
 
-        {!imageSrc ? (
+        {cameraLoading ? (
+          <div className="flex flex-col items-center justify-center h-[220px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <div className="mt-4 text-gray-600">Checking camera access...</div>
+          </div>
+        ) : !hasCamera ? (
+          <div className="flex flex-col items-center justify-center h-[220px] text-center">
+            <div className="text-red-500 mb-4">⚠️ Camera not available</div>
+            <div className="text-gray-600">{error}</div>
+          </div>
+        ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
               <Webcam
@@ -78,7 +125,11 @@ export default function SelfiePage() {
                 screenshotFormat="image/jpeg"
                 videoConstraints={{ facingMode: 'user' }}
                 className="w-full h-full object-cover rounded-full"
-                onUserMediaError={() => setError('Unable to access camera. Please check your browser permissions.')}
+                onUserMediaError={(err) => {
+                  console.error('❌ Camera error:', err);
+                  setError('Unable to access camera. Please check your browser permissions.');
+                  setHasCamera(false);
+                }}
               />
             </div>
             <button
@@ -116,7 +167,11 @@ export default function SelfiePage() {
             </div>
           </div>
         )}
-        {error && <div style={{ color: 'red', marginBottom: 8, fontSize: '0.97em' }}>{error}</div>}
+        {error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mt-4 text-center border border-red-200">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
