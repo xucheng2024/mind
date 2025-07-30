@@ -145,7 +145,19 @@ export default function SelfiePage() {
     } else {
       checkCamera();
     }
-  }, []);
+    
+    // 添加超时机制，防止相机一直loading
+    const timeout = setTimeout(() => {
+      if (cameraLoading && !cameraReady) {
+        console.log('⏰ Camera loading timeout, setting ready state');
+        setCameraLoading(false);
+        setCameraReady(true);
+        setError('');
+      }
+    }, 8000); // 8秒超时
+    
+    return () => clearTimeout(timeout);
+  }, [cameraLoading, cameraReady]);
 
   const capture = () => {
     setCapturing(true);
@@ -345,14 +357,19 @@ export default function SelfiePage() {
                     canvas: 'Canvas is not supported'
                   }}
                   videoReadyCallback={() => {
+                    console.log('✅ Camera ready callback triggered');
                     setCameraReady(true);
+                    setCameraLoading(false);
                     setError('');
                   }}
                   videoErrorCallback={(error) => {
+                    console.error('❌ Camera error callback:', error);
                     setError('Camera error. Please check permissions and try again.');
                     setCameraReady(false);
+                    setCameraLoading(false);
                   }}
                   onTakePhotoAnimationDone={() => {
+                    console.log('📸 Photo animation done');
                   }}
                   disablePicture={false}
                   disableVideo={true}
