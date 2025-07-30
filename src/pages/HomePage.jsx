@@ -170,7 +170,7 @@ export default function HomePage() {
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
     toast.success('Redirecting to registration...');
-    navigate('/registration?clinic_id=' + clinicId);
+    navigate('/register?clinic_id=' + clinicId);
   }, 200);
 
   // 防抖的预约按钮点击
