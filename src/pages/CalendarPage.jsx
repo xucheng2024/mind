@@ -154,6 +154,7 @@ export default function CalendarPage() {
   // Get available hours for selected date
   async function getAvailableHoursForDate(date) {
     if (!businessHours || !date) return [];
+    
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekday = weekdays[date.getDay()];
     const dayConfig = businessHours[weekday];
@@ -222,7 +223,15 @@ export default function CalendarPage() {
       weekday,
       dayConfig,
       isClosed,
-      businessHours
+      businessHours,
+      // Add device and timezone info
+      deviceInfo: {
+        userAgent: navigator.userAgent,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        currentTime: new Date().toISOString(),
+        localTime: new Date().toString(),
+        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      }
     });
     
     setIsClosedDay(isClosed);
