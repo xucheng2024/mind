@@ -175,11 +175,25 @@ export default function CalendarPage() {
     
     // Query slot_availability table
     const dateStr = date.toISOString().split('T')[0];
-    const { data: slotAvailability } = await supabase
+    const { data: slotAvailability, error } = await supabase
       .from('slot_availability')
       .select('visit_time, is_available')
       .eq('clinic_id', clinicId)
       .eq('visit_date', dateStr);
+    
+    console.log('📊 Slot availability debug:', {
+      date: dateStr,
+      clinicId,
+      slotAvailability,
+      error,
+      dayConfig,
+      weekday
+    });
+    
+    // If no slot_availability data found, create default slots
+    if (!slotAvailability || slotAvailability.length === 0) {
+      console.log('⚠️ No slot_availability data found, using default slots');
+    }
     
     let slots = [];
     for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
@@ -194,7 +208,11 @@ export default function CalendarPage() {
       // Check if slot is available from slot_availability table
       const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
       const slotData = slotAvailability?.find(slot => slot.visit_time === timeStr);
-      const isAvailable = slotData ? slotData.is_available : true; // Default to available if not found
+      
+      // If no slot_availability data found, default to available
+      const isAvailable = slotAvailability && slotAvailability.length > 0 
+        ? (slotData ? slotData.is_available : true)
+        : true; // Default to available if no slot_availability data
       
       slots.push({ 
         hour, 
