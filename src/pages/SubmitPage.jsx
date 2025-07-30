@@ -4,6 +4,7 @@ import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import { hash, encrypt } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 
 export default function SubmitPage() {
   const navigate = useNavigate();
@@ -71,10 +72,7 @@ export default function SubmitPage() {
       let selfiePath = registrationData.selfie || '';
 
       // Only encrypt name, birthday, address, phone, email, signature, selfie, id_last4
-      const AES_KEY = import.meta.env.VITE_AES_KEY;
-      if (!AES_KEY) {
-        console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
-      }
+      const AES_KEY = getAESKey();
       
       // Format current time as prefix
       const now = new Date();

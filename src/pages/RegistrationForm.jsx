@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import RegistrationHeader from '../components/RegistrationHeader';
 import InputMask from 'react-input-mask';
 import { hash, encrypt } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import { getClinicId } from '../config/clinic';
@@ -331,7 +332,7 @@ export default function RegistrationForm() {
   };
 
   function encryptEmail(email) {
-    const AES_KEY = import.meta.env.VITE_AES_KEY;
+    const AES_KEY = getAESKey();
     return email ? CryptoJS.AES.encrypt(email.trim().toLowerCase(), AES_KEY).toString() : '';
   }
 

@@ -9,6 +9,7 @@ import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
 import Button from '../components/Button';
 import { decrypt } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 
 
 export default function HomePage() {
@@ -62,7 +63,7 @@ export default function HomePage() {
       
       if (!error && data) {
         // 尝试解密姓名
-        const AES_KEY = import.meta.env.VITE_AES_KEY;
+        const AES_KEY = getAESKey();
         let decryptedName = data.full_name;
         
         if (AES_KEY && data.full_name && data.full_name.length > 20) {

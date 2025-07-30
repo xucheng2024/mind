@@ -12,6 +12,7 @@ import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
+import { validateConfig } from './lib/config';
 
 
 // Lazy load all pages
@@ -33,6 +34,15 @@ const PageLoader = () => (
 );
 
 function App() {
+  // Validate environment configuration
+  React.useEffect(() => {
+    if (!validateConfig()) {
+      console.error('❌ Environment configuration validation failed');
+    } else {
+      console.log('✅ Environment configuration validated');
+    }
+  }, []);
+
   return (
     <>
       <ErrorBoundary>

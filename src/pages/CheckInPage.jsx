@@ -3,6 +3,7 @@ import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { hash, encrypt, isPhone, isEmail } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 
@@ -238,10 +239,7 @@ export default function CheckInPage() {
     }
   }, [userRowId, clinicId]);
 
-  const AES_KEY = import.meta.env.VITE_AES_KEY;
-  if (!AES_KEY) {
-    console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
-  }
+  const AES_KEY = getAESKey();
 
   // 使用防抖的提交函数
   const handleSubmit = debounce(async (e) => {
