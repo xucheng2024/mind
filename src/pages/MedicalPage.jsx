@@ -30,7 +30,7 @@ export default function MedicalPage() {
     setForm(cleared);
     // 只更新医疗相关数据，保留 clinic_id 和其他重要数据
     const medicalData = { ...cleared };
-    // 确保不覆盖 clinic_id
+    // 确保不覆盖 clinic_id，只更新医疗相关字段
     updateRegistrationData(medicalData);
   }, []);
 
@@ -38,6 +38,14 @@ export default function MedicalPage() {
     console.log('✅ MedicalPage mounted');
     console.log('📋 Registration data:', registrationData);
     console.log('🏥 Clinic ID:', registrationData.clinic_id);
+    
+    // 检查 clinic_id 是否存在
+    if (!registrationData.clinic_id) {
+      console.error('❌ Missing clinic_id in MedicalPage');
+      console.log('🔍 Full registration data:', registrationData);
+    } else {
+      console.log('✅ Clinic ID found:', registrationData.clinic_id);
+    }
   }, [registrationData]);
 
   const handleSelect = (field, value) => {

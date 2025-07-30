@@ -3,7 +3,6 @@ const react = require('@vitejs/plugin-react')
 const { VitePWA } = require('vite-plugin-pwa')
 const legacy = require('@vitejs/plugin-legacy')
 const compression = require('vite-plugin-compression')
-const imagemin = require('vite-plugin-imagemin')
 
 module.exports = defineConfig({
   plugins: [
@@ -35,37 +34,6 @@ module.exports = defineConfig({
     compression({
       algorithm: 'gzip',
       ext: '.gz'
-    }),
-    compression({
-      algorithm: 'brotliCompress',
-      ext: '.br'
-    }),
-    imagemin({
-      gifsicle: {
-        optimizationLevel: 7,
-        interlaced: false
-      },
-      optipng: {
-        optimizationLevel: 7
-      },
-      mozjpeg: {
-        quality: 80
-      },
-      pngquant: {
-        quality: [0.8, 0.9],
-        speed: 4
-      },
-      svgo: {
-        plugins: [
-          {
-            name: 'removeViewBox'
-          },
-          {
-            name: 'removeEmptyAttrs',
-            active: false
-          }
-        ]
-      }
     }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -132,16 +100,14 @@ module.exports = defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          icons: ['react-icons'],
-          utils: ['uuid', 'crypto-js'],
-          ui: ['react-hot-toast', 'framer-motion'],
-          forms: ['react-input-mask', 'react-signature-canvas', 'react-hook-form', '@hookform/resolvers', 'zod'],
-          media: ['react-webcam', 'compressorjs'],
+          ui: ['react-hot-toast', 'framer-motion', 'react-icons'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-input-mask'],
+          media: ['react-webcam', 'compressorjs', 'react-signature-canvas'],
           calendar: ['react-big-calendar'],
           supabase: ['@supabase/supabase-js'],
-          dayjs: ['dayjs'],
+          utils: ['uuid', 'crypto-js', 'dayjs'],
           query: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
-          virtual: ['react-window', 'react-virtualized-auto-sizer']
+          virtual: ['react-window', 'react-virtualized-auto-sizer', 'react-intersection-observer']
         }
       }
     },
