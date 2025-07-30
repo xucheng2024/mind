@@ -18,6 +18,9 @@ export default function SelfiePage() {
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const [fileInputRef] = useState(() => React.createRef());
 
   // 检查相机权限 - iPhone优化版本
   const checkCamera = async () => {
@@ -215,6 +218,25 @@ export default function SelfiePage() {
     }, 500); // Add 500ms delay to ensure camera is ready
   };
 
+  // input file change handler for iOS PWA
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setCapturing(true);
+    setError('');
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageSrc(reader.result);
+      setCompressedBlob(file);
+      setCapturing(false);
+    };
+    reader.onerror = () => {
+      setError('Failed to read image. Please try again.');
+      setCapturing(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleRetake = () => {
     console.log('🔄 Retaking photo...');
     setImageSrc(null);
@@ -273,7 +295,7 @@ export default function SelfiePage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             <div className="mt-4 text-gray-600">Checking camera access...</div>
             <div className="mt-2 text-xs text-gray-400">
-              {window.matchMedia('(display-mode: standalone)').matches ? 'PWA Mode' : 'Browser Mode'}
+              {isPWA ? 'PWA Mode' : 'Browser Mode'}
             </div>
           </div>
         ) : !hasCamera ? (
@@ -281,8 +303,7 @@ export default function SelfiePage() {
             <div className="text-red-500 mb-4">⚠️ Camera not available</div>
             <div className="text-gray-600 mb-4 text-sm">{error}</div>
             <div className="text-gray-400 mb-4 text-xs">
-              {window.matchMedia('(display-mode: standalone)').matches ? 
-                'PWA Mode detected' : 'Browser Mode'}
+              {isPWA ? 'PWA Mode detected' : 'Browser Mode'}
             </div>
             <div className="text-gray-400 mb-4 text-xs">
               User Agent: {navigator.userAgent.substring(0, 50)}...
@@ -297,48 +318,64 @@ export default function SelfiePage() {
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
-              <Camera
-                ref={cameraRef}
-                aspectRatio={1}
-                facingMode="user"
-                idealResolution={{ width: 640, height: 480 }}
-                errorMessages={{
-                  noCameraAccessible: 'No camera accessible',
-                  permissionDenied: 'Permission denied',
-                  switchCamera: 'Switch camera',
-                  canvas: 'Canvas is not supported'
-                }}
-                videoReadyCallback={() => {
-                  console.log('✅ Camera video ready');
-                  setCameraReady(true);
-                  setError(''); // Clear any previous errors
-                }}
-                videoErrorCallback={(error) => {
-                  console.error('❌ Camera video error:', error);
-                  console.error('❌ Camera error details:', {
-                    name: error.name,
-                    message: error.message,
-                    stack: error.stack
-                  });
-                  setError('Camera error. Please check permissions and try again.');
-                  setCameraReady(false);
-                }}
-                onTakePhotoAnimationDone={() => {
-                  console.log('📸 Photo animation completed');
-                }}
-                // iPhone优化配置
-                disablePicture={false}
-                disableVideo={true}
-                showResolutionIndicator={false}
-              />
+              {/* iOS PWA 用 input file，其它用 Camera */}
+              {isIOS && isPWA ? (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                    disabled={capturing}
+                  >
+                    {capturing ? 'Processing...' : 'Take a Photo'}
+                  </button>
+                </>
+              ) : (
+                <Camera
+                  ref={cameraRef}
+                  aspectRatio={1}
+                  facingMode="user"
+                  idealResolution={{ width: 640, height: 480 }}
+                  errorMessages={{
+                    noCameraAccessible: 'No camera accessible',
+                    permissionDenied: 'Permission denied',
+                    switchCamera: 'Switch camera',
+                    canvas: 'Canvas is not supported'
+                  }}
+                  videoReadyCallback={() => {
+                    setCameraReady(true);
+                    setError('');
+                  }}
+                  videoErrorCallback={(error) => {
+                    setError('Camera error. Please check permissions and try again.');
+                    setCameraReady(false);
+                  }}
+                  onTakePhotoAnimationDone={() => {
+                  }}
+                  disablePicture={false}
+                  disableVideo={true}
+                  showResolutionIndicator={false}
+                />
+              )}
             </div>
-            <button
-              onClick={capture}
-              disabled={capturing || !cameraReady}
-              className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-            >
-              {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
-            </button>
+            {/* 只有非iOS PWA才显示拍照按钮 */}
+            {!(isIOS && isPWA) && (
+              <button
+                onClick={capture}
+                disabled={capturing || !cameraReady}
+                className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+              >
+                {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center mb-4">

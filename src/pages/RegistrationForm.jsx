@@ -44,17 +44,16 @@ export default function RegistrationForm() {
   const unitRef = useRef();
   const buildingRef = useRef();
 
+  // 只在首次挂载时同步 registrationData 到 form
   useEffect(() => {
     let timeoutId;
-
     if (!clinicId) {
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
       timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
-      // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
-    // 从registrationData恢复表单数据，而不是清空
+    // 只在首次挂载时同步 registrationData
     const restoredForm = {
       fullName: registrationData.fullName || '',
       idLast4: registrationData.idLast4 || '',
@@ -71,45 +70,11 @@ export default function RegistrationForm() {
       unit: registrationData.unit || ''
     };
     setForm(restoredForm);
-    
-    // 只在有 clinicId 时才更新 registrationData，但不要覆盖已清除的数据
-    if (clinicId && Object.keys(registrationData).length <= 1) {
-      // 只有在registrationData只有clinic_id时才更新
-      updateRegistrationData({
-        clinic_id: clinicId,
-        ...restoredForm
-      });
-    }
-
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [clinicId, navigate, registrationData]);
-
-  // 监听registrationData变化，更新表单
-  useEffect(() => {
-    console.log('📝 RegistrationForm: registrationData changed:', registrationData);
-    
-    // 从registrationData恢复表单数据
-    const restoredForm = {
-      fullName: registrationData.fullName || '',
-      idLast4: registrationData.idLast4 || '',
-      dobDay: registrationData.dobDay || '',
-      dobMonth: registrationData.dobMonth || '',
-      dobYear: registrationData.dobYear || '',
-      phone: registrationData.phone || '',
-      email: registrationData.email || '',
-      postalCode: registrationData.postalCode || '',
-      blockNo: registrationData.blockNo || '',
-      street: registrationData.street || '',
-      building: registrationData.building || '',
-      floor: registrationData.floor || '',
-      unit: registrationData.unit || ''
-    };
-    
-    console.log('📝 RegistrationForm: Setting form data:', restoredForm);
-    setForm(restoredForm);
-  }, [registrationData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clinicId, navigate]);
 
   // 防抖地址查询
   useEffect(() => {
