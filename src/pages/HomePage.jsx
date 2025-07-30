@@ -326,7 +326,7 @@ export default function HomePage() {
           <div className="w-full mb-6">
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-lg font-bold text-gray-800">Welcome back,</span>
+                <span className="text-lg font-bold text-gray-800">Welcome</span>
                 <span className="text-lg font-bold text-blue-600">{userInfo.full_name}</span>
               </div>
             </div>
