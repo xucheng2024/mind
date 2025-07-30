@@ -19,12 +19,13 @@ export default function SelfiePage() {
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
 
-  // 检查相机权限 - PWA优化版本
+  // 检查相机权限 - iPhone优化版本
   const checkCamera = async () => {
     console.log('🎥 Checking camera permission...');
     console.log('📱 User Agent:', navigator.userAgent);
     console.log('📱 PWA Mode:', window.matchMedia('(display-mode: standalone)').matches);
     console.log('📱 Standalone:', window.navigator.standalone);
+    console.log('📱 iOS:', /iPad|iPhone|iPod/.test(navigator.userAgent));
     
     try {
       // 先检查是否支持getUserMedia
@@ -38,14 +39,31 @@ export default function SelfiePage() {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       console.log('📹 Available video devices:', videoDevices.length);
 
-      // PWA环境下使用更简单的相机配置
-      const constraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 }
-        }
-      };
+      // iPhone优化配置
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      
+      let constraints;
+      if (isIOS) {
+        // iOS Safari需要更简单的配置
+        constraints = {
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        };
+        console.log('📱 iOS detected, using simplified constraints');
+      } else {
+        // 其他设备使用标准配置
+        constraints = {
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 }
+          }
+        };
+      }
 
       console.log('🎥 Requesting camera access with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -70,8 +88,16 @@ export default function SelfiePage() {
       
       let errorMessage = 'Unable to access camera. Please check your browser permissions and try again.';
       
+      // iPhone特定错误处理
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMessage = 'Camera access denied. Please allow camera access in your browser settings and refresh the page.';
+        if (isIOS && isPWA) {
+          errorMessage = 'Camera access denied. Please open Safari settings > Camera > Allow access, then refresh the app.';
+        } else {
+          errorMessage = 'Camera access denied. Please allow camera access in your browser settings and refresh the page.';
+        }
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         errorMessage = 'No camera found. Please make sure your device has a camera.';
       } else if (err.name === 'NotSupportedError') {
@@ -79,7 +105,11 @@ export default function SelfiePage() {
       } else if (err.message === 'Camera API not supported') {
         errorMessage = 'Camera not supported in this browser. Please try a different browser.';
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMessage = 'Camera is in use by another application. Please close other apps using the camera and try again.';
+        if (isIOS) {
+          errorMessage = 'Camera is in use. Please close other apps using the camera (like Camera app) and try again.';
+        } else {
+          errorMessage = 'Camera is in use by another application. Please close other apps using the camera and try again.';
+        }
       } else if (err.name === 'OverconstrainedError') {
         errorMessage = 'Camera constraints not supported. Please try again.';
       }
@@ -94,10 +124,17 @@ export default function SelfiePage() {
     // 检测是否在PWA环境中
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                    window.navigator.standalone === true;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     console.log('📱 PWA mode:', isPWA);
+    console.log('📱 iOS mode:', isIOS);
     
-    // 在PWA环境下添加延迟，确保Service Worker完全加载
-    if (isPWA) {
+    // iPhone PWA需要更长的延迟
+    if (isPWA && isIOS) {
+      console.log('📱 iPhone PWA detected, adding longer delay for camera initialization...');
+      setTimeout(() => {
+        checkCamera();
+      }, 2000);
+    } else if (isPWA) {
       console.log('📱 PWA detected, adding delay for camera initialization...');
       setTimeout(() => {
         checkCamera();
@@ -195,9 +232,14 @@ export default function SelfiePage() {
     // 检测是否在PWA环境中
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                    window.navigator.standalone === true;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    // 在PWA环境下添加延迟
-    if (isPWA) {
+    // iPhone PWA需要更长的延迟
+    if (isPWA && isIOS) {
+      setTimeout(() => {
+        checkCamera();
+      }, 1500);
+    } else if (isPWA) {
       setTimeout(() => {
         checkCamera();
       }, 500);
@@ -284,6 +326,10 @@ export default function SelfiePage() {
                 onTakePhotoAnimationDone={() => {
                   console.log('📸 Photo animation completed');
                 }}
+                // iPhone优化配置
+                disablePicture={false}
+                disableVideo={true}
+                showResolutionIndicator={false}
               />
             </div>
             <button
