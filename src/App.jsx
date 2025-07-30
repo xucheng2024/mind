@@ -7,6 +7,7 @@ import PWAStatus from './components/PWAStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import QueryProvider from './components/QueryProvider';
+import PWAInstallButton from './components/PWAInstallButton';
 import { RegistrationProvider } from '../context/RegistrationContext';
 
 // Lazy load all pages
@@ -49,6 +50,7 @@ function App() {
       <ManualInstallGuide />
       <PWAStatus />
       <PerformanceMonitor />
+      <PWAInstallButton />
     </>
   );
 }

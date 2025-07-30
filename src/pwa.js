@@ -36,8 +36,8 @@ export function setupInstallPrompt() {
     // Stash the event so it can be triggered later
     deferredPrompt = e;
     
-    // Show install button or prompt
-    showInstallPrompt();
+    // Don't show prompt automatically - wait for user gesture
+    console.log('PWA install prompt ready - waiting for user gesture');
   });
 }
 
@@ -56,6 +56,10 @@ export function showInstallPrompt() {
       deferredPrompt = null;
     });
   }
+}
+
+export function hasInstallPrompt() {
+  return !!deferredPrompt;
 }
 
 // Check for PWA installation
