@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
-import { debug } from '../utils/debug';
+
 
 const healthItems = [
   'HeartDisease', 'Diabetes', 'Hypertension', 'Cancer', 'Asthma',
@@ -36,16 +36,16 @@ export default function MedicalPage() {
   }, []);
 
   useEffect(() => {
-    debug.success('MedicalPage mounted');
-    debug.log('Registration data', registrationData);
-    debug.log('Clinic ID', registrationData.clinic_id);
+    window.debug.success('MedicalPage mounted');
+    window.debug.log('Registration data', registrationData);
+    window.debug.log('Clinic ID', registrationData.clinic_id);
     
     // 检查 clinic_id 是否存在
     if (!registrationData.clinic_id) {
-      debug.error('Missing clinic_id in MedicalPage');
-      debug.log('Full registration data', registrationData);
+      window.debug.error('Missing clinic_id in MedicalPage');
+      window.debug.log('Full registration data', registrationData);
     } else {
-      debug.success(`Clinic ID found: ${registrationData.clinic_id}`);
+      window.debug.success(`Clinic ID found: ${registrationData.clinic_id}`);
     }
   }, [registrationData]);
 

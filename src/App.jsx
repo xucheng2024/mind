@@ -10,8 +10,9 @@ import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
+import DebugPanel from './components/DebugPanel';
 import { RegistrationProvider } from '../context/RegistrationContext';
-import { debug } from './utils/debug';
+
 
 // Lazy load all pages
 const RegistrationForm = lazy(() => import('./pages/RegistrationForm'));
@@ -34,8 +35,8 @@ const PageLoader = () => (
 function App() {
   // Initialize debug system
   React.useEffect(() => {
-    debug.log('App initialized');
-    debug.success('Debug system ready');
+    window.debug.log('App initialized');
+    window.debug.success('Debug system ready');
   }, []);
 
   return (
@@ -62,6 +63,7 @@ function App() {
       <PWAInstallButton />
       <VersionUpdate />
       <PWAUpdateNotification />
+      <DebugPanel />
     </>
   );
 }
