@@ -10,12 +10,13 @@ export function registerPWA() {
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content is available
-                if (confirm('New version available! Reload to update?')) {
-                  window.location.reload();
+                              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content is available
+                  // Use a more modern approach - dispatch a custom event
+                  window.dispatchEvent(new CustomEvent('pwa-update-available', {
+                    detail: { newWorker }
+                  }));
                 }
-              }
             });
           });
         })

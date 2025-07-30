@@ -9,6 +9,7 @@ import PerformanceMonitor from './components/PerformanceMonitor';
 import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
+import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { RegistrationProvider } from '../context/RegistrationContext';
 
 // Lazy load all pages
@@ -53,6 +54,7 @@ function App() {
              <PerformanceMonitor />
              <PWAInstallButton />
              <VersionUpdate />
+             <PWAUpdateNotification />
     </>
   );
 }
