@@ -256,7 +256,19 @@ export default function CalendarPage() {
     
     if (!isClosed) {
       const availableSlots = await getAvailableHoursForDate(selectedDate);
-      setAvailableHours(availableSlots);
+      console.log('📅 Available slots result:', availableSlots);
+      
+      // Handle different return types from getAvailableHoursForDate
+      if (availableSlots === 'closed') {
+        setAvailableHours([]);
+        setIsClosedDay(true);
+      } else if (Array.isArray(availableSlots)) {
+        setAvailableHours(availableSlots);
+        setIsClosedDay(false);
+      } else {
+        console.error('❌ Unexpected result from getAvailableHoursForDate:', availableSlots);
+        setAvailableHours([]);
+      }
       
       // Get events for the selected date for modal
       const selectedDateStart = new Date(selectedDate);
@@ -580,11 +592,29 @@ export default function CalendarPage() {
                       week: 'Week',
                       list: 'List'
                     }}
+                    className="mobile-friendly-calendar"
                     dayCellDidMount={(arg) => {
-                      // Add click handler to day cells
-                      arg.el.addEventListener('click', () => {
+                      // Add click and touch handlers to day cells for better mobile support
+                      const handleDateClick = () => {
                         const date = arg.date;
                         handleDateSelect({ start: date });
+                      };
+                      
+                      // Add click event
+                      arg.el.addEventListener('click', handleDateClick);
+                      
+                      // Add touch events for mobile
+                      arg.el.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        console.log('📱 Touch start on date:', arg.date.toDateString());
+                        arg.el.style.backgroundColor = '#f3f4f6';
+                      });
+                      
+                      arg.el.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        console.log('📱 Touch end on date:', arg.date.toDateString());
+                        arg.el.style.backgroundColor = '';
+                        handleDateClick();
                       });
                       
                       // Gray out disabled dates

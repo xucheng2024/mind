@@ -242,3 +242,31 @@ input:disabled, select:disabled, textarea:disabled {
   @apply bg-gray-400;
 }
 
+/* Mobile-friendly calendar styles */
+.mobile-friendly-calendar .fc-daygrid-day {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-friendly-calendar .fc-daygrid-day:hover {
+  background-color: #f3f4f6;
+}
+
+.mobile-friendly-calendar .fc-daygrid-day:active {
+  background-color: #e5e7eb;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  .mobile-friendly-calendar .fc-daygrid-day {
+    min-height: 44px; /* Minimum touch target size */
+  }
+  
+  .mobile-friendly-calendar .fc-daygrid-day-number {
+    font-size: 16px;
+    padding: 8px;
+  }
+}
+
