@@ -19,7 +19,7 @@ export default function SelfiePage() {
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
 
-  // 检查相机权限
+  // 检查相机权限 - PWA优化版本
   const checkCamera = async () => {
     console.log('🎥 Checking camera permission...');
     try {
@@ -28,41 +28,70 @@ export default function SelfiePage() {
         throw new Error('Camera API not supported');
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      // PWA环境下使用更简单的相机配置
+      const constraints = {
+        video: {
           facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 }
+        }
+      };
+
+      console.log('🎥 Requesting camera access...');
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('✅ Camera permission granted');
       setHasCamera(true);
       setError('');
-      // 记得关闭流
-      stream.getTracks().forEach(track => track.stop());
+      
+      // 立即关闭流，避免占用相机
+      if (stream && stream.getTracks) {
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🎥 Camera stream stopped');
+        });
+      }
     } catch (err) {
       console.error('❌ Camera error:', err);
       setHasCamera(false);
       
+      let errorMessage = 'Unable to access camera. Please check your browser permissions and try again.';
+      
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera access denied. Please allow camera access in your browser settings and refresh the page.');
+        errorMessage = 'Camera access denied. Please allow camera access in your browser settings and refresh the page.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setError('No camera found. Please make sure your device has a camera.');
+        errorMessage = 'No camera found. Please make sure your device has a camera.';
       } else if (err.name === 'NotSupportedError') {
-        setError('Camera not supported in this browser. Please try a different browser.');
+        errorMessage = 'Camera not supported in this browser. Please try a different browser.';
       } else if (err.message === 'Camera API not supported') {
-        setError('Camera not supported in this browser. Please try a different browser.');
-      } else {
-        setError('Unable to access camera. Please check your browser permissions and try again.');
+        errorMessage = 'Camera not supported in this browser. Please try a different browser.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMessage = 'Camera is in use by another application. Please close other apps using the camera and try again.';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage = 'Camera constraints not supported. Please try again.';
       }
+      
+      setError(errorMessage);
     } finally {
       setCameraLoading(false);
     }
   };
 
   useEffect(() => {
-    checkCamera();
+    // 检测是否在PWA环境中
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true;
+    console.log('📱 PWA mode:', isPWA);
+    
+    // 在PWA环境下添加延迟，确保Service Worker完全加载
+    if (isPWA) {
+      console.log('📱 PWA detected, adding delay for camera initialization...');
+      setTimeout(() => {
+        checkCamera();
+      }, 1000);
+    } else {
+      checkCamera();
+    }
   }, []);
 
   const capture = () => {
@@ -149,8 +178,19 @@ export default function SelfiePage() {
     setError('');
     setCameraLoading(true);
     setCameraReady(false);
-    // Re-check camera permissions
-    checkCamera();
+    
+    // 检测是否在PWA环境中
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true;
+    
+    // 在PWA环境下添加延迟
+    if (isPWA) {
+      setTimeout(() => {
+        checkCamera();
+      }, 500);
+    } else {
+      checkCamera();
+    }
   };
 
   const handleSubmit = (e) => {
@@ -177,7 +217,11 @@ export default function SelfiePage() {
         ) : !hasCamera ? (
           <div className="flex flex-col items-center justify-center h-[220px] text-center">
             <div className="text-red-500 mb-4">⚠️ Camera not available</div>
-            <div className="text-gray-600 mb-4">{error}</div>
+            <div className="text-gray-600 mb-4 text-sm">{error}</div>
+            <div className="text-gray-400 mb-4 text-xs">
+              {window.matchMedia('(display-mode: standalone)').matches ? 
+                'PWA Mode detected' : 'Browser Mode'}
+            </div>
             <button
               onClick={handleRetryCamera}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -192,6 +236,7 @@ export default function SelfiePage() {
                 ref={cameraRef}
                 aspectRatio={1}
                 facingMode="user"
+                idealResolution={{ width: 640, height: 480 }}
                 errorMessages={{
                   noCameraAccessible: 'No camera accessible',
                   permissionDenied: 'Permission denied',
@@ -205,6 +250,10 @@ export default function SelfiePage() {
                 videoErrorCallback={(error) => {
                   console.error('❌ Camera video error:', error);
                   setError('Camera error. Please check permissions.');
+                  setCameraReady(false);
+                }}
+                onTakePhotoAnimationDone={() => {
+                  console.log('📸 Photo animation completed');
                 }}
               />
             </div>
