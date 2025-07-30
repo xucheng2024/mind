@@ -7,6 +7,12 @@ const InstallPrompt = () => {
   const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
+    // Check if user has dismissed the install prompt
+    const hasDismissed = localStorage.getItem('pwa_install_prompt_dismissed');
+    if (hasDismissed) {
+      return;
+    }
+
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -42,6 +48,8 @@ const InstallPrompt = () => {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    // Remember that user dismissed the prompt
+    localStorage.setItem('pwa_install_prompt_dismissed', 'true');
   };
 
   if (!showPrompt) return null;
