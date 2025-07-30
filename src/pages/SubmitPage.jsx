@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import { hash, encrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
+import cacheManager from '../lib/cache';
 
 export default function SubmitPage() {
   const navigate = useNavigate();
@@ -194,10 +195,22 @@ export default function SubmitPage() {
         return;
       }
 
-      // After successful registration, save user_id, user_row_id, and clinic_id to localStorage to achieve registered-as-logged-in experience
-      if (user_id) localStorage.setItem('user_id', user_id);
-      if (user_row_id) localStorage.setItem('user_row_id', user_row_id);
-      if (registrationData.clinic_id) localStorage.setItem('clinic_id', registrationData.clinic_id);
+      // After successful registration, save login info for auto-login
+      if (user_id && user_row_id && registrationData.clinic_id) {
+        cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id);
+      }
+      
+      // Clean up all registration-related cache and data
+      console.log('[SubmitPage] Cleaning up registration data...');
+      
+      // Clear all registration cache using cache manager
+      await cacheManager.clearRegistrationCache();
+      
+      // Clear registration context data
+      updateRegistrationData({});
+      
+      console.log('[SubmitPage] Cache cleanup completed');
+      
       // Only show successful registration if all are successful
       setSubmitted(true);
       setLoading(false);

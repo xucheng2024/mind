@@ -10,6 +10,7 @@ import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
 import Button from '../components/Button';
 import { decrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
+import cacheManager from '../lib/cache';
 
 
 export default function HomePage() {
@@ -31,14 +32,12 @@ export default function HomePage() {
   // 检查登录状态
   useEffect(() => {
     const checkLoginStatus = () => {
-      const storedUserId = localStorage.getItem('user_id');
-      const storedUserRowId = localStorage.getItem('user_row_id');
-      const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
-      
-      if (storedUserId && storedUserRowId && storedClinicId) {
+      // 使用缓存管理器检查登录状态
+      if (cacheManager.isLoggedIn()) {
+        const loginInfo = cacheManager.getLoginInfo();
         setIsLoggedIn(true);
         // 获取用户信息
-        fetchUserInfo(storedUserRowId, storedClinicId);
+        fetchUserInfo(loginInfo.userRowId, loginInfo.clinicId);
       } else {
         setIsLoggedIn(false);
         setUserInfo(null);
@@ -210,13 +209,12 @@ export default function HomePage() {
   const handleLogoutClick = debounce(() => {
     console.log('🚪 Logging out...');
     setLogoutLoading(true);
-    // Only clear user-related data, preserve registration data
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_row_id');
-    localStorage.removeItem('clinic_id');
-    sessionStorage.clear();
-    // 立即重新加载页面
-    window.location.reload();
+    // 使用缓存管理器清除登录信息
+    cacheManager.clearLoginInfo();
+    // Update state immediately instead of reloading
+    setIsLoggedIn(false);
+    setUserInfo(null);
+    setLogoutLoading(false);
   }, 100);
 
   return (
@@ -263,8 +261,8 @@ export default function HomePage() {
                 On-site Check-in
               </Button>
               <Button
-                variant="ghost"
-                className="bg-transparent border-0 text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-sm font-normal"
+                variant="secondary"
+                className="bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-400 text-sm font-normal"
                 onClick={handleLogoutClick}
                 loading={logoutLoading}
                 disabled={logoutLoading}
@@ -315,7 +313,8 @@ export default function HomePage() {
                 On-site Check-in
               </Button>
               <Button
-                variant="ghost"
+                variant="secondary"
+                className="bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-400 text-sm font-normal"
                 onClick={handleLogoutClick}
               >
                 Logout
