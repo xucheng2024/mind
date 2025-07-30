@@ -220,7 +220,7 @@ export default function HomePage() {
       <div className="w-full flex flex-col items-center mb-10 mt-12">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
         <div className="text-base text-gray-400 font-medium">Traditional Chinese Medicine & Wellness</div>
-        <div className="mt-4 w-24 h-24 rounded-full overflow-hidden shadow-lg">
+        <div className="mt-4 w-full max-w-md h-48 rounded-xl overflow-hidden shadow-lg">
           <LazyImage 
             src="/clinic-illustration.svg" 
             alt="Clinic" 
