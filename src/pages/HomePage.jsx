@@ -191,7 +191,9 @@ export default function HomePage() {
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
     console.log('🏠 HomePage: Clicking Register button');
-    navigate('/register?clinic_id=' + clinicId);
+    // 确保有有效的clinic_id
+    const validClinicId = clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
+    navigate('/register?clinic_id=' + validClinicId);
   }, 200);
 
   // 防抖的预约按钮点击
@@ -209,7 +211,7 @@ export default function HomePage() {
   const handleLogoutClick = debounce(() => {
     console.log('🚪 Logging out...');
     setLogoutLoading(true);
-    // 使用缓存管理器清除登录信息
+    // 使用缓存管理器清除登录信息，但保留clinic_id
     cacheManager.clearLoginInfo();
     // Update state immediately instead of reloading
     setIsLoggedIn(false);
@@ -262,7 +264,6 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="secondary"
-                className="bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-400 text-sm font-normal"
                 onClick={handleLogoutClick}
                 loading={logoutLoading}
                 disabled={logoutLoading}
@@ -312,13 +313,7 @@ export default function HomePage() {
               >
                 On-site Check-in
               </Button>
-              <Button
-                variant="secondary"
-                className="bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 hover:border-gray-400 text-sm font-normal"
-                onClick={handleLogoutClick}
-              >
-                Logout
-              </Button>
+
               {checkinError && (
                 <div className="flex justify-center w-full">
                   <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-2 mt-3 text-center text-sm font-medium max-w-xs w-full animate-fade-in">

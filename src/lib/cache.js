@@ -154,9 +154,9 @@ class CacheManager {
   clearLoginInfo() {
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_row_id');
-    localStorage.removeItem('clinic_id');
     localStorage.removeItem('login_timestamp');
-    console.log('🔓 Login info cleared');
+    // 保留clinic_id，因为用户可能还需要注册
+    console.log('🔓 Login info cleared (clinic_id preserved)');
   }
 
   // Get login info

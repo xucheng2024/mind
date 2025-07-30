@@ -14,7 +14,7 @@ import { getClinicId } from '../config/clinic';
 export default function RegistrationForm() {
   console.log('📝 RegistrationForm: Page loaded');
   const navigate = useNavigate();
-  const { updateRegistrationData } = useRegistration();
+  const { registrationData, updateRegistrationData } = useRegistration();
   const [searchParams] = useSearchParams();
   const clinicId = getClinicId(searchParams, localStorage);
 
