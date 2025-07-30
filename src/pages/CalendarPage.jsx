@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, dayjsLocalizer } from 'react-big-calendar';
+import Calendar from 'react-calendar';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-calendar/dist/Calendar.css';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -47,7 +47,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 }
 
-const localizer = dayjsLocalizer(dayjs);
+// Simple calendar implementation without react-big-calendar
 
 import { useNavigate } from 'react-router-dom';
 

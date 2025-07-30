@@ -39,30 +39,10 @@ module.exports = defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365
-              }
-            }
-          }
-        ]
+        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       },
       manifest: {
         name: 'Clinic App',
@@ -102,20 +82,18 @@ module.exports = defineConfig({
           router: ['react-router-dom'],
           ui: ['react-hot-toast', 'framer-motion', 'react-icons'],
           forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-input-mask'],
-          media: ['react-webcam', 'compressorjs', 'react-signature-canvas'],
-          calendar: ['react-big-calendar'],
+          media: ['compressorjs', 'react-signature-canvas'],
+          calendar: ['react-calendar'],
           supabase: ['@supabase/supabase-js'],
           utils: ['uuid', 'crypto-js', 'dayjs'],
-          query: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
-          virtual: ['react-window', 'react-virtualized-auto-sizer', 'react-intersection-observer']
+          query: ['@tanstack/react-query', '@tanstack/react-query-devtools']
         }
       }
     },
     terserOptions: {
       compress: {
-        drop_console: false, // 保留 console.log 用于调试
-        drop_debugger: true,
-        pure_funcs: [] // 不移除任何函数
+        drop_console: false,
+        drop_debugger: true
       },
       mangle: {
         safari10: true
@@ -127,6 +105,9 @@ module.exports = defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['@supabase/supabase-js']
+    exclude: ['@supabase/supabase-js'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   }
 })
