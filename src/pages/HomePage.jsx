@@ -198,46 +198,49 @@ export default function HomePage() {
     // 保存当前的clinic_id
     const currentClinicId = registrationData.clinic_id || clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
     
-    // 清除所有表单数据
-    updateRegistrationData({
-      clinic_id: currentClinicId,
-      fullName: '',
-      idLast4: '',
-      dobDay: '',
-      dobMonth: '',
-      dobYear: '',
-      phone: '',
-      email: '',
-      postalCode: '',
-      blockNo: '',
-      street: '',
-      building: '',
-      floor: '',
-      unit: '',
-      selfie: '',
-      signature: '',
-      // 清除健康声明
-      HeartDisease: '',
-      Diabetes: '',
-      Hypertension: '',
-      Cancer: '',
-      Asthma: '',
-      MentalIllness: '',
-      Epilepsy: '',
-      Stroke: '',
-      KidneyDisease: '',
-      LiverDisease: '',
-      otherHealthNotes: '',
-      // 清除同意书
-      consentAgreed: false,
-      releaseAgreed: false,
-      indemnityAgreed: false
-    });
+    // 先导航到注册页面
+    console.log('✅ Navigating to register with clinic_id:', currentClinicId);
+    navigate('/register?clinic_id=' + currentClinicId);
     
-    // 确保有有效的clinic_id
-    const validClinicId = currentClinicId;
-    console.log('✅ Form cleared, navigating to register with clinic_id:', validClinicId);
-    navigate('/register?clinic_id=' + validClinicId);
+    // 然后清除所有表单数据（在下一个tick执行，确保导航先完成）
+    setTimeout(() => {
+      console.log('🧹 Clearing registration form data after navigation...');
+      updateRegistrationData({
+        clinic_id: currentClinicId,
+        fullName: '',
+        idLast4: '',
+        dobDay: '',
+        dobMonth: '',
+        dobYear: '',
+        phone: '',
+        email: '',
+        postalCode: '',
+        blockNo: '',
+        street: '',
+        building: '',
+        floor: '',
+        unit: '',
+        selfie: '',
+        signature: '',
+        // 清除健康声明
+        HeartDisease: '',
+        Diabetes: '',
+        Hypertension: '',
+        Cancer: '',
+        Asthma: '',
+        MentalIllness: '',
+        Epilepsy: '',
+        Stroke: '',
+        KidneyDisease: '',
+        LiverDisease: '',
+        otherHealthNotes: '',
+        // 清除同意书
+        consentAgreed: false,
+        releaseAgreed: false,
+        indemnityAgreed: false
+      });
+      console.log('✅ Registration form data cleared');
+    }, 100);
   }, 200);
 
   // 防抖的预约按钮点击

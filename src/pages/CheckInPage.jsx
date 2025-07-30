@@ -394,7 +394,7 @@ export default function CheckInPage() {
                 type="button"
                 onClick={() => navigate('/')}
               >
-                Back to Home
+                Back Home
               </button>
             </div>
           </form>

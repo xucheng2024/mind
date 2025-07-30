@@ -1132,7 +1132,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-      {/* Back to home button */}
+      {/* Back home button */}
       <div className="w-full flex justify-center mt-8 mb-4">
         <button
           onClick={() => window.location.href = '/'}

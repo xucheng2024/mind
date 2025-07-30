@@ -83,7 +83,32 @@ export default function RegistrationForm() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [clinicId, navigate]);
+  }, [clinicId, navigate, registrationData]);
+
+  // 监听registrationData变化，更新表单
+  useEffect(() => {
+    console.log('📝 RegistrationForm: registrationData changed:', registrationData);
+    
+    // 从registrationData恢复表单数据
+    const restoredForm = {
+      fullName: registrationData.fullName || '',
+      idLast4: registrationData.idLast4 || '',
+      dobDay: registrationData.dobDay || '',
+      dobMonth: registrationData.dobMonth || '',
+      dobYear: registrationData.dobYear || '',
+      phone: registrationData.phone || '',
+      email: registrationData.email || '',
+      postalCode: registrationData.postalCode || '',
+      blockNo: registrationData.blockNo || '',
+      street: registrationData.street || '',
+      building: registrationData.building || '',
+      floor: registrationData.floor || '',
+      unit: registrationData.unit || ''
+    };
+    
+    console.log('📝 RegistrationForm: Setting form data:', restoredForm);
+    setForm(restoredForm);
+  }, [registrationData]);
 
   // 防抖地址查询
   useEffect(() => {
