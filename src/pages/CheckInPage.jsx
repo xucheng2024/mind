@@ -319,7 +319,6 @@ export default function CheckInPage() {
       setCheckedInTime(new Date().toLocaleString());
       setSuccess(true);
       toast.dismiss(loadingToast);
-      toast.success('Check-in successful!');
     } catch (err) {
       console.log('[handleSubmit] error:', err);
       toast.dismiss(loadingToast);

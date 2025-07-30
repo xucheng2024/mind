@@ -296,7 +296,6 @@ export default function RegistrationForm() {
 
       console.log('✅ Registration successful, navigating to medical page');
       toast.dismiss(loadingToast);
-      toast.success('Registration successful!');
       setLoading(false);
       navigate('/register/medical');
     } catch (error) {

@@ -152,7 +152,6 @@ export default function HomePage() {
     try {
       await checkInCore(data);
       toast.dismiss(loadingToast);
-      toast.success('Check-in successful!');
       setCheckinSuccess(true);
       setCheckinError('');
     } catch (err) {
@@ -174,7 +173,6 @@ export default function HomePage() {
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
     console.log('🏠 HomePage: Clicking Register button');
-    toast.success('Redirecting to registration...');
     navigate('/register?clinic_id=' + clinicId);
   }, 200);
 
@@ -183,17 +181,14 @@ export default function HomePage() {
     const storedUserId = localStorage.getItem('user_id');
     const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
     if (storedUserId && storedClinicId) {
-      toast.success('Redirecting to booking...');
       navigate(`/booking/slots?clinic_id=${storedClinicId}&user_id=${storedUserId}`);
     } else {
-      toast('Please login first');
       navigate('/booking?clinic_id=' + clinicId);
     }
   }, 200);
 
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
-    toast.success('Logging out...');
     // Clear all localStorage data
     localStorage.clear();
     // Also clear any sessionStorage if used
