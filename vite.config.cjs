@@ -140,7 +140,8 @@ module.exports = defineConfig({
           calendar: ['react-big-calendar'],
           supabase: ['@supabase/supabase-js'],
           dayjs: ['dayjs'],
-          query: ['@tanstack/react-query', '@tanstack/react-query-devtools']
+          query: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
+          virtual: ['react-window', 'react-virtualized-auto-sizer']
         }
       }
     },
