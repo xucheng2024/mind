@@ -32,13 +32,16 @@ export default function HomePage() {
   // 检查登录状态
   useEffect(() => {
     const checkLoginStatus = () => {
+      console.log('🔍 HomePage - Checking login status...');
       // 使用缓存管理器检查登录状态
       if (cacheManager.isLoggedIn()) {
         const loginInfo = cacheManager.getLoginInfo();
+        console.log('✅ HomePage - User logged in:', loginInfo);
         setIsLoggedIn(true);
         // 获取用户信息
         fetchUserInfo(loginInfo.userRowId, loginInfo.clinicId);
       } else {
+        console.log('❌ HomePage - User not logged in');
         setIsLoggedIn(false);
         setUserInfo(null);
       }
@@ -281,12 +284,19 @@ export default function HomePage() {
 
   // 防抖的预约按钮点击
   const handleBookingClick = debounce(() => {
+    console.log('🎯 HomePage - Book appointment clicked');
     const storedUserRowId = localStorage.getItem('user_row_id');
     const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
+    console.log('📋 HomePage - Stored data:', { storedUserRowId, storedClinicId, clinicId });
+    
     if (storedUserRowId && storedClinicId) {
-      navigate(`/booking/slots?clinic_id=${storedClinicId}&user_row_id=${storedUserRowId}`);
+      const url = `/booking/slots?clinic_id=${storedClinicId}&user_row_id=${storedUserRowId}`;
+      console.log('🚀 HomePage - Navigating to:', url);
+      navigate(url);
     } else {
-      navigate('/booking?clinic_id=' + clinicId);
+      const url = '/booking?clinic_id=' + clinicId;
+      console.log('⚠️ HomePage - Missing data, navigating to:', url);
+      navigate(url);
     }
   }, 200);
 

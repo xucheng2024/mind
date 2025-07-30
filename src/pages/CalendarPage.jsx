@@ -61,8 +61,12 @@ export default function CalendarPage() {
   if (!userRowId) userRowId = localStorage.getItem('user_row_id');
   // Redirect to booking if missing
   React.useEffect(() => {
+    console.log('🔍 CalendarPage - Checking params:', { clinicId, userRowId });
     if (!clinicId || !userRowId) {
+      console.log('⚠️ CalendarPage - Missing params, redirecting to booking');
       navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
+    } else {
+      console.log('✅ CalendarPage - Params valid, proceeding');
     }
   }, [clinicId, userRowId, navigate]);
 
@@ -135,8 +139,12 @@ export default function CalendarPage() {
 
   // Fetch appointment data
   useEffect(() => {
-    if (!clinicId) return;
+    if (!clinicId || !userRowId) {
+      console.log('⚠️ CalendarPage - Missing clinicId or userRowId for data fetch');
+      return;
+    }
     
+    console.log('📊 CalendarPage - Fetching appointments for:', { clinicId, userRowId });
     setLoading(true);
     supabase
       .from('visits')
@@ -146,7 +154,7 @@ export default function CalendarPage() {
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
-          console.error('Failed to fetch appointments:', error);
+          console.error('❌ CalendarPage - Failed to fetch appointments:', error);
           return;
         }
         const evts = (data || [])
@@ -171,15 +179,27 @@ export default function CalendarPage() {
 
   // Fetch clinic business hours
   useEffect(() => {
-    if (!clinicId) return;
+    if (!clinicId) {
+      console.log('⚠️ CalendarPage - Missing clinicId for business hours fetch');
+      return;
+    }
+    
+    console.log('🏢 CalendarPage - Fetching business hours for clinic:', clinicId);
     supabase
       .from('clinics')
       .select('business_hours')
       .eq('id', clinicId)
       .single()
       .then(({ data, error }) => {
-        if (!error && data && data.business_hours) {
+        if (error) {
+          console.error('❌ CalendarPage - Failed to fetch business hours:', error);
+          return;
+        }
+        if (data && data.business_hours) {
+          console.log('✅ CalendarPage - Business hours loaded:', data.business_hours);
           setBusinessHours(data.business_hours);
+        } else {
+          console.log('⚠️ CalendarPage - No business hours found for clinic');
         }
       });
   }, [clinicId]);

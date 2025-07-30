@@ -132,21 +132,24 @@ class CacheManager {
     const clinicId = localStorage.getItem('clinic_id');
     const loginTimestamp = localStorage.getItem('login_timestamp');
     
+    console.log('🔍 CacheManager - Checking login status:', { userId, userRowId, clinicId, loginTimestamp });
+    
     // Check if login info exists and is not too old (30 days)
     if (userId && userRowId && clinicId && loginTimestamp) {
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
       const isRecent = parseInt(loginTimestamp) > thirtyDaysAgo;
       
       if (isRecent) {
-        console.log('✅ User is logged in (auto-login)');
+        console.log('✅ CacheManager - User is logged in (auto-login)');
         return true;
       } else {
-        console.log('⏰ Login expired, clearing old login info');
+        console.log('⏰ CacheManager - Login expired, clearing old login info');
         this.clearLoginInfo();
         return false;
       }
     }
     
+    console.log('❌ CacheManager - User not logged in');
     return false;
   }
 
@@ -161,11 +164,13 @@ class CacheManager {
 
   // Get login info
   getLoginInfo() {
-    return {
+    const loginInfo = {
       userId: localStorage.getItem('user_id'),
       userRowId: localStorage.getItem('user_row_id'),
       clinicId: localStorage.getItem('clinic_id')
     };
+    console.log('📋 CacheManager - Getting login info:', loginInfo);
+    return loginInfo;
   }
 }
 
