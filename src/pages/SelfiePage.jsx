@@ -170,23 +170,8 @@ export default function SelfiePage() {
     setCameraLoading(true);
     setCameraReady(false);
     
-    // 检测是否在PWA环境中
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    // iPhone PWA需要更长的延迟
-    if (isPWA && isIOS) {
-      setTimeout(() => {
-        checkCamera();
-      }, 1500);
-    } else if (isPWA) {
-      setTimeout(() => {
-        checkCamera();
-      }, 500);
-    } else {
-      checkCamera();
-    }
+    // 直接检查相机，不需要延迟
+    checkCamera();
   };
 
 
@@ -215,17 +200,11 @@ export default function SelfiePage() {
           <div className="flex flex-col items-center justify-center h-[220px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             <div className="mt-4 text-gray-600">Checking camera access...</div>
-            <div className="mt-2 text-xs text-gray-400">
-              {isPWA ? 'PWA Mode' : 'Browser Mode'}
-            </div>
           </div>
         ) : !hasCamera ? (
           <div className="flex flex-col items-center justify-center h-[220px] text-center">
             <div className="text-red-500 mb-4">⚠️ Camera not available</div>
             <div className="text-gray-600 mb-4 text-sm">{error}</div>
-            <div className="text-gray-400 mb-4 text-xs">
-              {isPWA ? 'PWA Mode detected' : 'Browser Mode'}
-            </div>
             <div className="text-gray-400 mb-4 text-xs">
               User Agent: {navigator.userAgent.substring(0, 50)}...
             </div>
