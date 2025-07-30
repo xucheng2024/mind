@@ -7,6 +7,7 @@ import InputMask from 'react-input-mask';
 import { hash, encrypt } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
+import { debug } from '../utils/debug';
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
@@ -42,10 +43,14 @@ export default function RegistrationForm() {
 
   useEffect(() => {
     let timeoutId;
+    debug.log('RegistrationForm mounted with clinicId', clinicId);
+    
     if (!clinicId) {
+      debug.error('Missing clinic_id in URL');
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
       timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
+      debug.success(`Clinic ID found: ${clinicId}`);
       // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
@@ -57,6 +62,7 @@ export default function RegistrationForm() {
     });
     // 只在有 clinicId 时才更新 registrationData
     if (clinicId) {
+      debug.log('Updating registration data with clinic_id', clinicId);
       updateRegistrationData({
         clinic_id: clinicId,
         fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
