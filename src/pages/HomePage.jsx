@@ -172,6 +172,7 @@ export default function HomePage() {
 
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
+    console.log('🏠 HomePage: Clicking Register button');
     toast.success('Redirecting to registration...');
     navigate('/register?clinic_id=' + clinicId);
   }, 200);
