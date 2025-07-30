@@ -72,8 +72,9 @@ export default function RegistrationForm() {
     };
     setForm(restoredForm);
     
-    // 只在有 clinicId 时才更新 registrationData，保留现有数据
-    if (clinicId) {
+    // 只在有 clinicId 时才更新 registrationData，但不要覆盖已清除的数据
+    if (clinicId && Object.keys(registrationData).length <= 1) {
+      // 只有在registrationData只有clinic_id时才更新
       updateRegistrationData({
         clinic_id: clinicId,
         ...restoredForm

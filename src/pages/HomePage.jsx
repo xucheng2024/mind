@@ -137,10 +137,51 @@ export default function HomePage() {
     }
   }, [checkinSuccess]);
 
+  // 判断是否在营业时间
+  function isWithinBusinessHours(businessHours) {
+    if (!businessHours) return false;
+    const now = new Date();
+    const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const weekday = weekdays[now.getDay()];
+    const dayConfig = businessHours[weekday];
+    if (!dayConfig || dayConfig.closed) return false;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentMinutes = currentHour * 60 + currentMinute;
+    const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
+    const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+
+  const [businessHours, setBusinessHours] = React.useState(null);
+
+  React.useEffect(() => {
+    // 获取营业时间
+    if (!clinicId) return;
+    supabase
+      .from('clinics')
+      .select('business_hours')
+      .eq('id', clinicId)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data && data.business_hours) {
+          setBusinessHours(data.business_hours);
+        }
+      });
+  }, [clinicId]);
+
   // 使用防抖的check-in函数
   const handleHomeCheckIn = debounce(async () => {
     setCheckNavLoading(true);
     setCheckinError('');
+    // 新增：营业时间判断
+    if (!isWithinBusinessHours(businessHours)) {
+      toast.error('Not within business hours, please try later.');
+      setCheckNavLoading(false);
+      return;
+    }
     const loadingToast = toast.loading('Processing check-in...');
     
     const storedUserRowId = localStorage.getItem('user_row_id');
@@ -198,49 +239,44 @@ export default function HomePage() {
     // 保存当前的clinic_id
     const currentClinicId = registrationData.clinic_id || clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
     
-    // 先导航到注册页面
-    console.log('✅ Navigating to register with clinic_id:', currentClinicId);
-    navigate('/register?clinic_id=' + currentClinicId);
+    // 立即清除所有表单数据
+    updateRegistrationData({
+      clinic_id: currentClinicId,
+      fullName: '',
+      idLast4: '',
+      dobDay: '',
+      dobMonth: '',
+      dobYear: '',
+      phone: '',
+      email: '',
+      postalCode: '',
+      blockNo: '',
+      street: '',
+      building: '',
+      floor: '',
+      unit: '',
+      selfie: '',
+      signature: '',
+      // 清除健康声明
+      HeartDisease: '',
+      Diabetes: '',
+      Hypertension: '',
+      Cancer: '',
+      Asthma: '',
+      MentalIllness: '',
+      Epilepsy: '',
+      Stroke: '',
+      KidneyDisease: '',
+      LiverDisease: '',
+      otherHealthNotes: '',
+      // 清除同意书
+      consentAgreed: false,
+      releaseAgreed: false,
+      indemnityAgreed: false
+    });
     
-    // 然后清除所有表单数据（在下一个tick执行，确保导航先完成）
-    setTimeout(() => {
-      console.log('🧹 Clearing registration form data after navigation...');
-      updateRegistrationData({
-        clinic_id: currentClinicId,
-        fullName: '',
-        idLast4: '',
-        dobDay: '',
-        dobMonth: '',
-        dobYear: '',
-        phone: '',
-        email: '',
-        postalCode: '',
-        blockNo: '',
-        street: '',
-        building: '',
-        floor: '',
-        unit: '',
-        selfie: '',
-        signature: '',
-        // 清除健康声明
-        HeartDisease: '',
-        Diabetes: '',
-        Hypertension: '',
-        Cancer: '',
-        Asthma: '',
-        MentalIllness: '',
-        Epilepsy: '',
-        Stroke: '',
-        KidneyDisease: '',
-        LiverDisease: '',
-        otherHealthNotes: '',
-        // 清除同意书
-        consentAgreed: false,
-        releaseAgreed: false,
-        indemnityAgreed: false
-      });
-      console.log('✅ Registration form data cleared');
-    }, 100);
+    console.log('✅ Registration form data cleared, navigating to register with clinic_id:', currentClinicId);
+    navigate('/register?clinic_id=' + currentClinicId);
   }, 200);
 
   // 防抖的预约按钮点击

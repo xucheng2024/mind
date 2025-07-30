@@ -59,71 +59,6 @@ export default function CheckInPage() {
       });
   }, [clinicId]);
 
-  // Check if current time is within business hours
-  function isWithinBusinessHours() {
-    console.log('[isWithinBusinessHours] businessHours:', businessHours);
-    
-    if (!businessHours) {
-      console.log('[isWithinBusinessHours] No business hours data, using default');
-      return false;
-    }
-    
-    const now = new Date();
-    const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    const weekday = weekdays[now.getDay()];
-    const dayConfig = businessHours[weekday];
-    
-    console.log('[isWithinBusinessHours] Current day:', weekday, 'Day config:', dayConfig);
-    
-    if (!dayConfig || dayConfig.closed) {
-      console.log('[isWithinBusinessHours] Day is closed or no config');
-      return false;
-    }
-    
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentMinutes = currentHour * 60 + currentMinute;
-    
-    const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
-    const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
-    
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    
-    console.log('[isWithinBusinessHours] Current time:', `${currentHour}:${currentMinute}`, `(${currentMinutes} minutes)`);
-    console.log('[isWithinBusinessHours] Business hours:', `${dayConfig.open}-${dayConfig.close}`, `(${startMinutes}-${endMinutes} minutes)`);
-    
-    const isWithin = currentMinutes >= startMinutes && currentMinutes < endMinutes;
-    console.log('[isWithinBusinessHours] Is within business hours:', isWithin);
-    
-    return isWithin;
-  }
-
-  // Early validation - check business hours immediately
-  useEffect(() => {
-    // Check business hours every minute to ensure real-time validation
-    const checkBusinessHours = () => {
-      if (!isWithinBusinessHours()) {
-        setError('Clinic is currently closed. Please check-in during business hours.');
-        setSuccess(false);
-        setCheckedInTime(null);
-      } else {
-        // Clear error if business hours are now valid
-        if (error && error.includes('currently closed')) {
-          setError('');
-        }
-      }
-    };
-    
-    // Check immediately
-    checkBusinessHours();
-    
-    // Check every minute
-    const interval = setInterval(checkBusinessHours, 60000);
-    
-    return () => clearInterval(interval);
-  }, [businessHours, error]);
-
   // Auto redirect to booking page
   // Auto check-in logic
   async function checkInCore(user) {
@@ -140,7 +75,7 @@ export default function CheckInPage() {
     
     // Check if within business hours
     console.log('[checkInCore] Checking business hours...');
-    const withinBusinessHours = isWithinBusinessHours();
+    const withinBusinessHours = true; // Removed business hours check
     console.log('[checkInCore] Within business hours:', withinBusinessHours);
     
     if (!withinBusinessHours) {
