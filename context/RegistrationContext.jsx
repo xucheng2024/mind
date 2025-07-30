@@ -23,10 +23,8 @@ export const RegistrationProvider = ({ children }) => {
   }, [registrationData]);
 
   const updateRegistrationData = (newData) => {
-    console.log('🔄 Updating registration data:', newData);
     setRegistrationData((prev) => {
       const updated = { ...prev, ...newData };
-      console.log('✅ Updated registration data:', updated);
       return updated;
     });
   };

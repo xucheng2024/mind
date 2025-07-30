@@ -1,5 +1,10 @@
 // PWA Service Worker Registration
 export function registerPWA() {
+  // Skip Service Worker registration in development
+  if (import.meta.env.DEV) {
+    return;
+  }
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')

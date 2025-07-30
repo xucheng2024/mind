@@ -37,11 +37,13 @@ export default function VersionUpdate() {
 
   const handleClose = () => {
     setShowUpdate(false);
-    // Also update stored version when user dismisses
+    // Update stored version when user dismisses
     setStoredVersion(getCurrentVersion());
   };
 
   const handleReload = () => {
+    setShowUpdate(false);
+    setStoredVersion(getCurrentVersion());
     window.location.reload();
   };
 

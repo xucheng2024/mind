@@ -8,8 +8,8 @@ export default function PWAInstallButton() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if user has dismissed the install prompt
-    const hasDismissed = localStorage.getItem('pwa_install_dismissed');
+    // Check if user has dismissed the install prompt for this session
+    const hasDismissed = sessionStorage.getItem('pwa_install_dismissed');
     if (hasDismissed) {
       return;
     }
@@ -25,14 +25,16 @@ export default function PWAInstallButton() {
         const checkPrompt = () => {
           if (hasInstallPrompt()) {
             setShowButton(true);
+          } else {
+            setShowButton(false);
           }
         };
         
         // Check immediately
         checkPrompt();
         
-        // Check periodically
-        const interval = setInterval(checkPrompt, 1000);
+        // Check periodically (but less frequently)
+        const interval = setInterval(checkPrompt, 3000);
         return () => clearInterval(interval);
       }
     };
@@ -47,8 +49,8 @@ export default function PWAInstallButton() {
 
   const handleDismiss = () => {
     setShowButton(false);
-    // Remember that user dismissed the prompt
-    localStorage.setItem('pwa_install_dismissed', 'true');
+    // Remember dismissal for this session only
+    sessionStorage.setItem('pwa_install_dismissed', 'true');
   };
 
   if (isInstalled || !showButton) {

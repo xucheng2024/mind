@@ -29,25 +29,17 @@ export default function MedicalPage() {
     healthItems.forEach(item => { cleared[item] = ''; });
     cleared.otherHealthNotes = '';
     setForm(cleared);
-    // 只更新医疗相关数据，保留 clinic_id 和其他重要数据
+    // Only update medical-related data, preserve clinic_id and other important data
     const medicalData = { ...cleared };
-    // 确保不覆盖 clinic_id，只更新医疗相关字段
     updateRegistrationData(medicalData);
   }, []);
 
   useEffect(() => {
-    console.log('🏥 MedicalPage mounted');
-    console.log('📋 Registration data:', registrationData);
-    console.log('🏥 Clinic ID:', registrationData.clinic_id);
-    
-    // 检查 clinic_id 是否存在
+    // Check if clinic_id exists
     if (!registrationData.clinic_id) {
-      console.error('❌ Missing clinic_id in MedicalPage');
-      console.log('📋 Full registration data:', registrationData);
-    } else {
-      console.log(`✅ Clinic ID found: ${registrationData.clinic_id}`);
+      // Handle missing clinic_id
     }
-  }, [registrationData]);
+  }, [registrationData]); // Added registrationData to dependency array for logs
 
   const handleSelect = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));

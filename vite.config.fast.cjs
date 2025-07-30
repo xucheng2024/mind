@@ -63,6 +63,11 @@ module.exports = defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['@supabase/supabase-js']
+    exclude: ['@supabase/supabase-js'],
+    force: true
+  },
+  server: {
+    port: 5175,
+    host: true
   }
 }) 

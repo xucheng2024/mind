@@ -7,13 +7,14 @@ import InputMask from 'react-input-mask';
 import { hash, encrypt } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
+import { getClinicId } from '../config/clinic';
 
 
 export default function RegistrationForm() {
   const navigate = useNavigate();
   const { updateRegistrationData } = useRegistration();
   const [searchParams] = useSearchParams();
-  const clinicId = searchParams.get('clinic_id');
+  const clinicId = getClinicId(searchParams, localStorage);
 
   const [form, setForm] = useState({
     fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
@@ -43,16 +44,11 @@ export default function RegistrationForm() {
 
   useEffect(() => {
     let timeoutId;
-    console.log('📝 RegistrationForm mounted with clinicId:', clinicId);
-    console.log('🔍 RegistrationForm searchParams:', Object.fromEntries(searchParams.entries()));
-    
+
     if (!clinicId) {
-      console.error('❌ Missing clinic_id in URL');
-      console.error('🔍 Available search params:', Object.fromEntries(searchParams.entries()));
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
       timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
-      console.log(`✅ Clinic ID found: ${clinicId}`);
       // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
@@ -64,7 +60,6 @@ export default function RegistrationForm() {
     });
     // 只在有 clinicId 时才更新 registrationData
     if (clinicId) {
-      console.log('💾 Updating registration data with clinic_id:', clinicId);
       updateRegistrationData({
         clinic_id: clinicId,
         fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
@@ -73,7 +68,7 @@ export default function RegistrationForm() {
       });
     }
     localStorage.removeItem('registrationFormDraft');
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -82,7 +77,7 @@ export default function RegistrationForm() {
   // 防抖地址查询
   useEffect(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
-    
+
     if (typeof window !== 'undefined' && form.postalCode.length === 6) {
       const timer = setTimeout(() => {
         setAddressLoading(true);
@@ -115,10 +110,10 @@ export default function RegistrationForm() {
           .catch(() => setAddressError('Address lookup failed, please check your network connection'))
           .finally(() => setAddressLoading(false));
       }, 500); // 500ms 防抖延迟
-      
+
       setDebounceTimer(timer);
     }
-    
+
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
     };
@@ -129,7 +124,7 @@ export default function RegistrationForm() {
     const timeoutId = setTimeout(() => {
       localStorage.setItem('registrationFormDraft', JSON.stringify(form));
     }, 1000); // 1秒后保存
-    
+
     return () => clearTimeout(timeoutId);
   }, [form]);
 
@@ -180,7 +175,6 @@ export default function RegistrationForm() {
   // 使用防抖的提交函数
   const handleSubmit = debounce(async (e) => {
     e.preventDefault();
-    console.log('[Register][Submit] 当前表单内容:', form, 'clinicId:', clinicId);
     if (!validate()) {
       // 跳到第一个有错的输入框
       const errorOrder = [
@@ -199,7 +193,6 @@ export default function RegistrationForm() {
     setLoading(true);
     const loadingToast = toast.loading('Processing registration...');
 
-    console.log('[Register] 检查是否已注册:', { clinicId, phone: form.phone, email: form.email });
     const phoneHash = hash(form.phone);
     const emailHash = hash(form.email);
     // 只查 hash 字段，不查明文
@@ -213,11 +206,8 @@ export default function RegistrationForm() {
       .eq('clinic_id', clinicId)
       .eq('email_hash', emailHash)
       .limit(1);
-    console.log('[Register] 查到的手机号用户:', phoneUsers, phoneError);
-    console.log('[Register] 查到的邮箱用户:', emailUsers, emailError);
 
     if (phoneError || emailError) {
-      console.error('❌ 查询失败:', phoneError || emailError);
       toast.dismiss(loadingToast);
       toast.error('Server error, please try again later.');
       setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
@@ -240,8 +230,6 @@ export default function RegistrationForm() {
       return;
     }
 
-    console.log('Submitting registrationData:', form);
-
     updateRegistrationData({
       ...form,
       dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
@@ -252,7 +240,7 @@ export default function RegistrationForm() {
 
     // 清除草稿数据，因为已经成功提交
     localStorage.removeItem('registrationFormDraft');
-    
+
     toast.dismiss(loadingToast);
     toast.success('Registration successful!');
     setLoading(false);
@@ -423,7 +411,6 @@ export default function RegistrationForm() {
                 if (/^\d+$/.test(val)) setErrors(prev => ({ ...prev, phone: '' }));
               }}
               onBlur={async () => {
-                console.log('phone blur triggered');
                 let err = '';
                 if (!/^\d+$/.test(form.phone)) {
                   err = 'Phone number must be numeric';

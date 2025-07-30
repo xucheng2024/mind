@@ -7,8 +7,8 @@ const InstallPrompt = () => {
   const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
-    // Check if user has dismissed the install prompt
-    const hasDismissed = localStorage.getItem('pwa_install_prompt_dismissed');
+    // Check if user has dismissed the install prompt for this session
+    const hasDismissed = sessionStorage.getItem('pwa_install_prompt_dismissed');
     if (hasDismissed) {
       return;
     }
@@ -33,9 +33,8 @@ const InstallPrompt = () => {
     try {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
+
       if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
         setShowPrompt(false);
       }
     } catch (error) {
@@ -48,8 +47,8 @@ const InstallPrompt = () => {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Remember that user dismissed the prompt
-    localStorage.setItem('pwa_install_prompt_dismissed', 'true');
+    // Remember dismissal for this session only
+    sessionStorage.setItem('pwa_install_prompt_dismissed', 'true');
   };
 
   if (!showPrompt) return null;
