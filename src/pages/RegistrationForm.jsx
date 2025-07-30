@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
@@ -9,6 +9,7 @@ import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import { getClinicId } from '../config/clinic';
+import CryptoJS from 'crypto-js';
 
 
 export default function RegistrationForm() {
