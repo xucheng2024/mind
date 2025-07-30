@@ -253,6 +253,12 @@ export default function HomePage() {
               >
                 On-site Check-in
               </Button>
+              <Button
+                variant="ghost"
+                onClick={handleLogoutClick}
+              >
+                Logout
+              </Button>
               {checkinError && (
                 <div className="flex justify-center w-full">
                   <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-2 mt-3 text-center text-sm font-medium max-w-xs w-full animate-fade-in">
@@ -261,15 +267,6 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-          </div>
-          <div className="w-full flex justify-center mt-2">
-            <Button
-              variant="ghost"
-              className="w-auto px-4 py-2 text-sm"
-              onClick={handleLogoutClick}
-            >
-              Logout / Switch User
-            </Button>
           </div>
         </div>
       )}
@@ -304,6 +301,12 @@ export default function HomePage() {
                 disabled={checkNavLoading}
               >
                 On-site Check-in
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleLogoutClick}
+              >
+                Logout
               </Button>
               {checkinError && (
                 <div className="flex justify-center w-full">
