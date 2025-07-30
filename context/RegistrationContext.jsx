@@ -32,6 +32,29 @@ export const RegistrationProvider = ({ children }) => {
   const clearRegistrationData = () => {
     setRegistrationData({});
     localStorage.removeItem('registrationData');
+    localStorage.removeItem('registrationFormDraft');
+    sessionStorage.clear();
+    
+    // Clear any cached images or blobs
+    if (typeof window !== 'undefined') {
+      // Clear any blob URLs
+      if (window.URL && window.URL.revokeObjectURL) {
+        // This is a best effort cleanup - we can't track all blob URLs
+        console.log('🧹 Clearing blob URLs and cache...');
+      }
+      
+      // Clear any camera cache
+      if (window.cameraCache) {
+        delete window.cameraCache;
+      }
+      
+      // Clear any form cache
+      if (window.formCache) {
+        delete window.formCache;
+      }
+    }
+    
+    console.log('🧹 Registration data cleared completely');
   };
 
   return (

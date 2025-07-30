@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
 import Compressor from 'compressorjs';
+import IOSCamera from '../components/IOSCamera';
 
 export default function SelfiePage() {
   const cameraRef = useRef(null);
@@ -21,6 +22,7 @@ export default function SelfiePage() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const [fileInputRef] = useState(() => React.createRef());
+  const [showIOSCamera, setShowIOSCamera] = useState(false);
 
   // 检查相机权限 - iPhone优化版本
   const checkCamera = async () => {
@@ -270,6 +272,25 @@ export default function SelfiePage() {
     }
   };
 
+  // iOS相机处理函数
+  const handleIOSCameraCapture = (blob, imageUrl) => {
+    console.log('📸 iOS camera capture successful');
+    setImageSrc(imageUrl);
+    setCompressedBlob(blob);
+    setShowIOSCamera(false);
+    setError('');
+  };
+
+  const handleIOSCameraError = (errorMessage) => {
+    console.error('❌ iOS camera error:', errorMessage);
+    setError(errorMessage);
+    setShowIOSCamera(false);
+  };
+
+  const handleIOSCameraClose = () => {
+    setShowIOSCamera(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('📤 Submitting photo...');
@@ -361,14 +382,24 @@ export default function SelfiePage() {
             {/* 拍照按钮移到圆框下方，风格一致 */}
             <div className="w-full flex flex-col items-center">
               {isIOS && isPWA ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                  className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-                  disabled={capturing}
-                >
-                  {capturing ? 'Processing...' : 'Take a Photo'}
-                </button>
+                <div className="w-full space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowIOSCamera(true)}
+                    className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                    disabled={capturing}
+                  >
+                    {capturing ? 'Processing...' : 'Use iOS Camera'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    className={`w-full h-12 rounded-xl text-base font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                    disabled={capturing}
+                  >
+                    {capturing ? 'Processing...' : 'Use File Picker'}
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={capture}
@@ -413,6 +444,15 @@ export default function SelfiePage() {
           </div>
         )}
       </div>
+
+      {/* iOS相机组件 */}
+      {showIOSCamera && (
+        <IOSCamera
+          onCapture={handleIOSCameraCapture}
+          onError={handleIOSCameraError}
+          onClose={handleIOSCameraClose}
+        />
+      )}
     </div>
   );
 }
