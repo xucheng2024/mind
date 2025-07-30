@@ -28,12 +28,16 @@ export default function MedicalPage() {
     healthItems.forEach(item => { cleared[item] = ''; });
     cleared.otherHealthNotes = '';
     setForm(cleared);
-    updateRegistrationData(cleared);
+    // 保留 clinic_id，只清空医疗相关数据
+    const medicalData = { ...cleared };
+    updateRegistrationData(medicalData);
   }, []);
 
   useEffect(() => {
     console.log('✅ MedicalPage mounted');
-  }, []);
+    console.log('📋 Registration data:', registrationData);
+    console.log('🏥 Clinic ID:', registrationData.clinic_id);
+  }, [registrationData]);
 
   const handleSelect = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
