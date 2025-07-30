@@ -82,7 +82,7 @@ module.exports = defineConfig({
           router: ['react-router-dom'],
           ui: ['react-hot-toast', 'framer-motion', 'react-icons'],
           forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-input-mask'],
-          media: ['compressorjs', 'react-signature-canvas'],
+          media: ['compressorjs', '@uiw/react-signature'],
           calendar: ['react-calendar'],
           supabase: ['@supabase/supabase-js'],
           utils: ['uuid', 'crypto-js', 'dayjs'],

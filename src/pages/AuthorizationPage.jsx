@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SignatureCanvas from 'react-signature-canvas';
+import Signature from '@uiw/react-signature';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
 
@@ -12,18 +12,18 @@ export default function AuthorizationPage() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const sigCanvasRef = useRef();
+  const signatureRef = useRef();
 
   const validate = () => {
     const errs = {};
     if (isGuardian === null) errs.guardian = 'Please select an option';
-    if (sigCanvasRef.current?.isEmpty?.()) errs.signature = 'Signature is required';
+    if (signatureRef.current?.isEmpty?.()) errs.signature = 'Signature is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleClear = () => {
-    sigCanvasRef.current?.clear();
+    signatureRef.current?.clear();
     setIsGuardian(null);
     setErrors({});
     updateRegistrationData({ signature: '' });
@@ -39,7 +39,7 @@ export default function AuthorizationPage() {
       return;
     }
 
-    const signatureDataUrl = sigCanvasRef.current.getCanvas().toDataURL('image/png');
+    const signatureDataUrl = signatureRef.current?.toDataURL?.() || '';
 
     updateRegistrationData({
       is_guardian: isGuardian,
@@ -96,21 +96,14 @@ export default function AuthorizationPage() {
           className={`relative rounded-2xl mb-2 w-full overflow-hidden border ${errors.signature ? 'border-red-500' : 'border-gray-300'} bg-white`}
           style={{ height: '160px' }}
         >
-          <SignatureCanvas
-            ref={sigCanvasRef}
-            penColor="#2563eb"
-            backgroundColor="white"
-            canvasProps={{
-              style: {
-                width: '100%',
-                height: '100%',
-                display: 'block',
-                margin: 0,
-                padding: 0,
-                border: 'none',
-                borderRadius: '1rem',
-                background: 'white',
-              }
+          <Signature
+            ref={signatureRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              borderRadius: '1rem',
+              background: 'white',
             }}
           />
           <button
