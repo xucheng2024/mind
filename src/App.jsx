@@ -13,6 +13,8 @@ import PWAUpdateNotification from './components/PWAUpdateNotification';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { validateConfig } from './lib/config';
+import './lib/supabaseTest.js'; // Test Supabase browser compatibility
+import './lib/moduleTest.js'; // Test Node.js module polyfills
 
 
 // Lazy load all pages

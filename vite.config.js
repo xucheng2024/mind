@@ -1,10 +1,17 @@
-const { defineConfig } = require('vite')
-const react = require('@vitejs/plugin-react')
-const { VitePWA } = require('vite-plugin-pwa')
-const legacy = require('@vitejs/plugin-legacy')
-const compression = require('vite-plugin-compression')
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+import legacy from '@vitejs/plugin-legacy'
+import compression from 'vite-plugin-compression'
 
-module.exports = defineConfig({
+
+
+export default defineConfig({
+  define: {
+    global: 'globalThis',
+    'process.env': {},
+    'process.browser': true,
+  },
   plugins: [
     react(),
     legacy({
@@ -75,16 +82,21 @@ module.exports = defineConfig({
     minify: 'terser',
     target: 'esnext',
     chunkSizeWarningLimit: 1000,
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+      requireReturnsDefault: 'preferred',
+      esmExternals: true
+    },
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           ui: ['react-hot-toast', 'framer-motion', 'react-icons'],
-          forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-input-mask'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-imask'],
           media: ['compressorjs', '@uiw/react-signature'],
           calendar: ['react-calendar'],
-          supabase: ['@supabase/supabase-js'],
           utils: ['uuid', 'crypto-js', 'dayjs'],
           query: ['@tanstack/react-query', '@tanstack/react-query-devtools']
         }
@@ -104,10 +116,52 @@ module.exports = defineConfig({
     keepNames: true
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['@supabase/supabase-js'],
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@supabase/supabase-js',
+      'react-hot-toast',
+      'framer-motion',
+      'react-icons',
+      'react-hook-form',
+      '@hookform/resolvers',
+      'zod',
+      'react-imask',
+      'compressorjs',
+      '@uiw/react-signature',
+      'react-calendar',
+      'uuid',
+      'crypto-js',
+      'dayjs',
+      '@tanstack/react-query',
+      '@tanstack/react-query-devtools'
+    ],
     esbuildOptions: {
-      target: 'esnext'
+      target: 'esnext',
+      format: 'esm'
     }
+  },
+  resolve: {
+    dedupe: ['react', 'react-dom', '@supabase/supabase-js'],
+    mainFields: ['module', 'main'],
+    alias: {
+      stream: 'stream-browserify',
+      util: 'util/',
+    }
+  },
+  server: {
+    port: 5173,
+    host: true,
+    open: true,
+    cors: true,
+    hmr: {
+      overlay: true
+    }
+  },
+  preview: {
+    port: 4173,
+    host: true,
+    open: true
   }
-})
+}) 

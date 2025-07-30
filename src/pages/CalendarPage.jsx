@@ -1,64 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Calendar from 'react-calendar';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
-import 'react-calendar/dist/Calendar.css';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaUser, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 
 // Set dayjs locale
 dayjs.locale('en');
 
-// CSS animations
-const styles = `
-  @keyframes fadeInScale {
-    0% {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  
-  @keyframes successPulse {
-    0% {
-      transform: scale(1);
-      background: #10b981;
-    }
-    50% {
-      transform: scale(1.1);
-      background: #059669;
-    }
-    100% {
-      transform: scale(1);
-      background: #10b981;
-    }
-  }
-`;
-
-// Insert styles into page
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement("style");
-  styleSheet.type = "text/css";
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-}
-
-// Simple calendar implementation without react-big-calendar
-
-import { useNavigate } from 'react-router-dom';
-
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
   // Use URL params first, then localStorage
   let clinicId = searchParams.get('clinic_id');
   let userRowId = searchParams.get('user_row_id');
   if (!clinicId) clinicId = localStorage.getItem('clinic_id');
   if (!userRowId) userRowId = localStorage.getItem('user_row_id');
+
   // Redirect to booking if missing
   React.useEffect(() => {
     console.log('🔍 CalendarPage - Checking params:', { clinicId, userRowId });
@@ -73,59 +37,20 @@ export default function CalendarPage() {
   const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [modalEvents, setModalEvents] = useState([]);
-  const [refresh, setRefresh] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [confirmCancel, setConfirmCancel] = useState(null);
-  const [clickedHour, setClickedHour] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [businessHours, setBusinessHours] = useState(null);
   const [availableHours, setAvailableHours] = useState([]);
   const [isClosedDay, setIsClosedDay] = useState(false);
   const [userHasOtherBooking, setUserHasOtherBooking] = useState(false);
   const [changeAppointment, setChangeAppointment] = useState(null);
-  const [activeTab, setActiveTab] = useState('am'); // 'am' or 'pm'
-  const [notification, setNotification] = useState(null); // { type: 'success'|'error'|'warning', message: string }
-
-  // Available time range (9am to 8pm)
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9);
-
-  // Get hour display format
-  function getDisplayHourPeriod(hour) {
-    const period = hour < 12 ? 'am' : 'pm';
-    let displayHour = hour % 12;
-    if (displayHour === 0) displayHour = 12;
-    return { displayHour, period };
-  }
-
-  // Format time to "9:00" format
-  function formatTime(hour, minute = 0) {
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  }
-
-  // Custom calendar toolbar
-  function CustomToolbar({ label, onNavigate }) {
-    return (
-      <div className="flex items-center justify-center mb-6">
-        <button
-          onClick={() => onNavigate('PREV')}
-          className="p-3 hover:bg-gray-100 rounded-full transition-colors"
-          aria-label="Previous Month"
-        >
-          <FaChevronLeft className="text-gray-600" />
-        </button>
-        <span className="font-bold text-xl mx-8 min-w-[200px] text-center">
-          {label}
-        </span>
-        <button
-          onClick={() => onNavigate('NEXT')}
-          className="p-3 hover:bg-gray-100 rounded-full transition-colors"
-          aria-label="Next Month"
-        >
-          <FaChevronRight className="text-gray-600" />
-        </button>
-      </div>
-    );
-  }
+  const [confirmCancel, setConfirmCancel] = useState(null);
+  const [clickedHour, setClickedHour] = useState(null);
+  const [activeTab, setActiveTab] = useState('am');
+  const [notification, setNotification] = useState(null);
+  const [clinicInfo, setClinicInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const [refresh, setRefresh] = useState(0);
 
   // Auto-close notifications
   useEffect(() => {
@@ -137,12 +62,40 @@ export default function CalendarPage() {
     }
   }, [notification]);
 
+  // Fetch clinic and user info
+  useEffect(() => {
+    if (!clinicId || !userRowId) return;
+    
+    // Fetch clinic info
+    supabase
+      .from('clinics')
+      .select('*')
+      .eq('id', clinicId)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setClinicInfo(data);
+          setBusinessHours(data.business_hours);
+        }
+      });
+
+    // Fetch user info
+    supabase
+      .from('users')
+      .select('*')
+      .eq('clinic_id', clinicId)
+      .eq('row_id', userRowId)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setUserInfo(data);
+        }
+      });
+  }, [clinicId, userRowId]);
+
   // Fetch appointment data
   useEffect(() => {
-    if (!clinicId || !userRowId) {
-      console.log('⚠️ CalendarPage - Missing clinicId or userRowId for data fetch');
-      return;
-    }
+    if (!clinicId || !userRowId) return;
     
     console.log('📊 CalendarPage - Fetching appointments for:', { clinicId, userRowId });
     setLoading(true);
@@ -158,326 +111,151 @@ export default function CalendarPage() {
           return;
         }
         const evts = (data || [])
-          .filter(v => v.status === 'booked') // Only show booked appointments
+          .filter(v => v.status === 'booked')
           .map(v => {
             const startDate = v.book_time || v.visit_time ? new Date(v.book_time || v.visit_time) : null;
             if (!startDate) return null;
-            const timeStr = formatTime(startDate.getHours(), startDate.getMinutes());
             return {
               id: v.id,
-              title: timeStr,
+              title: `Appointment - ${startDate.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+              })}`,
               start: startDate,
-              end: new Date(startDate.getTime() + 30 * 60 * 1000), // 30-minute appointment
+              end: new Date(startDate.getTime() + 30 * 60 * 1000),
               status: v.status,
               userRowId: v.user_row_id,
+              backgroundColor: '#3B82F6',
+              borderColor: '#2563EB',
+              textColor: '#FFFFFF',
+              extendedProps: {
+                type: 'appointment'
+              }
             };
           })
           .filter(e => e && e.start);
         setEvents(evts);
       });
-  }, [clinicId, refresh, userRowId]);
+  }, [clinicId, userRowId, refresh]);
 
-  // Fetch clinic business hours
-  useEffect(() => {
-    if (!clinicId) {
-      console.log('⚠️ CalendarPage - Missing clinicId for business hours fetch');
-      return;
-    }
-    
-    console.log('🏢 CalendarPage - Fetching business hours for clinic:', clinicId);
-    supabase
-      .from('clinics')
-      .select('business_hours')
-      .eq('id', clinicId)
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('❌ CalendarPage - Failed to fetch business hours:', error);
-          return;
-        }
-        if (data && data.business_hours) {
-          console.log('✅ CalendarPage - Business hours loaded:', data.business_hours);
-          setBusinessHours(data.business_hours);
-        } else {
-          console.log('⚠️ CalendarPage - No business hours found for clinic');
-        }
-      });
-  }, [clinicId]);
+  // Format time helper
+  function formatTime(hour, minute = 0) {
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }
 
-  // Check if a time slot is full - supports half-hour slots
-  const isSlotFull = useCallback((date) => {
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    const day = date.getDate();
-    const month = date.getMonth();
-    const year = date.getFullYear();
-    
-    const count = events.filter(e => {
-      const eventHour = e.start.getHours();
-      const eventMinute = e.start.getMinutes();
-      return e.status === 'booked' &&
-             e.start.getFullYear() === year &&
-             e.start.getMonth() === month &&
-             e.start.getDate() === day &&
-             eventHour === hour &&
-             eventMinute === minute;
-    }).length;
-    return count >= 2;
-  }, [events]);
-
-  // Optimized getAvailableHoursForDate - supports half-hour slots
-  // New businessHours format supports { open, close, closed }
-  function getAvailableHoursForDate(date) {
+  // Get available hours for selected date
+  async function getAvailableHoursForDate(date) {
     if (!businessHours || !date) return [];
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const weekday = weekdays[date.getDay()];
     const dayConfig = businessHours[weekday];
     if (!dayConfig || dayConfig.closed) return 'closed';
     
-    // Parse open and close times (supports "09:00" and "09:30" format)
     const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
     const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
     
-    // Convert to minutes for easier calculation
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
     
-    // 只允许预约结束时间 > 当前时间的 slot，且不超过最大预约日期
     const now = new Date();
     const maxDate = new Date(now);
     maxDate.setDate(now.getDate() + 13);
     maxDate.setHours(23,59,59,999);
-    // 如果选中的日期超过最大预约日期，直接返回空数组
+    
     if (date > maxDate) return [];
+    
+    // Query slot_availability table
+    const dateStr = date.toISOString().split('T')[0];
+    const { data: slotAvailability } = await supabase
+      .from('slot_availability')
+      .select('visit_time, is_available')
+      .eq('clinic_id', clinicId)
+      .eq('visit_date', dateStr);
+    
     let slots = [];
     for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
       const hour = Math.floor(minutes / 60);
       const minute = minutes % 60;
-      // slot 结束时间
       const slotEnd = new Date(date);
       slotEnd.setHours(hour, minute + 30, 0, 0);
       if (date.toDateString() === now.toDateString()) {
-        if (slotEnd <= now) continue; // 结束时间早于当前时间，不可预约
+        if (slotEnd <= now) continue;
       }
-      slots.push({ hour, minute });
+      
+      // Check if slot is available from slot_availability table
+      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+      const slotData = slotAvailability?.find(slot => slot.visit_time === timeStr);
+      const isAvailable = slotData ? slotData.is_available : true; // Default to available if not found
+      
+      slots.push({ 
+        hour, 
+        minute, 
+        isAvailable,
+        timeStr 
+      });
     }
     return slots;
   }
 
-  // Calendar slot style - supports half-hour slots
-  function slotPropGetter(date) {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const slotMinutes = date.getHours() * 60 + date.getMinutes();
+  // Handle date selection
+  const handleDateSelect = useCallback(async (selectInfo) => {
+    const selectedDate = selectInfo.start;
+    setSelectedDate(selectedDate);
     
-    // 禁用结束时间 <= 当前时间的 slot
-    const slotEnd = new Date(date);
-    slotEnd.setMinutes(slotEnd.getMinutes() + 30);
-    if (slotEnd <= now) {
-      return {
-        style: {
-          backgroundColor: '#f3f4f6',
-          color: '#d1d5db',
-          pointerEvents: 'none',
-          cursor: 'not-allowed',
-        },
-      };
-    }
-    
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    const dayOfWeek = date.getDay();
-    
-    // Use businessHours data to determine if open
-    if (businessHours) {
-      const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-      const weekday = weekdays[dayOfWeek];
-      const dayConfig = businessHours[weekday];
-      
-      if (!dayConfig || dayConfig.closed) {
-        return {
-          style: {
-            backgroundColor: '#f9fafb',
-            color: '#d1d5db',
-            cursor: 'not-allowed',
-          },
-        };
-      }
-      
-      // Check if within business hours (supports half-hour)
-      const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
-      const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
-      
-      const currentMinutes = hour * 60 + minute;
-      const startMinutes = startH * 60 + startM;
-      const endMinutes = endH * 60 + endM;
-      
-      if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
-        return {
-          style: {
-            backgroundColor: '#f9fafb',
-            color: '#d1d5db',
-            cursor: 'not-allowed',
-          },
-        };
-      }
-    } else {
-      // If no businessHours data, use default logic
-      if (dayOfWeek === 0 || dayOfWeek === 1 || hour < 9 || hour > 20) {
-        return {
-          style: {
-            backgroundColor: '#f9fafb',
-            color: '#d1d5db',
-            cursor: 'not-allowed',
-          },
-        };
-      }
-    }
-    
-    return {};
-  }
-
-  // Event style
-  function eventPropGetter(event) {
-    if (event.userRowId === userRowId) {
-      return {
-        style: {
-          backgroundColor: '#3b82f6',
-          color: 'white',
-          borderRadius: '8px',
-          border: 'none',
-          fontSize: '13px',
-          fontWeight: '600',
-        },
-      };
-    }
-    if (event.status === 'canceled') {
-      return {
-        style: {
-          backgroundColor: '#e5e7eb',
-          color: '#9ca3af',
-          textDecoration: 'line-through',
-          borderRadius: '8px',
-          border: 'none',
-          fontSize: '13px',
-          fontWeight: '600',
-        },
-      };
-    }
-    return {};
-  }
-
-  // Day style
-  function dayPropGetter(date) {
-    const now = new Date();
-    now.setHours(0,0,0,0);
-    const isPast = date < now;
-    // 限制只能预约今天起14天内
-    const maxDate = new Date(now);
-    maxDate.setDate(now.getDate() + 13); // 今天+13=共14天
-    maxDate.setHours(23,59,59,999);
-    const isTooFar = date > maxDate;
-    if (isPast || isTooFar) {
-      return {
-        style: {
-          backgroundColor: '#f3f4f6',
-          color: '#d1d5db',
-          pointerEvents: 'none',
-          cursor: 'not-allowed',
-        },
-      };
-    }
-    // 仅根据 business_hours 判断休息日
-    if (businessHours) {
-      const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-      const weekday = weekdays[date.getDay()];
-      const dayConfig = businessHours[weekday];
-      if (!dayConfig || dayConfig.closed) {
-        return {
-          style: {
-            backgroundColor: '#f9fafb',
-            color: '#d1d5db',
-            pointerEvents: 'none',
-            cursor: 'not-allowed',
-          },
-        };
-      }
-    }
-    return {};
-  }
-
-  // Dynamically generate available hours when selecting a date
-  function handleSelectSlot(slotInfo) {
-    const date = slotInfo.start;
-    const now = new Date();
-    now.setHours(0,0,0,0);
-    if (date < now) return; // Disable clicking on dates before today's popup
-    
-    // Extra check: if today, check if clicked on past time
-    const today = new Date();
-    if (date.toDateString() === today.toDateString()) {
-      const currentMinutes = today.getHours() * 60 + today.getMinutes();
-      const slotMinutes = date.getHours() * 60 + date.getMinutes();
-      if (slotMinutes <= currentMinutes) {
-        return; // Disable clicking on current half-hour slot and before
-      }
-    }
-    
-    if (!businessHours) return;
-    
-    // Use businessHours data to determine if open
+    // Check if day is closed
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    const weekday = weekdays[date.getDay()];
-    const dayConfig = businessHours[weekday];
+    const weekday = weekdays[selectedDate.getDay()];
+    const dayConfig = businessHours?.[weekday];
+    const isClosed = !dayConfig || dayConfig.closed;
     
-    if (!dayConfig || dayConfig.closed) {
-      return; // If not open today, don't show popup
-    }
+    setIsClosedDay(isClosed);
     
-    // Get all appointments for the day
-    const dayEvents = events.filter(e =>
-      e.start.toDateString() === date.toDateString()
-    );
-    
-    // Check if user already has an appointment today
-    const myEvent = dayEvents.find(e => e.userRowId === userRowId && e.status === 'booked');
-    
-    if (myEvent) {
-      // If user already has an appointment today, show cancel confirmation
-      const timeStr = formatTime(myEvent.start.getHours(), myEvent.start.getMinutes());
-      setConfirmCancel({ eventId: myEvent.id, timeStr });
-    } else {
-      setSelectedDate(date);
-      setModalEvents(dayEvents);
-      setClickedHour(null);
+    if (!isClosed) {
+      const availableSlots = await getAvailableHoursForDate(selectedDate);
+      setAvailableHours(availableSlots);
       
-      // Check if user already has other appointments today
-      const userHasOtherBookingToday = dayEvents.some(e => 
-        e.userRowId === userRowId && 
-        e.status === 'booked'
+      // Get events for the selected date for modal
+      const selectedDateStart = new Date(selectedDate);
+      selectedDateStart.setHours(0, 0, 0, 0);
+      const selectedDateEnd = new Date(selectedDate);
+      selectedDateEnd.setHours(23, 59, 59, 999);
+      
+      const modalEvents = events.filter(e => 
+        e.start >= selectedDateStart && e.start <= selectedDateEnd
       );
-      setUserHasOtherBooking(userHasOtherBookingToday);
+      setModalEvents(modalEvents);
       
-      // Dynamically generate available hours
-      const result = getAvailableHoursForDate(date);
-      if (result === 'closed') {
-        setIsClosedDay(true);
-        setAvailableHours([]);
-      } else {
-        setIsClosedDay(false);
-        setAvailableHours(result);
-        
-        // Automatically switch to the tab with available slots
-        const { amSlots, pmSlots } = separateAmPmSlots(result);
-        if (amSlots.length > 0) {
-          setActiveTab('am');
-        } else if (pmSlots.length > 0) {
-          setActiveTab('pm');
-        }
+      // Check if user has other booking today
+      const today = new Date(selectedDate);
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      
+      const todayEvents = events.filter(e => 
+        e.start >= today && e.start < tomorrow && e.userRowId === userRowId
+      );
+      setUserHasOtherBooking(todayEvents.length > 0);
+      
+      // If user has appointment today, show cancel confirmation directly
+      if (todayEvents.length > 0) {
+        setConfirmCancel({ eventId: todayEvents[0].id });
+        return;
       }
-      setShowModal(true);
     }
-  }
+    
+    setShowModal(true);
+  }, [businessHours, events, userRowId]);
+
+  // Handle event click
+  const handleEventClick = useCallback((clickInfo) => {
+    const event = clickInfo.event;
+    if (event.extendedProps.userRowId === userRowId) {
+      setConfirmCancel({
+        eventId: event.id,
+      });
+    }
+  }, [userRowId]);
 
   // Validate user existence
   async function validateUser() {
@@ -503,14 +281,13 @@ export default function CalendarPage() {
     }
   }
 
-  // Optimized handleBook, supports half-hour slots
+  // Handle booking
   async function handleBook(hour, minute = 0) {
     const date = new Date(selectedDate);
     date.setHours(hour, minute, 0, 0);
     setClickedHour(`${hour}:${minute.toString().padStart(2, '0')}`);
     
     try {
-      // Validate user existence
       const userExists = await validateUser();
       if (!userExists) {
         setNotification({ type: 'error', message: 'User validation failed. Please try logging in again.' });
@@ -518,7 +295,6 @@ export default function CalendarPage() {
         return;
       }
       
-      // Check if user already has an appointment today
       const today = new Date(selectedDate);
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -549,19 +325,27 @@ export default function CalendarPage() {
           status: 'booked',
           is_first: false,
         }]);
+      
       if (error) throw error;
-      setEvents(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          title: formatTime(hour, minute),
-          start: new Date(date),
-          end: new Date(date.getTime() + 30 * 60 * 1000), // 30-minute appointment
-          status: 'booked',
-          userRowId: userRowId,
-        },
-      ]);
+      
+      const newEvent = {
+        id: Date.now(),
+        title: `Appointment - ${formatTime(hour, minute)}`,
+        start: new Date(date),
+        end: new Date(date.getTime() + 30 * 60 * 1000),
+        status: 'booked',
+        userRowId: userRowId,
+        backgroundColor: '#3B82F6',
+        borderColor: '#2563EB',
+        textColor: '#FFFFFF',
+        extendedProps: {
+          type: 'appointment'
+        }
+      };
+      
+      setEvents(prev => [...prev, newEvent]);
       setNotification({ type: 'success', message: `Appointment booked successfully for ${formatTime(hour, minute)}!` });
+      
       setTimeout(() => {
         setShowModal(false);
         setSelectedDate(null);
@@ -579,13 +363,6 @@ export default function CalendarPage() {
     }
   }
 
-  // Click on appointment event
-  function handleEventClick(event) {
-    if (event.userRowId === userRowId) {
-      setConfirmCancel({ eventId: event.id, timeStr: event.title });
-    }
-  }
-
   // Confirm cancel appointment
   async function confirmCancelBooking() {
     if (!confirmCancel) return;
@@ -595,8 +372,15 @@ export default function CalendarPage() {
       .update({ status: 'canceled' })
       .eq('id', confirmCancel.eventId);
     
+    setEvents(prev => prev.filter(e => e.id !== confirmCancel.eventId));
     setConfirmCancel(null);
+    setShowModal(false);
+    setSelectedDate(null);
+    setClickedHour(null);
+    setUserHasOtherBooking(false);
+    setActiveTab('am');
     setRefresh(r => r + 1);
+    setNotification({ type: 'success', message: 'Appointment cancelled.' });
   }
 
   // Handle appointment change
@@ -604,7 +388,6 @@ export default function CalendarPage() {
     if (!changeAppointment) return;
     
     try {
-      // 1. Find today's appointment and cancel it
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -620,7 +403,6 @@ export default function CalendarPage() {
         .lt('book_time', tomorrow.toISOString());
       
       if (todayVisits && todayVisits.length > 0) {
-        // Cancel all today's appointments
         for (const visit of todayVisits) {
           await supabase
             .from('visits')
@@ -629,7 +411,6 @@ export default function CalendarPage() {
         }
       }
       
-      // 2. Create new appointment
       const newDate = new Date(selectedDate);
       newDate.setHours(changeAppointment.hour, changeAppointment.minute, 0, 0);
       
@@ -646,26 +427,32 @@ export default function CalendarPage() {
       
       if (error) throw error;
       
-      // 3. Update local state
+      const newEvent = {
+        id: Date.now(),
+        title: `Appointment - ${formatTime(changeAppointment.hour, changeAppointment.minute)}`,
+        start: new Date(newDate),
+        end: new Date(newDate.getTime() + 30 * 60 * 1000),
+        status: 'booked',
+        userRowId: userRowId,
+        backgroundColor: '#3B82F6',
+        borderColor: '#2563EB',
+        textColor: '#FFFFFF',
+        extendedProps: {
+          type: 'appointment'
+        }
+      };
+      
       setEvents(prev => [
         ...prev.filter(e => e.userRowId !== userRowId || e.status === 'canceled'),
-        {
-          id: Date.now(),
-          title: formatTime(changeAppointment.hour, changeAppointment.minute),
-          start: new Date(newDate),
-          end: new Date(newDate.getTime() + 30 * 60 * 1000),
-          status: 'booked',
-          userRowId: userRowId,
-        },
+        newEvent
       ]);
       
-      // 4. Close modal and reset state
       setChangeAppointment(null);
       setShowModal(false);
       setSelectedDate(null);
       setClickedHour(null);
       setUserHasOtherBooking(false);
-      setActiveTab('am'); // Reset to AM tab
+      setActiveTab('am');
       setRefresh(r => r + 1);
       setNotification({ type: 'success', message: `Appointment changed successfully to ${formatTime(changeAppointment.hour, changeAppointment.minute)}!` });
       
@@ -682,200 +469,216 @@ export default function CalendarPage() {
     return { amSlots, pmSlots };
   }
 
-  // Get dynamic time range - supports different business hours for different days
-  function getTimeRange() {
-    if (!businessHours) {
-      // Default time range
-      const minTime = new Date();
-      minTime.setHours(9, 0, 0, 0);
-      const maxTime = new Date();
-      maxTime.setHours(20, 0, 0, 0);
-      return { minTime, maxTime };
-    }
-    
-    // Find the earliest and latest business hours from businessHours
-    let earliestMinutes = 24 * 60; // Convert 24 hours to minutes
-    let latestMinutes = 0;
-    
-    Object.values(businessHours).forEach(dayConfig => {
-      if (dayConfig && !dayConfig.closed) {
-        const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
-        const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
-        
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-        
-        earliestMinutes = Math.min(earliestMinutes, startMinutes);
-        latestMinutes = Math.max(latestMinutes, endMinutes);
-      }
-    });
-    
-    // If no valid business hours found, use default values
-    if (earliestMinutes === 24 * 60 || latestMinutes === 0) {
-      earliestMinutes = 9 * 60; // 9:00 AM
-      latestMinutes = 20 * 60;   // 8:00 PM
-    }
-    
-    const minTime = new Date();
-    minTime.setHours(Math.floor(earliestMinutes / 60), earliestMinutes % 60, 0, 0);
-    const maxTime = new Date();
-    maxTime.setHours(Math.floor(latestMinutes / 60), latestMinutes % 60, 0, 0);
-    
-    return { minTime, maxTime };
-  }
-
-  // Time range settings
-  const { minTime, maxTime } = getTimeRange();
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      {/* Calendar main container */}
-      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8">
-        <h2 className="text-3xl font-extrabold text-center mb-8 text-gray-800">
-          My Appointment
-        </h2>
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="text-blue-600 font-medium animate-pulse">Loading...</div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <FaCalendarAlt className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
+                <p className="text-sm text-gray-500">
+                  {clinicInfo?.name || 'Loading clinic info...'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
+            >
+              Back Home
+            </button>
           </div>
-        ) : (
-          <div className="relative">
-            <Calendar
-              localizer={localizer}
-              events={events.filter(e => e && e.status === 'booked')}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 500 }}
-              selectable="ignoreEvents"
-              longPressThreshold={1}
-              views={{ month: true }}
-              view="month"
-              onView={() => {}}
-              components={{ toolbar: CustomToolbar }}
-              onSelectSlot={slotInfo => {
-                console.log('onSelectSlot', slotInfo);
-                handleSelectSlot(slotInfo);
-              }}
-              eventPropGetter={eventPropGetter}
-              slotPropGetter={slotPropGetter}
-              dayPropGetter={dayPropGetter}
-              min={minTime}
-              max={maxTime}
-              popup
-              onSelectEvent={handleEventClick}
-            />
-          </div>
-        )}
-        {/* Cancel appointment confirmation modal */}
-        {confirmCancel && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-md p-4">
-            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-gray-200 transform transition-all duration-300">
-              <div className="p-8">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Calendar */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Calendar View</h2>
+                <p className="text-sm text-gray-500">Click on any date to book an appointment</p>
+              </div>
+              <div className="p-6">
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">Cancel Appointment</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Are you sure you want to cancel your appointment at <span className="font-semibold text-red-600">{confirmCancel.timeStr}</span>?
-                  </p>
-                  <p className="text-sm text-gray-500 mt-3">
-                    You can book a new appointment after cancellation.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={confirmCancelBooking}
-                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                  >
-                    Yes, Cancel
-                  </button>
-                  <button
-                    onClick={() => setConfirmCancel(null)}
-                    className="flex-1 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 border border-gray-200"
-                  >
-                    Keep Appointment
-                  </button>
-                </div>
+                ) : (
+                  <FullCalendar
+                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+                    headerToolbar={{
+                      left: 'prev',
+                      center: 'title',
+                      right: 'next'
+                    }}
+                    initialView="dayGridMonth"
+                    editable={false}
+                    selectable={true}
+                    selectMirror={true}
+                    dayMaxEvents={true}
+                    weekends={true}
+                    events={events}
+                    select={handleDateSelect}
+                    eventClick={handleEventClick}
+                    height="auto"
+                    selectConstraint={{
+                      start: new Date(),
+                      end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+                    }}
+                    selectMinDistance={0}
+                    selectLongPressDelay={0}
+                    eventTimeFormat={{
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    }}
+                    dayHeaderFormat={{
+                      weekday: 'short'
+                    }}
+                    titleFormat={{
+                      month: 'long',
+                      year: 'numeric'
+                    }}
+                    buttonText={{
+                      today: 'Today',
+                      month: 'Month',
+                      week: 'Week',
+                      list: 'List'
+                    }}
+                    dayCellDidMount={(arg) => {
+                      // Add click handler to day cells
+                      arg.el.addEventListener('click', () => {
+                        const date = arg.date;
+                        handleDateSelect({ start: date });
+                      });
+                      
+                      // Gray out disabled dates
+                      const now = new Date();
+                      const maxDate = new Date(now);
+                      maxDate.setDate(now.getDate() + 13);
+                      maxDate.setHours(23,59,59,999);
+                      
+                      if (arg.date < now || arg.date > maxDate) {
+                        arg.el.style.opacity = '0.3';
+                        arg.el.style.pointerEvents = 'none';
+                      }
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
-        )}
-      </div>
-      {/* Change appointment confirmation modal */}
-      {changeAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-md p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-gray-200 transform transition-all duration-300">
-            <div className="p-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* User Info */}
+            {userInfo && (
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                    <FaUser className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Patient Info</h3>
+                    <p className="text-sm text-gray-500">Your details</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-3">Change Appointment</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Do you want to change your appointment to <span className="font-semibold text-blue-600">{formatTime(changeAppointment.hour, changeAppointment.minute)}</span>?
-                </p>
-                <p className="text-sm text-gray-500 mt-3">
-                  Your current appointment will be cancelled and replaced with this new time.
-                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <FaUser className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {userInfo.first_name} {userInfo.last_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <FaPhone className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{userInfo.phone}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleChangeAppointment}
-                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  Yes, Change
-                </button>
-                <button
-                  onClick={() => setChangeAppointment(null)}
-                  className="flex-1 bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-200 border border-gray-200"
-                >
-                  Keep Current
-                </button>
+            )}
+
+            {/* Clinic Info */}
+            {clinicInfo && (
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                    <FaMapMarkerAlt className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Clinic Info</h3>
+                    <p className="text-sm text-gray-500">Location & hours</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{clinicInfo.address}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <FaClock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {businessHours?.monday?.open} - {businessHours?.monday?.close}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Appointments</span>
+                  <span className="text-lg font-semibold text-blue-600">{events.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">This Month</span>
+                  <span className="text-lg font-semibold text-green-600">
+                    {events.filter(e => {
+                      const now = new Date();
+                      return e.start.getMonth() === now.getMonth() && 
+                             e.start.getFullYear() === now.getFullYear();
+                    }).length}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
-      {/* Time selection modal, always on top of calendar */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-          <div 
-            className="bg-white/90 rounded-2xl w-full max-w-lg shadow-xl relative border border-gray-100 mx-4"
-            style={{
-              animation: 'fadeInScale 0.3s ease-out',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: 0
-            }}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => {
-                setShowModal(false);
-                setSelectedDate(null);
-                setClickedHour(null);
-                setUserHasOtherBooking(false);
-                setChangeAppointment(null);
-                setActiveTab('am'); // Reset to AM tab
-              }}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200 text-gray-500 hover:text-gray-700 z-10"
-              style={{ fontSize: '20px', lineHeight: '1' }}
-            >
-              ×
-            </button>
-            <div className="px-10 py-12">
-              {/* Title area */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Select Appointment Time
-                </h3>
-                <div className="w-12 h-1 mx-auto rounded-full bg-gradient-to-r from-blue-400 to-blue-600 mb-4" />
-                <p className="text-gray-500 text-sm">
+      </div>
+
+      {/* Time Selection Modal */}
+      {showModal && !confirmCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            <div className="relative">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-8 py-6 text-white">
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setSelectedDate(null);
+                    setClickedHour(null);
+                    setUserHasOtherBooking(false);
+                    setChangeAppointment(null);
+                    setActiveTab('am');
+                  }}
+                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors duration-200"
+                >
+                  ×
+                </button>
+                <h3 className="text-xl font-bold mb-2">Select Appointment Time</h3>
+                <p className="text-blue-100">
                   {selectedDate?.toLocaleDateString('en-US', { 
                     weekday: 'long',
                     year: 'numeric',
@@ -884,37 +687,65 @@ export default function CalendarPage() {
                   })}
                 </p>
               </div>
-              {/* Time selection fluid button area */}
-              <div className="max-w-xl mx-auto mb-6">
+
+              {/* Content */}
+              <div className="p-8">
                 {isClosedDay ? (
-                  <div className="w-full text-center text-gray-400 py-8 text-lg font-semibold">
-                    Closed today
-                    <div className="text-sm text-gray-400 mt-3 font-normal">Closed on holidays. For appointments, please call the clinic first.</div>
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <FaClock className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Closed Today</h4>
+                    <p className="text-gray-500">The clinic is closed on this day. Please select another date.</p>
                   </div>
                 ) : userHasOtherBooking ? (
-                  <div className="w-full text-center text-blue-600 py-8 text-lg font-semibold">
-                    You already have an appointment today
-                    <div className="text-sm text-blue-500 mt-3 font-normal">Click "Change" on any available slot to reschedule your appointment.</div>
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <FaClock className="w-8 h-8 text-yellow-600" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Already Booked</h4>
+                    <p className="text-gray-500 mb-4">Cancel to change.</p>
+                    <button
+                      className="mt-4 px-6 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors duration-200"
+                      onClick={() => {
+                        // Find today's appointment and trigger cancel modal
+                        const today = new Date(selectedDate);
+                        today.setHours(0, 0, 0, 0);
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        const todayEvents = modalEvents.filter(e =>
+                          e.start >= today && e.start < tomorrow && e.userRowId === userRowId && e.status === 'booked'
+                        );
+                        if (todayEvents.length > 0) {
+                          setConfirmCancel({ eventId: todayEvents[0].id });
+                        }
+                      }}
+                    >
+                      Cancel Appointment
+                    </button>
                   </div>
                 ) : availableHours.length === 0 ? (
-                  <div className="w-full text-center text-gray-400 py-8 text-lg font-semibold">
-                    No available slots
-                    <div className="text-sm text-gray-400 mt-3 font-normal">All time slots for today have been booked or are in the past.</div>
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <FaClock className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">No Available Slots</h4>
+                    <p className="text-gray-500">All time slots for today have been booked or are in the past.</p>
                   </div>
                 ) : (
                   <div>
-                    {/* AM/PM tabs */}
+                    {/* AM/PM Tabs */}
                     <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
                       {(() => {
                         const { amSlots, pmSlots } = separateAmPmSlots(availableHours);
-                        const hasAmSlots = amSlots.length > 0;
-                        const hasPmSlots = pmSlots.length > 0;
+                        const hasAmSlots = amSlots.filter(s => s.isAvailable).length > 0;
+                        const hasPmSlots = pmSlots.filter(s => s.isAvailable).length > 0;
                         
                         return (
                           <>
                             <button
                               onClick={() => setActiveTab('am')}
-                              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
                                 activeTab === 'am'
                                   ? 'bg-white text-blue-600 shadow-sm'
                                   : 'text-gray-600 hover:text-gray-800'
@@ -922,11 +753,11 @@ export default function CalendarPage() {
                               disabled={!hasAmSlots}
                             >
                               Morning
-                              {hasAmSlots && <span className="ml-1 text-xs">({amSlots.length})</span>}
+                              {hasAmSlots && <span className="ml-1 text-xs">({amSlots.filter(s => s.isAvailable).length})</span>}
                             </button>
                             <button
                               onClick={() => setActiveTab('pm')}
-                              className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
                                 activeTab === 'pm'
                                   ? 'bg-white text-blue-600 shadow-sm'
                                   : 'text-gray-600 hover:text-gray-800'
@@ -934,37 +765,28 @@ export default function CalendarPage() {
                               disabled={!hasPmSlots}
                             >
                               Afternoon
-                              {hasPmSlots && <span className="ml-1 text-xs">({pmSlots.length})</span>}
+                              {hasPmSlots && <span className="ml-1 text-xs">({pmSlots.filter(s => s.isAvailable).length})</span>}
                             </button>
                           </>
                         );
                       })()}
                     </div>
                     
-                    {/* Time slots display */}
-                    <div className="grid grid-cols-3 gap-4 justify-items-center">
+                    {/* Time Slots */}
+                    <div className="grid grid-cols-3 gap-3">
                       {(() => {
                         const { amSlots, pmSlots } = separateAmPmSlots(availableHours);
                         const currentSlots = activeTab === 'am' ? amSlots : pmSlots;
                         
-                        if (currentSlots.length === 0) {
+                        if (currentSlots.filter(s => s.isAvailable).length === 0) {
                           return (
-                            <div className="col-span-3 text-center text-gray-400 py-8 text-lg font-semibold">
+                            <div className="col-span-3 text-center py-8 text-gray-500">
                               No {activeTab === 'am' ? 'morning' : 'afternoon'} slots available
                             </div>
                           );
                         }
                         
                         return currentSlots.map(slot => {
-                          // ...existing code...
-                          const slotEvents = modalEvents.filter(e => {
-                            const eventHour = e.start.getHours();
-                            const eventMinute = e.start.getMinutes();
-                            return eventHour === slot.hour && 
-                                   eventMinute === slot.minute &&
-                                   e.status === 'booked';
-                          });
-                          const isFull = slotEvents.length >= 2;
                           const myEvent = modalEvents.find(e => {
                             const eventHour = e.start.getHours();
                             const eventMinute = e.start.getMinutes();
@@ -975,52 +797,30 @@ export default function CalendarPage() {
                           });
                           const isClicked = clickedHour === `${slot.hour}:${slot.minute.toString().padStart(2, '0')}`;
                           const isBooked = !!myEvent;
-                          // ...existing code...
                           const userHasOtherBooking = modalEvents.some(e => 
                             e.userRowId === userRowId && 
                             e.status === 'booked' && 
                             !(e.start.getHours() === slot.hour && e.start.getMinutes() === slot.minute)
                           );
-                          // 判断是否为禁用 slot（灰色且不可点）
-                          // 逻辑与 slotPropGetter 保持一致
+                          
                           const slotDate = new Date(selectedDate);
                           slotDate.setHours(slot.hour, slot.minute, 0, 0);
                           const slotEnd = new Date(slotDate);
                           slotEnd.setMinutes(slotEnd.getMinutes() + 30);
                           const now = new Date();
                           let isDisabled = false;
-                          // 超过最大预约日期（今天+13天）禁用
+                          
                           const maxDate = new Date(now);
                           maxDate.setDate(now.getDate() + 13);
                           maxDate.setHours(23,59,59,999);
                           if (slotDate > maxDate) isDisabled = true;
                           if (slotEnd <= now) isDisabled = true;
-                          if (isFull) isDisabled = true;
-                          if (!businessHours) isDisabled = false;
-                          else {
-                            const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                            const weekday = weekdays[slotDate.getDay()];
-                            const dayConfig = businessHours[weekday];
-                            if (!dayConfig || dayConfig.closed) isDisabled = true;
-                            const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
-                            const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
-                            const currentMinutes = slot.hour * 60 + slot.minute;
-                            const startMinutes = startH * 60 + startM;
-                            const endMinutes = endH * 60 + endM;
-                            if (currentMinutes < startMinutes || currentMinutes >= endMinutes) isDisabled = true;
+                          
+                          // Skip unavailable slots
+                          if (!slot.isAvailable) {
+                            return null;
                           }
-                          // 禁用 slot 用 disabled 属性
-                          if (isFull) {
-                            return (
-                              <div
-                                key={`${slot.hour}:${slot.minute}`}
-                                className="px-6 py-2 rounded-full border font-semibold text-base bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed flex items-center justify-center"
-                                style={{ minWidth: 80 }}
-                              >
-                                <span className="font-medium">Full</span>
-                              </div>
-                            );
-                          }
+                          
                           if (userHasOtherBooking && !isBooked && !isDisabled) {
                             return (
                               <button
@@ -1028,26 +828,26 @@ export default function CalendarPage() {
                                 onClick={() => {
                                   setChangeAppointment({ hour: slot.hour, minute: slot.minute });
                                 }}
-                                className="px-6 py-2 rounded-full border font-semibold text-base bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-800 hover:border-yellow-400 transition-all duration-200 flex items-center justify-center"
-                                style={{ minWidth: 80 }}
+                                className="px-4 py-3 rounded-xl border font-medium text-sm bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:text-yellow-800 hover:border-yellow-400 transition-all duration-200 flex items-center justify-center"
                                 disabled={isDisabled}
                               >
-                                <span className="font-medium">Change</span>
+                                Change
                               </button>
                             );
                           }
+                          
                           return (
                             <button
                               key={`${slot.hour}:${slot.minute}`}
                               onClick={() => {
                                 if (isBooked) {
-                                  setConfirmCancel({ eventId: myEvent.id, timeStr: formatTime(slot.hour, slot.minute) });
+                                  setConfirmCancel({ eventId: myEvent.id });
                                 } else {
                                   handleBook(slot.hour, slot.minute);
                                 }
                               }}
                               className={
-                                `px-6 py-2 rounded-full border font-semibold text-base shadow-sm transition-all duration-200
+                                `px-4 py-3 rounded-xl border font-medium text-sm transition-all duration-200 flex items-center justify-center
                                 ${isClicked 
                                   ? 'bg-blue-500 text-white border-blue-500 shadow-lg' 
                                   : isBooked
@@ -1055,49 +855,106 @@ export default function CalendarPage() {
                                     : isDisabled
                                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                                       : 'bg-transparent text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-400 hover:shadow-md'
-                                }
-                                flex items-center justify-center relative overflow-hidden`
+                                }`
                               }
-                              style={{
-                                minWidth: 80,
-                                marginBottom: 0,
-                                animation: isClicked ? 'successPulse 0.6s ease-in-out' : 'none',
-                                pointerEvents: isDisabled ? 'none' : undefined
-                              }}
                               disabled={isDisabled}
                             >
                               {isClicked ? (
-                                <div className="flex items-center justify-center">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </div>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
                               ) : isBooked ? (
-                                <span className="font-medium">Cancel</span>
+                                'Cancel'
                               ) : (
-                                <span className="font-medium">
-                                  {formatTime(slot.hour, slot.minute)}
-                                </span>
+                                formatTime(slot.hour, slot.minute)
                               )}
                             </button>
                           );
-                        });
+                        }).filter(Boolean);
                       })()}
                     </div>
                   </div>
                 )}
               </div>
-              {/* Bottom hint */}
-              <div className="text-center mt-8">
-                <p className="text-xs text-gray-400">
-                  Click to select your appointment time
-                </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {confirmCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Cancel Appointment</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to cancel your appointment?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={confirmCancelBooking}
+                  className="flex-1 bg-red-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-red-600 transition-colors duration-200"
+                >
+                  Yes, Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmCancel(null);
+                    setShowModal(false);
+                    setSelectedDate(null);
+                    setClickedHour(null);
+                    setUserHasOtherBooking(false);
+                    setActiveTab('am');
+                  }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                >
+                  Keep Appointment
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-      {/* Notification component */}
+
+      {/* Change Appointment Modal */}
+      {changeAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Change Appointment</h3>
+              <p className="text-gray-600 mb-6">
+                Do you want to change your appointment to <span className="font-semibold text-blue-600">{formatTime(changeAppointment.hour, changeAppointment.minute)}</span>?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleChangeAppointment}
+                  className="flex-1 bg-yellow-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-yellow-600 transition-colors duration-200"
+                >
+                  Yes, Change
+                </button>
+                <button
+                  onClick={() => setChangeAppointment(null)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                >
+                  Keep Current
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
           <div className={`max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 p-4 transform transition-all duration-300 ${
@@ -1152,15 +1009,6 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-      {/* Back home button */}
-      <div className="w-full flex justify-center mt-8 mb-4">
-        <button
-          onClick={() => window.location.href = '/'}
-          className="px-8 py-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-        >
-          Back Home
-        </button>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera } from 'react-html5-camera-photo';
+import Webcam from 'react-webcam';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
@@ -84,71 +84,51 @@ export default function SelfiePage() {
     checkCamera();
   }, []);
 
+  // 拍照逻辑改为用 react-webcam
   const capture = () => {
     setCapturing(true);
     console.log('📸 Taking photo...');
-    
-    // 检查相机组件是否真正ready
     if (!cameraRef.current) {
       console.error('❌ Camera ref not available');
       setError('Camera not ready. Please wait and try again.');
       setCapturing(false);
       return;
     }
-    
     try {
-      const image = cameraRef.current.takePhoto();
+      const image = cameraRef.current.getScreenshot();
       console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
-      
       if (image) {
         setError('');
-        console.log('📸 Starting image processing...');
-        
-        // Convert base64 to blob
+        // base64 to blob
         fetch(image)
-          .then(res => {
-            console.log('📸 Fetch response:', res);
-            return res.blob();
-          })
+          .then(res => res.blob())
           .then(blob => {
-            console.log('📸 Blob created:', blob.size, 'bytes');
-            console.log('🖼️ Compressing image...');
             new Compressor(blob, {
               quality: 0.6,
               convertSize: 1000000,
               success(result) {
-                console.log('✅ Image compressed successfully:', result.size, 'bytes');
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                  console.log('✅ Image converted to data URL');
                   setImageSrc(reader.result);
                   setCompressedBlob(result);
                 };
                 reader.readAsDataURL(result);
               },
               error(err) {
-                console.error('❌ Compression failed:', err.message);
-                console.log('📸 Using original image without compression');
                 setImageSrc(image);
                 setCompressedBlob(blob);
               }
             });
           })
           .catch(err => {
-            console.error('❌ Image processing failed:', err);
             setError('Failed to process image. Please try again.');
           })
-          .finally(() => {
-            console.log('📸 Photo capture process completed');
-            setCapturing(false);
-          });
+          .finally(() => setCapturing(false));
       } else {
-        console.error('❌ Failed to take photo');
         setError('Failed to take photo. Please try again.');
         setCapturing(false);
       }
     } catch (error) {
-      console.error('❌ Camera capture error:', error);
       setError('Camera error. Please try again.');
       setCapturing(false);
     }
@@ -218,38 +198,24 @@ export default function SelfiePage() {
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
-              <Camera
+              <Webcam
                 ref={cameraRef}
-                aspectRatio={1}
-                facingMode="user"
-                idealResolution={{ width: 640, height: 480 }}
-                errorMessages={{
-                  noCameraAccessible: 'No camera accessible',
-                  permissionDenied: 'Permission denied',
-                  switchCamera: 'Switch camera',
-                  canvas: 'Canvas is not supported'
-                }}
-                videoReadyCallback={() => {
-                  console.log('✅ Camera ready callback triggered');
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: 'user', width: 640, height: 480 }}
+                onUserMedia={() => {
                   setCameraReady(true);
                   setCameraLoading(false);
                   setError('');
                 }}
-                videoErrorCallback={(error) => {
-                  console.error('❌ Camera error callback:', error);
+                onUserMediaError={err => {
                   setError('Camera error. Please check permissions and try again.');
                   setCameraReady(false);
                   setCameraLoading(false);
                 }}
-                onTakePhotoAnimationDone={() => {
-                  console.log('📸 Photo animation done');
-                }}
-                disablePicture={false}
-                disableVideo={true}
-                showResolutionIndicator={false}
+                className="w-full h-full object-cover"
               />
             </div>
-            {/* 拍照按钮移到圆框下方，风格一致 */}
             <div className="w-full flex flex-col items-center">
               <button
                 onClick={capture}

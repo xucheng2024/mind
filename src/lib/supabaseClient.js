@@ -3,23 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔧 Supabase Config:', {
-  url: supabaseUrl ? 'SET' : 'MISSING',
-  key: supabaseKey ? 'SET' : 'MISSING',
-  env: import.meta.env.MODE,
-  userAgent: navigator.userAgent,
-  isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
-  location: window.location.href,
-  origin: window.location.origin
-});
-
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Supabase environment variables missing!');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl);
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseKey ? 'SET' : 'MISSING');
+  throw new Error('Supabase configuration is incomplete. Please check your environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'appclinic-web'
+    }
+  }
+});
 
 // Test Supabase connection
 supabase.from('users').select('count').limit(1).then(result => {

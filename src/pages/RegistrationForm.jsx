@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import RegistrationHeader from '../components/RegistrationHeader';
-import InputMask from 'react-input-mask';
+import { IMaskInput } from 'react-imask';
 import { hash, encrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
@@ -147,15 +147,32 @@ export default function RegistrationForm() {
     const dd = parseInt(form.dobDay, 10);
     const mm = parseInt(form.dobMonth, 10);
     const yyyy = parseInt(form.dobYear, 10);
+    
     if (!dd || !mm || !yyyy) return false;
-    if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) return false;
-
-    const date = new Date(yyyy, mm - 1, dd);  // 更安全的日期构造
-    return (
-      date.getFullYear() === yyyy &&
-      date.getMonth() === mm - 1 &&
-      date.getDate() === dd
-    );
+    
+    // 基本范围检查
+    if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return false;
+    
+    // 年份范围检查 (诊所适用: 1900-当前年份+1)
+    const currentYear = new Date().getFullYear();
+    if (yyyy < 1900 || yyyy > currentYear + 1) return false;
+    
+    // 具体日期验证
+    const date = new Date(yyyy, mm - 1, dd);
+    if (
+      date.getFullYear() !== yyyy ||
+      date.getMonth() !== mm - 1 ||
+      date.getDate() !== dd
+    ) return false;
+    
+    // 未来日期检查 (诊所登记通常不允许未来日期)
+    if (date > new Date()) return false;
+    
+    // 年龄合理性检查 (诊所适用: 0-120岁)
+    const age = currentYear - yyyy;
+    if (age > 120) return false;
+    
+    return true;
   };
 
   const validate = () => {
@@ -163,7 +180,7 @@ export default function RegistrationForm() {
     const errs = {};
     if (!form.fullName) errs.fullName = 'Full name is required';
     if (!/^[A-Za-z0-9]{4}$/.test(form.idLast4)) errs.idLast4 = 'Must be exactly 4 letters or digits';
-    if (!validateDOB()) errs.dob = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
+    if (!validateDOB()) errs.dob = 'Please enter a valid date of birth (DD/MM/YYYY)';
     if (!/^\d+$/.test(form.phone)) errs.phone = 'Phone number must be numeric';
     if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = 'Invalid email';
     if (!/^\d{6}$/.test(form.postalCode)) errs.postalCode = 'Postal code must be exactly 6 digits';
@@ -307,15 +324,67 @@ export default function RegistrationForm() {
     }
   }, 300);
 
-  const handleDOBChange = (e) => {
-    let [dd, mm, yyyy] = e.target.value.split('/');
+  const handleDOBChange = (value) => {
+    let [dd, mm, yyyy] = value.split('/');
     dd = dd || '';
     mm = mm || '';
     yyyy = yyyy || '';
+    
+    // 实时格式验证
+    let isValid = true;
+    let errorMsg = '';
+    
+    if (dd && mm && yyyy) {
+      const day = parseInt(dd, 10);
+      const month = parseInt(mm, 10);
+      const year = parseInt(yyyy, 10);
+      
+      // 基本范围检查
+      if (day < 1 || day > 31 || month < 1 || month > 12) {
+        isValid = false;
+        errorMsg = 'Invalid date format';
+      }
+      // 年份范围检查 (诊所适用: 1900-当前年份+1)
+      else if (year < 1900 || year > new Date().getFullYear() + 1) {
+        isValid = false;
+        errorMsg = `Year must be between 1900-${new Date().getFullYear() + 1}`;
+      }
+      // 具体日期验证
+      else {
+        const date = new Date(year, month - 1, day);
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month - 1 ||
+          date.getDate() !== day
+        ) {
+          isValid = false;
+          errorMsg = 'Invalid date (e.g., 30/02/2023)';
+        }
+        // 未来日期检查 (诊所登记通常不允许未来日期)
+        else if (date > new Date()) {
+          isValid = false;
+          errorMsg = 'Date cannot be in the future';
+        }
+        // 年龄合理性检查 (诊所适用: 0-120岁)
+        else {
+          const age = new Date().getFullYear() - year;
+          if (age > 120) {
+            isValid = false;
+            errorMsg = 'Age seems unrealistic';
+          }
+        }
+      }
+    }
+    
     setForm({ ...form, dobDay: dd, dobMonth: mm, dobYear: yyyy });
-
-    // 不做任何实时校验
     updateRegistrationData({ dobDay: dd, dobMonth: mm, dobYear: yyyy });
+    
+    // 实时错误更新
+    if (dd && mm && yyyy) {
+      setErrors(prev => ({ ...prev, dob: isValid ? '' : errorMsg }));
+    } else {
+      setErrors(prev => ({ ...prev, dob: '' }));
+    }
   };
 
   const fieldRefs = {
@@ -420,47 +489,47 @@ export default function RegistrationForm() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Date of Birth <span className="text-red-500">*</span>
+              <span className="text-xs text-gray-500 ml-2">(DD/MM/YYYY)</span>
             </label>
-            <InputMask
-              mask="99/99/9999"
-              maskChar=""
+            <IMaskInput
+              mask="00/00/0000"
               placeholder="DD/MM/YYYY"
               value={`${form.dobDay}/${form.dobMonth}/${form.dobYear}`}
-              onChange={handleDOBChange}
+              onAccept={handleDOBChange}
               onBlur={() => {
-                let err = '';
-                const dd = parseInt(form.dobDay, 10);
-                const mm = parseInt(form.dobMonth, 10);
-                const yyyy = parseInt(form.dobYear, 10);
-                if (!(dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yyyy >= 1900 && yyyy <= 2050)) {
-                  err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
-                } else {
-                  const date = new Date(yyyy, mm - 1, dd);
-                  if (
-                    date.getFullYear() !== yyyy ||
-                    date.getMonth() !== mm - 1 ||
-                    date.getDate() !== dd
-                  ) {
-                    err = 'Date must be valid (DD/MM/YYYY between 1900-2050)';
+                // onBlur 时进行最终验证
+                if (form.dobDay && form.dobMonth && form.dobYear) {
+                  const isValid = validateDOB();
+                  if (!isValid) {
+                    setErrors(prev => ({ ...prev, dob: 'Please enter a valid date of birth' }));
                   }
                 }
-                setErrors(prev => ({ ...prev, dob: err }));
               }}
               inputMode="numeric"
               type="tel"
+              ref={dobInputRef}
               className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
-            >
-              {(inputProps) => (
-                <input
-                  {...inputProps}
-                  ref={dobInputRef}
-                  type="tel"
-                  inputMode="numeric"
-                  className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
-                />
-              )}
-            </InputMask>
-            {errors.dob && <div className="text-red-500 text-xs mt-1">{errors.dob}</div>}
+              style={{
+                fontFamily: 'monospace',
+                letterSpacing: '0.5px'
+              }}
+            />
+            {errors.dob && (
+              <div className="text-red-500 text-xs mt-1 flex items-start gap-1">
+                <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.dob}
+              </div>
+            )}
+            {!errors.dob && form.dobDay && form.dobMonth && form.dobYear && (
+              <div className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Valid date format
+              </div>
+            )}
           </div>
 
           {/* Phone Number */}
