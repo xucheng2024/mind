@@ -6,6 +6,7 @@ import ToastProvider from './components/ToastProvider';
 import PWAStatus from './components/PWAStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/PerformanceMonitor';
+import QueryProvider from './components/QueryProvider';
 import { RegistrationProvider } from '../context/RegistrationContext';
 
 // Lazy load all pages
@@ -54,12 +55,14 @@ function App() {
 
 export default function RootApp() {
   return (
-    <RegistrationProvider>
-      <BrowserRouter>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </BrowserRouter>
-    </RegistrationProvider>
+    <QueryProvider>
+      <RegistrationProvider>
+        <BrowserRouter>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </BrowserRouter>
+      </RegistrationProvider>
+    </QueryProvider>
   );
 }

@@ -15,7 +15,10 @@
     "deploy:preview": "vercel"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
     "@supabase/supabase-js": "^2.51.0",
+    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query-devtools": "^5.83.0",
     "@vitejs/plugin-legacy": "^5.4.3",
     "@vitejs/plugin-react": "^4.6.0",
     "compressorjs": "^1.2.1",
@@ -28,6 +31,7 @@
     "react": "^18.2.0",
     "react-big-calendar": "^1.19.4",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.61.1",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-input-mask": "^2.0.4",
@@ -40,7 +44,8 @@
     "vite": "^5.4.19",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-imagemin": "^0.6.1",
-    "vite-plugin-pwa": "^1.0.2"
+    "vite-plugin-pwa": "^1.0.2",
+    "zod": "^4.0.13"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
