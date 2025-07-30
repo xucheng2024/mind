@@ -281,10 +281,10 @@ export default function HomePage() {
 
   // 防抖的预约按钮点击
   const handleBookingClick = debounce(() => {
-    const storedUserId = localStorage.getItem('user_id');
+    const storedUserRowId = localStorage.getItem('user_row_id');
     const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
-    if (storedUserId && storedClinicId) {
-      navigate(`/booking/slots?clinic_id=${storedClinicId}&user_id=${storedUserId}`);
+    if (storedUserRowId && storedClinicId) {
+      navigate(`/booking/slots?clinic_id=${storedClinicId}&user_row_id=${storedUserRowId}`);
     } else {
       navigate('/booking?clinic_id=' + clinicId);
     }
