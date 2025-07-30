@@ -192,10 +192,9 @@ export default function RegistrationForm() {
     return isValid;
   };
 
-  // 使用防抖的提交函数
+  // 使用防抖的提交函数，但不在这里处理 preventDefault
   const handleSubmit = debounce(async (e) => {
     console.log('🔥 FORM SUBMIT TRIGGERED!'); // 测试日志
-    e.preventDefault();
     console.log('🚀 RegistrationForm submit started');
     console.log('📋 Form data:', form);
     console.log('🏥 Clinic ID:', clinicId);
@@ -339,9 +338,14 @@ export default function RegistrationForm() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
+          e.preventDefault(); // 确保阻止默认行为
           console.log('🔥 FORM ONSUBMIT EVENT FIRED!');
-          handleSubmit(e);
+          try {
+            await handleSubmit(e);
+          } catch (error) {
+            console.error('❌ Form submit error:', error);
+          }
         }}
         className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
       >
