@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
-import Webcam from 'react-webcam';
+import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
 import Compressor from 'compressorjs';
 
 export default function SelfiePage() {
-  const webcamRef = useRef(null);
+  const cameraRef = useRef(null);
   const navigate = useNavigate();
   const { registrationData, updateRegistrationData } = useRegistration();
   const [imageSrc, setImageSrc] = useState(null);
@@ -66,36 +66,61 @@ export default function SelfiePage() {
   const capture = () => {
     setCapturing(true);
     console.log('📸 Taking photo...');
-    const imageDataUrl = webcamRef.current?.getScreenshot?.();
-    if (imageDataUrl) {
-      setError('');
-      fetch(imageDataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          console.log('🖼️ Compressing image...');
-          new Compressor(blob, {
-            quality: 0.6,
-            convertSize: 1000000,
-            success(result) {
-              console.log('✅ Image compressed successfully');
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                setImageSrc(reader.result);
-                setCompressedBlob(result);
-              };
-              reader.readAsDataURL(result);
-            },
-            error(err) {
-              console.error('❌ Compression failed:', err.message);
-              setImageSrc(imageDataUrl);
-              setCompressedBlob(blob);
-            }
+    
+    if (cameraRef.current) {
+      const image = cameraRef.current.takePhoto();
+      console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
+      
+      if (image) {
+        setError('');
+        console.log('📸 Starting image processing...');
+        
+        // Convert base64 to blob
+        fetch(image)
+          .then(res => {
+            console.log('📸 Fetch response:', res);
+            return res.blob();
+          })
+          .then(blob => {
+            console.log('📸 Blob created:', blob.size, 'bytes');
+            console.log('🖼️ Compressing image...');
+            new Compressor(blob, {
+              quality: 0.6,
+              convertSize: 1000000,
+              success(result) {
+                console.log('✅ Image compressed successfully:', result.size, 'bytes');
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  console.log('✅ Image converted to data URL');
+                  setImageSrc(reader.result);
+                  setCompressedBlob(result);
+                };
+                reader.readAsDataURL(result);
+              },
+              error(err) {
+                console.error('❌ Compression failed:', err.message);
+                console.log('📸 Using original image without compression');
+                setImageSrc(image);
+                setCompressedBlob(blob);
+              }
+            });
+          })
+          .catch(err => {
+            console.error('❌ Image processing failed:', err);
+            setError('Failed to process image. Please try again.');
+          })
+          .finally(() => {
+            console.log('📸 Photo capture process completed');
+            setCapturing(false);
           });
-        })
-        .finally(() => setCapturing(false));
+      } else {
+        console.error('❌ Failed to take photo');
+        setError('Failed to take photo. Please try again.');
+        setCapturing(false);
+      }
     } else {
-      console.error('❌ Failed to take photo');
-      setError('Failed to take photo. Please try again.');
+      console.error('❌ Camera ref not available');
+      setError('Camera not ready. Please wait and try again.');
       setCapturing(false);
     }
   };
@@ -136,16 +161,22 @@ export default function SelfiePage() {
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{ facingMode: 'user' }}
-                className="w-full h-full object-cover rounded-full"
-                onUserMediaError={(err) => {
-                  console.error('❌ Camera error:', err);
-                  setError('Unable to access camera. Please check your browser permissions.');
-                  setHasCamera(false);
+              <Camera
+                ref={cameraRef}
+                aspectRatio={1}
+                facingMode="user"
+                errorMessages={{
+                  noCameraAccessible: 'No camera accessible',
+                  permissionDenied: 'Permission denied',
+                  switchCamera: 'Switch camera',
+                  canvas: 'Canvas is not supported'
+                }}
+                videoReadyCallback={() => {
+                  console.log('✅ Camera video ready');
+                }}
+                videoErrorCallback={(error) => {
+                  console.error('❌ Camera video error:', error);
+                  setError('Camera error. Please check permissions.');
                 }}
               />
             </div>

@@ -93,13 +93,13 @@ export default function AuthorizationPage() {
           Signature of Patient/Guardian or Representative <span className="text-red-500">*</span>
         </label>
         <div
-          className={`relative rounded-2xl mb-2 w-full overflow-hidden border ${errors.signature ? 'border-red-500' : 'border-gray-300'} bg-gray-50`}
-          style={{ height: '160px', background: '#f9fafb', position: 'relative' }}
+          className={`relative rounded-2xl mb-2 w-full overflow-hidden border ${errors.signature ? 'border-red-500' : 'border-gray-300'} bg-white`}
+          style={{ height: '160px' }}
         >
           <SignatureCanvas
             ref={sigCanvasRef}
             penColor="#2563eb"
-            backgroundColor="#f9fafb"
+            backgroundColor="white"
             canvasProps={{
               style: {
                 width: '100%',
@@ -109,7 +109,7 @@ export default function AuthorizationPage() {
                 padding: 0,
                 border: 'none',
                 borderRadius: '1rem',
-                background: '#f9fafb',
+                background: 'white',
               }
             }}
           />
@@ -117,30 +117,7 @@ export default function AuthorizationPage() {
             type="button"
             aria-label="Clear signature"
             onClick={handleClear}
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              background: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              fontWeight: 700,
-              color: '#2563eb',
-              cursor: 'pointer',
-              zIndex: 20,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-              margin: 0,
-              padding: 0,
-              transition: 'background 0.2s'
-            }}
-            onMouseOver={e => (e.currentTarget.style.background = '#f3f4f6')}
-            onMouseOut={e => (e.currentTarget.style.background = '#fff')}
+            className="absolute top-2 right-2 bg-white border border-gray-300 rounded-full w-8 h-8 flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm hover:bg-gray-50 transition-colors z-10"
           >
             ×
           </button>
@@ -159,12 +136,12 @@ export default function AuthorizationPage() {
           {loading ? 'Submitting...' : 'Complete'}
         </button>
         <div style={{ fontSize: '0.92em', color: '#555', margin: '16px 0 8px 0', textAlign: 'center' }}>
-          By clicking <strong>Complete</strong>, you confirm that you have read and agree to the
+          By clicking <strong>Complete</strong>, you agree to the<br />
           <a
             href="/consent-release-indemnity.html"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#2563eb', textDecoration: 'underline', marginLeft: 4 }}
+            style={{ color: '#2563eb', textDecoration: 'underline' }}
           >
             Consent & Indemnity Agreement
           </a>.

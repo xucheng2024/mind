@@ -18,6 +18,7 @@ export default function HomePage() {
   const [checkinSuccess, setCheckinSuccess] = React.useState(false);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [userInfo, setUserInfo] = React.useState(null);
+  const [logoutLoading, setLogoutLoading] = React.useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // Get clinic_id using the helper function
@@ -206,13 +207,16 @@ export default function HomePage() {
 
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
+    console.log('🚪 Logging out...');
+    setLogoutLoading(true);
     // Only clear user-related data, preserve registration data
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_row_id');
     localStorage.removeItem('clinic_id');
     sessionStorage.clear();
+    // 立即重新加载页面
     window.location.reload();
-  }, 200);
+  }, 100);
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-white to-blue-50">
@@ -220,11 +224,11 @@ export default function HomePage() {
       <div className="w-full flex flex-col items-center mb-10 mt-12">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
         <div className="text-base text-gray-400 font-medium">Traditional Chinese Medicine & Wellness</div>
-        <div className="mt-4 w-full max-w-md h-48 rounded-xl overflow-hidden shadow-lg">
+        <div className="mt-4 w-full max-w-sm h-32 rounded-xl overflow-hidden shadow-lg">
           <LazyImage 
             src="/clinic-illustration.svg" 
             alt="Clinic" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
             placeholder="/logo.png"
           />
         </div>
@@ -257,8 +261,10 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="ghost"
-                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                className="bg-transparent border-0 text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-sm font-normal"
                 onClick={handleLogoutClick}
+                loading={logoutLoading}
+                disabled={logoutLoading}
               >
                 Logout
               </Button>
