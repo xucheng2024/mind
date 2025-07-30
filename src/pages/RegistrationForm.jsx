@@ -43,14 +43,14 @@ export default function RegistrationForm() {
 
   useEffect(() => {
     let timeoutId;
-    window.debug.log('RegistrationForm mounted with clinicId', clinicId);
+    console.log('RegistrationForm mounted with clinicId', clinicId);
     
     if (!clinicId) {
-      window.debug.error('Missing clinic_id in URL');
+      console.error('Missing clinic_id in URL');
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
       timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
-      window.debug.success(`Clinic ID found: ${clinicId}`);
+      console.log(`Clinic ID found: ${clinicId}`);
       // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
@@ -62,7 +62,7 @@ export default function RegistrationForm() {
     });
     // 只在有 clinicId 时才更新 registrationData
     if (clinicId) {
-      window.debug.log('Updating registration data with clinic_id', clinicId);
+      console.log('Updating registration data with clinic_id', clinicId);
       updateRegistrationData({
         clinic_id: clinicId,
         fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',

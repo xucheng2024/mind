@@ -10,7 +10,7 @@ import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
-import DebugPanel from './components/DebugPanel';
+
 import { RegistrationProvider } from '../context/RegistrationContext';
 
 
@@ -35,8 +35,8 @@ const PageLoader = () => (
 function App() {
   // Initialize debug system
   React.useEffect(() => {
-    window.debug.log('App initialized');
-    window.debug.success('Debug system ready');
+    console.log('App initialized');
+    console.log('Debug system ready');
   }, []);
 
   return (
@@ -63,7 +63,7 @@ function App() {
       <PWAInstallButton />
       <VersionUpdate />
       <PWAUpdateNotification />
-      <DebugPanel />
+
     </>
   );
 }

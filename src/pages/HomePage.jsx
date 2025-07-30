@@ -20,7 +20,7 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   // Get clinic_id using the helper function
   const clinicId = getClinicId(searchParams, localStorage);
-  window.debug.log('HomePage clinicId', clinicId);
+  console.log('HomePage clinicId', clinicId);
 
   // 这样获取 context 数据和方法
   const { registrationData, updateRegistrationData } = useRegistration();
