@@ -339,7 +339,10 @@ export default function RegistrationForm() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          console.log('🔥 FORM ONSUBMIT EVENT FIRED!');
+          handleSubmit(e);
+        }}
         className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
       >
       <RegistrationHeader title="Personal Information" />
@@ -717,6 +720,7 @@ export default function RegistrationForm() {
         <button
           type="submit"
           disabled={loading}
+          onClick={() => console.log('🔥 SUBMIT BUTTON CLICKED!')}
           className={`w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${loading ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none transform-none' : ''}`}
         >
           {loading ? (
