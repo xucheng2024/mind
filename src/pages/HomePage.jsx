@@ -191,8 +191,52 @@ export default function HomePage() {
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
     console.log('🏠 HomePage: Clicking Register button');
+    
+    // 清除所有表单数据，但保留clinic_id
+    console.log('🧹 Clearing registration form data...');
+    
+    // 保存当前的clinic_id
+    const currentClinicId = registrationData.clinic_id || clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
+    
+    // 清除所有表单数据
+    updateRegistrationData({
+      clinic_id: currentClinicId,
+      fullName: '',
+      idLast4: '',
+      dobDay: '',
+      dobMonth: '',
+      dobYear: '',
+      phone: '',
+      email: '',
+      postalCode: '',
+      blockNo: '',
+      street: '',
+      building: '',
+      floor: '',
+      unit: '',
+      selfie: '',
+      signature: '',
+      // 清除健康声明
+      HeartDisease: '',
+      Diabetes: '',
+      Hypertension: '',
+      Cancer: '',
+      Asthma: '',
+      MentalIllness: '',
+      Epilepsy: '',
+      Stroke: '',
+      KidneyDisease: '',
+      LiverDisease: '',
+      otherHealthNotes: '',
+      // 清除同意书
+      consentAgreed: false,
+      releaseAgreed: false,
+      indemnityAgreed: false
+    });
+    
     // 确保有有效的clinic_id
-    const validClinicId = clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
+    const validClinicId = currentClinicId;
+    console.log('✅ Form cleared, navigating to register with clinic_id:', validClinicId);
     navigate('/register?clinic_id=' + validClinicId);
   }, 200);
 
