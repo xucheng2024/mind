@@ -46,6 +46,7 @@ export default function RegistrationForm() {
       setFatalError("Missing clinic_id in URL. Please use a valid registration link.");
       timeoutId = setTimeout(() => navigate('/'), 2000);
     } else {
+      // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
     // 统一清空所有保存的数据，保留clinic_id
@@ -54,12 +55,15 @@ export default function RegistrationForm() {
       phone: '', email: '', postalCode: '', blockNo: '', street: '',
       building: '', floor: '', unit: ''
     });
-    updateRegistrationData({
-      clinic_id: clinicId,
-      fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
-      phone: '', email: '', postalCode: '', blockNo: '', street: '',
-      building: '', floor: '', unit: ''
-    });
+    // 只在有 clinicId 时才更新 registrationData
+    if (clinicId) {
+      updateRegistrationData({
+        clinic_id: clinicId,
+        fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
+        phone: '', email: '', postalCode: '', blockNo: '', street: '',
+        building: '', floor: '', unit: ''
+      });
+    }
     localStorage.removeItem('registrationFormDraft');
     
     return () => {

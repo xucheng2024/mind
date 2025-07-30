@@ -28,8 +28,9 @@ export default function MedicalPage() {
     healthItems.forEach(item => { cleared[item] = ''; });
     cleared.otherHealthNotes = '';
     setForm(cleared);
-    // 保留 clinic_id，只清空医疗相关数据
+    // 只更新医疗相关数据，保留 clinic_id 和其他重要数据
     const medicalData = { ...cleared };
+    // 确保不覆盖 clinic_id
     updateRegistrationData(medicalData);
   }, []);
 
