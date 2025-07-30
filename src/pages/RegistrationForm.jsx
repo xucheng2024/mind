@@ -157,6 +157,7 @@ export default function RegistrationForm() {
   };
 
   const validate = () => {
+    console.log('🔍 Starting form validation...');
     const errs = {};
     if (!form.fullName) errs.fullName = 'Full name is required';
     if (!/^[A-Za-z0-9]{4}$/.test(form.idLast4)) errs.idLast4 = 'Must be exactly 4 letters or digits';
@@ -168,12 +169,32 @@ export default function RegistrationForm() {
     if (!form.street) errs.street = 'Street Name is required';
     if (!form.floor) errs.floor = 'Floor Number is required';
     if (!form.unit) errs.unit = 'Unit Number is required';
+    
+    console.log('📋 Validation results:', {
+      fullName: form.fullName ? 'OK' : 'MISSING',
+      idLast4: /^[A-Za-z0-9]{4}$/.test(form.idLast4) ? 'OK' : 'INVALID',
+      dob: validateDOB() ? 'OK' : 'INVALID',
+      phone: /^\d+$/.test(form.phone) ? 'OK' : 'INVALID',
+      email: /^\S+@\S+\.\S+$/.test(form.email) ? 'OK' : 'INVALID',
+      postalCode: /^\d{6}$/.test(form.postalCode) ? 'OK' : 'INVALID',
+      blockNo: form.blockNo ? 'OK' : 'MISSING',
+      street: form.street ? 'OK' : 'MISSING',
+      floor: form.floor ? 'OK' : 'MISSING',
+      unit: form.unit ? 'OK' : 'MISSING'
+    });
+    
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    const isValid = Object.keys(errs).length === 0;
+    console.log('✅ Form validation result:', isValid ? 'PASSED' : 'FAILED');
+    if (!isValid) {
+      console.log('❌ Validation errors:', errs);
+    }
+    return isValid;
   };
 
   // 使用防抖的提交函数
   const handleSubmit = debounce(async (e) => {
+    console.log('🔥 FORM SUBMIT TRIGGERED!'); // 测试日志
     e.preventDefault();
     console.log('🚀 RegistrationForm submit started');
     console.log('📋 Form data:', form);
