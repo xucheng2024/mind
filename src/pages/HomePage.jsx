@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
+import Button from '../components/Button';
 
 
 export default function HomePage() {
@@ -206,7 +207,6 @@ export default function HomePage() {
       <div className="w-full flex flex-col items-center mb-10 mt-12">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
         <div className="text-base text-gray-400 font-medium">Traditional Chinese Medicine & Wellness</div>
-        {/* 懒加载诊所图片 */}
         <div className="mt-4 w-24 h-24 rounded-full overflow-hidden shadow-lg">
           <LazyImage 
             src="/clinic-illustration.svg" 
@@ -226,19 +226,20 @@ export default function HomePage() {
               <div className="text-sm text-gray-600">{userInfo.full_name}</div>
             </div>
             <div className="space-y-4">
-              <button
-                className="w-full bg-white border border-blue-300 text-blue-700 rounded-xl py-4 px-6 text-lg font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
+              <Button
+                variant="primary"
                 onClick={handleBookingClick}
               >
                 Book Appointment
-              </button>
-              <button
-                className={`w-full bg-white border border-blue-300 text-blue-700 rounded-xl py-4 px-6 text-lg font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition ${checkNavLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={checkNavLoading}
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={handleHomeCheckIn}
+                loading={checkNavLoading}
+                disabled={checkNavLoading}
               >
                 On-site Check-in
-              </button>
+              </Button>
               {checkinError && (
                 <div className="flex justify-center w-full">
                   <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-2 mt-3 text-center text-sm font-medium max-w-xs w-full animate-fade-in">
@@ -247,6 +248,15 @@ export default function HomePage() {
                 </div>
               )}
             </div>
+          </div>
+          <div className="w-full flex justify-center mt-2">
+            <Button
+              variant="ghost"
+              className="w-auto px-4 py-2 text-sm"
+              onClick={handleLogoutClick}
+            >
+              Logout / Switch User
+            </Button>
           </div>
         </div>
       )}
@@ -257,30 +267,31 @@ export default function HomePage() {
           <div className="w-full mb-8">
             <div className="text-lg font-bold text-gray-800 mb-1">First-time Visitor</div>
             <div className="text-xs text-gray-400 mb-4">First visit to clinic now</div>
-            <button
-              className="w-full bg-white border border-blue-300 text-blue-700 rounded-xl py-4 px-6 text-lg font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
+            <Button
+              variant="primary"
               onClick={handleRegisterClick}
             >
               Register & Check-in
-            </button>
+            </Button>
           </div>
           <div className="w-full">
             <div className="text-lg font-bold text-gray-800 mb-1">Returning Visitor</div>
             <div className="text-xs text-gray-400 mb-4">For patients who already have an account.</div>
             <div className="space-y-4">
-              <button
-                className="w-full bg-white border border-blue-300 text-blue-700 rounded-xl py-4 px-6 text-lg font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
+              <Button
+                variant="primary"
                 onClick={handleBookingClick}
               >
                 Book Appointment
-              </button>
-              <button
-                className={`w-full bg-white border border-blue-300 text-blue-700 rounded-xl py-4 px-6 text-lg font-bold shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition ${checkNavLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={checkNavLoading}
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={handleHomeCheckIn}
+                loading={checkNavLoading}
+                disabled={checkNavLoading}
               >
                 On-site Check-in
-              </button>
+              </Button>
               {checkinError && (
                 <div className="flex justify-center w-full">
                   <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-2 mt-3 text-center text-sm font-medium max-w-xs w-full animate-fade-in">
@@ -300,19 +311,6 @@ export default function HomePage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             <span>Check-in successful!</span>
           </div>
-        </div>
-      )}
-
-      {/* 仅在已登录时显示 logout/switch 按钮 */}
-      {isLoggedIn && (
-        <div className="w-full flex justify-center mt-4 mb-2">
-          <button
-            className="px-4 py-2 bg-gray-100 text-gray-500 font-medium rounded-lg shadow-sm hover:bg-gray-200 hover:text-gray-700 transition text-sm border border-gray-200 focus:outline-none"
-            style={{ minWidth: 0 }}
-            onClick={handleLogoutClick}
-          >
-            Logout / Switch User
-          </button>
         </div>
       )}
     </div>

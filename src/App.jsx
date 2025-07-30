@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import InstallPrompt from './components/InstallPrompt';
-import ManualInstallGuide from './components/ManualInstallGuide';
+import ShareButton from './components/ShareButton';
 import ToastProvider from './components/ToastProvider';
 import PWAStatus from './components/PWAStatus';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -51,7 +51,7 @@ function App() {
         </Suspense>
       </ErrorBoundary>
       <InstallPrompt />
-      <ManualInstallGuide />
+      <ShareButton />
       <PWAStatus />
       <PerformanceMonitor />
       <PWAInstallButton />
