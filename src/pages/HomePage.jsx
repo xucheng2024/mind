@@ -1,11 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
+import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
 
 export default function HomePage() {
   // 防止多次点击 check-in
@@ -15,8 +16,9 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [userInfo, setUserInfo] = React.useState(null);
   const navigate = useNavigate();
-  // Fixed clinicId
-  const clinicId = '5c366433-6dc9-4735-9181-a690201bd0b3';
+  const [searchParams] = useSearchParams();
+  // Get clinic_id using the helper function
+  const clinicId = getClinicId(searchParams, localStorage);
 
   // 这样获取 context 数据和方法
   const { registrationData, updateRegistrationData } = useRegistration();
