@@ -74,8 +74,15 @@ export default function CalendarPage() {
       .single()
       .then(({ data, error }) => {
         if (!error && data) {
+          console.log('🏥 Clinic info loaded:', {
+            clinicId,
+            businessHours: data.business_hours,
+            clinicName: data.name
+          });
           setClinicInfo(data);
           setBusinessHours(data.business_hours);
+        } else {
+          console.error('❌ Failed to load clinic info:', error);
         }
       });
 
@@ -208,6 +215,15 @@ export default function CalendarPage() {
     const weekday = weekdays[selectedDate.getDay()];
     const dayConfig = businessHours?.[weekday];
     const isClosed = !dayConfig || dayConfig.closed;
+    
+    // Debug logging
+    console.log('📅 Date selection debug:', {
+      selectedDate: selectedDate.toDateString(),
+      weekday,
+      dayConfig,
+      isClosed,
+      businessHours
+    });
     
     setIsClosedDay(isClosed);
     
@@ -471,6 +487,19 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Debug Info - Temporary */}
+      {businessHours && (
+        <div className="bg-yellow-100 p-4 mb-4">
+          <h3 className="font-bold">Debug - Business Hours:</h3>
+          <pre className="text-xs">{JSON.stringify(businessHours, null, 2)}</pre>
+          <div className="mt-2">
+            <h4 className="font-bold">Date Tests:</h4>
+            <p>8/5/2024: {new Date('2024-08-05').toDateString()} - Day: {['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date('2024-08-05').getDay()]}</p>
+            <p>8/6/2024: {new Date('2024-08-06').toDateString()} - Day: {['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date('2024-08-06').getDay()]}</p>
+          </div>
+        </div>
+      )}
+      
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
