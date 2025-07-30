@@ -29,15 +29,16 @@ export default function MedicalPage() {
     console.log('📋 Registration data:', registrationData);
     console.log('🏥 Clinic ID:', registrationData.clinic_id);
     
-    const cleared = {};
-    healthItems.forEach(item => { cleared[item] = ''; });
-    cleared.otherHealthNotes = '';
-    setForm(cleared);
-    // Only update medical-related data, preserve clinic_id and other important data
-    const medicalData = { ...cleared };
-    console.log('🔄 Updating medical data:', medicalData);
-    updateRegistrationData(medicalData);
-  }, []);
+    // 从registrationData恢复表单数据，而不是清空
+    const restored = {};
+    healthItems.forEach(item => { 
+      restored[item] = registrationData[item] || ''; 
+    });
+    restored.otherHealthNotes = registrationData.otherHealthNotes || '';
+    setForm(restored);
+    
+    console.log('🔄 Restored form data:', restored);
+  }, [registrationData]);
 
   useEffect(() => {
     console.log('🔍 MedicalPage registration data changed:', registrationData);

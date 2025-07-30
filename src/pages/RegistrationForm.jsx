@@ -54,22 +54,31 @@ export default function RegistrationForm() {
       // 只在有 clinicId 时才更新
       updateRegistrationData({ clinic_id: clinicId });
     }
-    // 统一清空所有保存的数据，保留clinic_id
-    setForm({
-      fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
-      phone: '', email: '', postalCode: '', blockNo: '', street: '',
-      building: '', floor: '', unit: ''
-    });
-    // 只在有 clinicId 时才更新 registrationData
+    // 从registrationData恢复表单数据，而不是清空
+    const restoredForm = {
+      fullName: registrationData.fullName || '',
+      idLast4: registrationData.idLast4 || '',
+      dobDay: registrationData.dobDay || '',
+      dobMonth: registrationData.dobMonth || '',
+      dobYear: registrationData.dobYear || '',
+      phone: registrationData.phone || '',
+      email: registrationData.email || '',
+      postalCode: registrationData.postalCode || '',
+      blockNo: registrationData.blockNo || '',
+      street: registrationData.street || '',
+      building: registrationData.building || '',
+      floor: registrationData.floor || '',
+      unit: registrationData.unit || ''
+    };
+    setForm(restoredForm);
+    
+    // 只在有 clinicId 时才更新 registrationData，保留现有数据
     if (clinicId) {
       updateRegistrationData({
         clinic_id: clinicId,
-        fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
-        phone: '', email: '', postalCode: '', blockNo: '', street: '',
-        building: '', floor: '', unit: ''
+        ...restoredForm
       });
     }
-    localStorage.removeItem('registrationFormDraft');
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);

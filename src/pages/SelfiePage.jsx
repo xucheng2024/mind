@@ -200,7 +200,11 @@ export default function SelfiePage() {
       setError('Please take a selfie first.');
       return;
     }
+    
+    console.log('📸 Saving selfie to registration data...');
     updateRegistrationData({ selfie: imageSrc });
+    
+    console.log('🚀 Navigating to authorization page...');
     navigate('/register/authorize');
   };
 
