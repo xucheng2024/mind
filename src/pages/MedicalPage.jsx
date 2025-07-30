@@ -36,16 +36,16 @@ export default function MedicalPage() {
   }, []);
 
   useEffect(() => {
-    console.log('MedicalPage mounted');
-    console.log('Registration data', registrationData);
-    console.log('Clinic ID', registrationData.clinic_id);
+    console.log('🏥 MedicalPage mounted');
+    console.log('📋 Registration data:', registrationData);
+    console.log('🏥 Clinic ID:', registrationData.clinic_id);
     
     // 检查 clinic_id 是否存在
     if (!registrationData.clinic_id) {
-      console.error('Missing clinic_id in MedicalPage');
-      console.log('Full registration data', registrationData);
+      console.error('❌ Missing clinic_id in MedicalPage');
+      console.log('📋 Full registration data:', registrationData);
     } else {
-      console.log(`Clinic ID found: ${registrationData.clinic_id}`);
+      console.log(`✅ Clinic ID found: ${registrationData.clinic_id}`);
     }
   }, [registrationData]);
 

@@ -35,8 +35,9 @@ const PageLoader = () => (
 function App() {
   // Initialize debug system
   React.useEffect(() => {
-    console.log('App initialized');
-    console.log('Debug system ready');
+    console.log('🚀 App initialized');
+    console.log('🔧 Debug system ready');
+    console.log('📱 Development mode:', process.env.NODE_ENV);
   }, []);
 
   return (
@@ -61,8 +62,9 @@ function App() {
       <PWAStatus />
       <PerformanceMonitor />
       <PWAInstallButton />
-      <VersionUpdate />
-      <PWAUpdateNotification />
+      {/* Temporarily disabled to prevent constant popups */}
+      {/* <VersionUpdate /> */}
+      {/* <PWAUpdateNotification /> */}
 
     </>
   );

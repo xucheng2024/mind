@@ -30,13 +30,15 @@ export default function VersionUpdate() {
       setUpdateInfo(getVersionInfo(currentVersion));
       setShowUpdate(true);
       
-      // Update stored version
+      // Update stored version immediately to prevent re-showing
       setStoredVersion(currentVersion);
     }
   }, []);
 
   const handleClose = () => {
     setShowUpdate(false);
+    // Also update stored version when user dismisses
+    setStoredVersion(getCurrentVersion());
   };
 
   const handleReload = () => {
