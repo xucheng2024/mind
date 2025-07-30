@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import Webcam from 'react-webcam';
+import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
@@ -84,7 +84,7 @@ export default function SelfiePage() {
     checkCamera();
   }, []);
 
-  // 拍照逻辑改为用 react-webcam
+  // 拍照逻辑改为用 react-camera-pro
   const capture = () => {
     setCapturing(true);
     console.log('📸 Taking photo...');
@@ -95,7 +95,7 @@ export default function SelfiePage() {
       return;
     }
     try {
-      const image = cameraRef.current.getScreenshot();
+      const image = cameraRef.current.takePhoto();
       console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
       if (image) {
         setError('');
@@ -198,17 +198,16 @@ export default function SelfiePage() {
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
-              <Webcam
+              <Camera
                 ref={cameraRef}
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{ facingMode: 'user', width: 640, height: 480 }}
-                onUserMedia={() => {
+                facingMode="user"
+                aspectRatio={1}
+                onCameraStart={() => {
                   setCameraReady(true);
                   setCameraLoading(false);
                   setError('');
                 }}
-                onUserMediaError={err => {
+                onCameraError={err => {
                   setError('Camera error. Please check permissions and try again.');
                   setCameraReady(false);
                   setCameraLoading(false);

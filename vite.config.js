@@ -57,7 +57,7 @@ export default defineConfig({
           router: ['react-router-dom'],
           ui: ['react-hot-toast', 'framer-motion', 'react-icons'],
           forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'react-imask'],
-          media: ['compressorjs', '@uiw/react-signature'],
+          media: ['compressorjs', '@uiw/react-signature', 'react-camera-pro'],
           calendar: ['@fullcalendar/react', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/interaction', '@fullcalendar/list'],
           utils: ['uuid', 'crypto-js', 'dayjs'],
           query: ['@tanstack/react-query', '@tanstack/react-query-devtools']
@@ -89,6 +89,7 @@ export default defineConfig({
       'react-imask',
       'compressorjs',
       '@uiw/react-signature',
+      'react-camera-pro',
       '@fullcalendar/react',
       '@fullcalendar/daygrid',
       '@fullcalendar/timegrid',
