@@ -154,7 +154,7 @@ export default function SelfiePage() {
         setCameraReady(true);
         setError('');
       }
-    }, 8000); // 8秒超时
+    }, 3000); // 3秒超时
     
     return () => clearTimeout(timeout);
   }, [cameraLoading, cameraReady]);
