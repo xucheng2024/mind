@@ -47,6 +47,7 @@ export default function SelfiePage() {
       
       console.log('✅ Camera permission granted');
       setHasCamera(true);
+      setCameraReady(true); // 直接设置相机为ready状态
       setError('');
       
       // 立即关闭流，避免占用相机
