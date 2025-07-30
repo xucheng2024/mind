@@ -26,6 +26,38 @@ export function registerPWA() {
   }
 }
 
+// PWA Installation Prompt
+let deferredPrompt;
+
+export function setupInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent Chrome 67 and earlier from automatically showing the prompt
+    e.preventDefault();
+    // Stash the event so it can be triggered later
+    deferredPrompt = e;
+    
+    // Show install button or prompt
+    showInstallPrompt();
+  });
+}
+
+export function showInstallPrompt() {
+  if (deferredPrompt) {
+    // Show the install prompt
+    deferredPrompt.prompt();
+    
+    // Wait for the user to respond to the prompt
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
 // Check for PWA installation
 export function isPWAInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches ||
