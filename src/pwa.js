@@ -1,7 +1,15 @@
 // PWA Service Worker Registration
 export function registerPWA() {
+  console.log('🔧 PWA Registration:', {
+    isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+    hasServiceWorker: 'serviceWorker' in navigator,
+    env: import.meta.env.MODE,
+    location: window.location.href
+  });
+
   // Skip Service Worker registration in development
   if (import.meta.env.DEV) {
+    console.log('🚫 Skipping Service Worker registration in development');
     return;
   }
 
@@ -9,7 +17,7 @@ export function registerPWA() {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('SW registered: ', registration);
+          console.log('✅ SW registered: ', registration);
           
           // Handle updates
           registration.addEventListener('updatefound', () => {
@@ -26,7 +34,7 @@ export function registerPWA() {
           });
         })
         .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
+          console.log('❌ SW registration failed: ', registrationError);
         });
     });
   }

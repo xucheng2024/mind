@@ -178,6 +178,15 @@ export default function RegistrationForm() {
     console.log('🚀 RegistrationForm submit started');
     console.log('📋 Form data:', form);
     console.log('🏥 Clinic ID:', clinicId);
+    console.log('🌐 Network info:', {
+      online: navigator.onLine,
+      connection: navigator.connection ? {
+        effectiveType: navigator.connection.effectiveType,
+        downlink: navigator.connection.downlink
+      } : 'Not supported',
+      isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+      userAgent: navigator.userAgent
+    });
     
     if (!validate()) {
       console.log('❌ Form validation failed');
@@ -206,68 +215,75 @@ export default function RegistrationForm() {
     console.log('🔐 Hashed values:', { phoneHash, emailHash });
     
     console.log('🔍 Checking for duplicate users...');
-    // 只查 hash 字段，不查明文
-    const { data: phoneUsers, error: phoneError } = await supabase
-      .from('users').select('user_id')
-      .eq('clinic_id', clinicId)
-      .eq('phone_hash', phoneHash)
-      .limit(1);
-    const { data: emailUsers, error: emailError } = await supabase
-      .from('users').select('user_id')
-      .eq('clinic_id', clinicId)
-      .eq('email_hash', emailHash)
-      .limit(1);
+    try {
+      // 只查 hash 字段，不查明文
+      const { data: phoneUsers, error: phoneError } = await supabase
+        .from('users').select('user_id')
+        .eq('clinic_id', clinicId)
+        .eq('phone_hash', phoneHash)
+        .limit(1);
+      const { data: emailUsers, error: emailError } = await supabase
+        .from('users').select('user_id')
+        .eq('clinic_id', clinicId)
+        .eq('email_hash', emailHash)
+        .limit(1);
 
-    console.log('📊 Supabase query results:', {
-      phoneUsers,
-      phoneError,
-      emailUsers,
-      emailError
-    });
+      console.log('📊 Supabase query results:', {
+        phoneUsers,
+        phoneError,
+        emailUsers,
+        emailError
+      });
 
-    if (phoneError || emailError) {
-      console.error('❌ Supabase query failed:', { phoneError, emailError });
+      if (phoneError || emailError) {
+        console.error('❌ Supabase query failed:', { phoneError, emailError });
+        toast.dismiss(loadingToast);
+        toast.error('Server error, please try again later.');
+        setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
+        setLoading(false);
+        return;
+      }
+
+      if (phoneUsers?.length > 0) {
+        console.log('❌ Phone number already registered');
+        toast.dismiss(loadingToast);
+        toast.error('This phone number has already been registered.');
+        setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
+        setLoading(false);
+        return;
+      }
+      if (emailUsers?.length > 0) {
+        console.log('❌ Email already registered');
+        toast.dismiss(loadingToast);
+        toast.error('This email has already been registered.');
+        setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ No duplicate users found, updating registration data');
+      updateRegistrationData({
+        ...form,
+        dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
+        dobDay: form.dobDay,
+        dobMonth: form.dobMonth,
+        dobYear: form.dobYear
+      });
+
+      // 清除草稿数据，因为已经成功提交
+      localStorage.removeItem('registrationFormDraft');
+
+      console.log('✅ Registration successful, navigating to medical page');
       toast.dismiss(loadingToast);
-      toast.error('Server error, please try again later.');
-      setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
+      toast.success('Registration successful!');
       setLoading(false);
-      return;
-    }
-
-    if (phoneUsers?.length > 0) {
-      console.log('❌ Phone number already registered');
+      navigate('/register/medical');
+    } catch (error) {
+      console.error('❌ Unexpected error during registration:', error);
       toast.dismiss(loadingToast);
-      toast.error('This phone number has already been registered.');
-      setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
+      toast.error('An unexpected error occurred. Please try again.');
       setLoading(false);
-      return;
     }
-    if (emailUsers?.length > 0) {
-      console.log('❌ Email already registered');
-      toast.dismiss(loadingToast);
-      toast.error('This email has already been registered.');
-      setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
-      setLoading(false);
-      return;
-    }
-
-    console.log('✅ No duplicate users found, updating registration data');
-    updateRegistrationData({
-      ...form,
-      dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
-      dobDay: form.dobDay,
-      dobMonth: form.dobMonth,
-      dobYear: form.dobYear
-    });
-
-    // 清除草稿数据，因为已经成功提交
-    localStorage.removeItem('registrationFormDraft');
-
-    console.log('✅ Registration successful, navigating to medical page');
-    toast.dismiss(loadingToast);
-    toast.success('Registration successful!');
-    setLoading(false);
-    navigate('/register/medical');
   }, 300);
 
   const handleDOBChange = (e) => {
