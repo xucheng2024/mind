@@ -90,71 +90,70 @@ export default function SelfiePage() {
     setCapturing(true);
     console.log('📸 Taking photo...');
     
-    // Add a small delay to ensure camera is fully ready
-    setTimeout(() => {
-      if (cameraRef.current) {
-        try {
-          const image = cameraRef.current.takePhoto();
-          console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
-          
-          if (image) {
-            setError('');
-            console.log('📸 Starting image processing...');
-            
-            // Convert base64 to blob
-            fetch(image)
-              .then(res => {
-                console.log('📸 Fetch response:', res);
-                return res.blob();
-              })
-              .then(blob => {
-                console.log('📸 Blob created:', blob.size, 'bytes');
-                console.log('🖼️ Compressing image...');
-                new Compressor(blob, {
-                  quality: 0.6,
-                  convertSize: 1000000,
-                  success(result) {
-                    console.log('✅ Image compressed successfully:', result.size, 'bytes');
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      console.log('✅ Image converted to data URL');
-                      setImageSrc(reader.result);
-                      setCompressedBlob(result);
-                    };
-                    reader.readAsDataURL(result);
-                  },
-                  error(err) {
-                    console.error('❌ Compression failed:', err.message);
-                    console.log('📸 Using original image without compression');
-                    setImageSrc(image);
-                    setCompressedBlob(blob);
-                  }
-                });
-              })
-              .catch(err => {
-                console.error('❌ Image processing failed:', err);
-                setError('Failed to process image. Please try again.');
-              })
-              .finally(() => {
-                console.log('📸 Photo capture process completed');
-                setCapturing(false);
-              });
-          } else {
-            console.error('❌ Failed to take photo');
-            setError('Failed to take photo. Please try again.');
+    // 检查相机组件是否真正ready
+    if (!cameraRef.current) {
+      console.error('❌ Camera ref not available');
+      setError('Camera not ready. Please wait and try again.');
+      setCapturing(false);
+      return;
+    }
+    
+    try {
+      const image = cameraRef.current.takePhoto();
+      console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
+      
+      if (image) {
+        setError('');
+        console.log('📸 Starting image processing...');
+        
+        // Convert base64 to blob
+        fetch(image)
+          .then(res => {
+            console.log('📸 Fetch response:', res);
+            return res.blob();
+          })
+          .then(blob => {
+            console.log('📸 Blob created:', blob.size, 'bytes');
+            console.log('🖼️ Compressing image...');
+            new Compressor(blob, {
+              quality: 0.6,
+              convertSize: 1000000,
+              success(result) {
+                console.log('✅ Image compressed successfully:', result.size, 'bytes');
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  console.log('✅ Image converted to data URL');
+                  setImageSrc(reader.result);
+                  setCompressedBlob(result);
+                };
+                reader.readAsDataURL(result);
+              },
+              error(err) {
+                console.error('❌ Compression failed:', err.message);
+                console.log('📸 Using original image without compression');
+                setImageSrc(image);
+                setCompressedBlob(blob);
+              }
+            });
+          })
+          .catch(err => {
+            console.error('❌ Image processing failed:', err);
+            setError('Failed to process image. Please try again.');
+          })
+          .finally(() => {
+            console.log('📸 Photo capture process completed');
             setCapturing(false);
-          }
-        } catch (error) {
-          console.error('❌ Camera capture error:', error);
-          setError('Camera error. Please try again.');
-          setCapturing(false);
-        }
+          });
       } else {
-        console.error('❌ Camera ref not available');
-        setError('Camera not ready. Please wait and try again.');
+        console.error('❌ Failed to take photo');
+        setError('Failed to take photo. Please try again.');
         setCapturing(false);
       }
-    }, 500); // Add 500ms delay to ensure camera is ready
+    } catch (error) {
+      console.error('❌ Camera capture error:', error);
+      setError('Camera error. Please try again.');
+      setCapturing(false);
+    }
   };
 
   // input file change handler for iOS PWA
