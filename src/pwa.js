@@ -14,7 +14,8 @@ export function registerPWA() {
   }
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    // Register immediately when possible
+    const registerSW = () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
           console.log('✅ SW registered: ', registration);
@@ -23,20 +24,36 @@ export function registerPWA() {
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
-                              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content is available
-                  // Use a more modern approach - dispatch a custom event
-                  window.dispatchEvent(new CustomEvent('pwa-update-available', {
-                    detail: { newWorker }
-                  }));
-                }
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New content is available
+                console.log('🔄 New service worker installed, notifying app...');
+                window.dispatchEvent(new CustomEvent('pwa-update-available', {
+                  detail: { newWorker }
+                }));
+              }
             });
           });
+
+          // Check for waiting worker on registration
+          if (registration.waiting) {
+            console.log('🔄 Found waiting service worker on registration');
+            window.dispatchEvent(new CustomEvent('pwa-update-available', {
+              detail: { newWorker: registration.waiting }
+            }));
+          }
         })
         .catch((registrationError) => {
           console.log('❌ SW registration failed: ', registrationError);
         });
-    });
+    };
+
+    // Register immediately if page is already loaded
+    if (document.readyState === 'complete') {
+      registerSW();
+    } else {
+      // Wait for page load
+      window.addEventListener('load', registerSW);
+    }
   }
 }
 

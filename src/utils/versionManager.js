@@ -3,7 +3,7 @@
 
 export const VERSION_CONFIG = {
   // Current app version - update this when releasing new versions
-  CURRENT_VERSION: '1.2.0',
+  CURRENT_VERSION: '1.3.0',
   
   // Version history - add new versions here
   VERSION_HISTORY: {
@@ -35,6 +35,17 @@ export const VERSION_CONFIG = {
         'Debug logging for registration flow',
         'Improved error handling and user feedback',
         'Version update notification system'
+      ]
+    },
+    '1.3.0': {
+      date: '2024-01-25',
+      title: 'PWA Update Optimization',
+      changes: [
+        'Faster PWA update detection on mobile',
+        'Improved service worker registration timing',
+        'Enhanced update notification user experience',
+        'Reduced unnecessary toast notifications',
+        'Better error handling and logging'
       ]
     }
   }

@@ -8,19 +8,40 @@ export default function PWAUpdateNotification() {
 
   useEffect(() => {
     const handleUpdateAvailable = (event) => {
+      console.log('🔄 PWA Update detected:', event.detail);
       setNewWorker(event.detail.newWorker);
       setShowUpdate(true);
     };
 
+    // Listen for PWA update events
     window.addEventListener('pwa-update-available', handleUpdateAvailable);
+
+    // Also check for updates after a short delay
+    const checkForUpdates = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration && registration.waiting) {
+            console.log('🔄 Found waiting service worker');
+            setNewWorker(registration.waiting);
+            setShowUpdate(true);
+          }
+        });
+      }
+    };
+
+    // Check immediately and after delay
+    checkForUpdates();
+    const timeoutId = setTimeout(checkForUpdates, 2000);
 
     return () => {
       window.removeEventListener('pwa-update-available', handleUpdateAvailable);
+      clearTimeout(timeoutId);
     };
   }, []);
 
   const handleUpdate = () => {
     if (newWorker) {
+      console.log('🔄 Applying PWA update...');
       newWorker.postMessage({ type: 'SKIP_WAITING' });
       window.location.reload();
     }

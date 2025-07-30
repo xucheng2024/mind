@@ -14,25 +14,35 @@ export default function VersionUpdate() {
   const [updateInfo, setUpdateInfo] = useState(null);
 
   useEffect(() => {
-    // Check for version updates
-    const storedVersion = getStoredVersion();
-    const currentVersion = getCurrentVersion();
-    
-    if (!storedVersion) {
-      // First time user
-      setStoredVersion(currentVersion);
-      return;
-    }
-
-    if (storedVersion !== currentVersion) {
-      // Version has changed
-      setPreviousVersion(storedVersion);
-      setUpdateInfo(getVersionInfo(currentVersion));
-      setShowUpdate(true);
+    // Immediate check for version updates
+    const checkVersion = () => {
+      const storedVersion = getStoredVersion();
+      const currentVersion = getCurrentVersion();
       
-      // Update stored version immediately to prevent re-showing
-      setStoredVersion(currentVersion);
-    }
+      if (!storedVersion) {
+        // First time user
+        setStoredVersion(currentVersion);
+        return;
+      }
+
+      if (storedVersion !== currentVersion) {
+        // Version has changed
+        setPreviousVersion(storedVersion);
+        setUpdateInfo(getVersionInfo(currentVersion));
+        setShowUpdate(true);
+        
+        // Update stored version immediately to prevent re-showing
+        setStoredVersion(currentVersion);
+      }
+    };
+
+    // Check immediately
+    checkVersion();
+
+    // Also check after a short delay to catch any late updates
+    const timeoutId = setTimeout(checkVersion, 1000);
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleClose = () => {
