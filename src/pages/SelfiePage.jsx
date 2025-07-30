@@ -3,7 +3,30 @@ import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
-import Compressor from 'compressorjs';
+
+// Native image compression function
+const compressImage = async (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions (60% of original size)
+      const maxWidth = img.width * 0.6;
+      const maxHeight = img.height * 0.6;
+      
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, maxWidth, maxHeight);
+      canvas.toBlob(resolve, 'image/jpeg', 0.6);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 export default function SelfiePage() {
   const cameraRef = useRef(null);
@@ -102,23 +125,20 @@ export default function SelfiePage() {
         // base64 to blob
         fetch(image)
           .then(res => res.blob())
-          .then(blob => {
-            new Compressor(blob, {
-              quality: 0.6,
-              convertSize: 1000000,
-              success(result) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  setImageSrc(reader.result);
-                  setCompressedBlob(result);
-                };
-                reader.readAsDataURL(result);
-              },
-              error(err) {
-                setImageSrc(image);
-                setCompressedBlob(blob);
-              }
-            });
+          .then(async blob => {
+            try {
+              const compressedBlob = await compressImage(blob);
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setImageSrc(reader.result);
+                setCompressedBlob(compressedBlob);
+              };
+              reader.readAsDataURL(compressedBlob);
+            } catch (err) {
+              // Fallback to original image if compression fails
+              setImageSrc(image);
+              setCompressedBlob(blob);
+            }
           })
           .catch(err => {
             setError('Failed to process image. Please try again.');
@@ -258,8 +278,6 @@ export default function SelfiePage() {
           </div>
         )}
       </div>
-
-
     </div>
   );
 }
