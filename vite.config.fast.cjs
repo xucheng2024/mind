@@ -59,7 +59,8 @@ module.exports = defineConfig({
     }
   },
   esbuild: {
-    keepNames: true
+    keepNames: true,
+    drop: [] // 不移除任何 console 语句
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],

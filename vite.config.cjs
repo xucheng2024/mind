@@ -113,9 +113,9 @@ module.exports = defineConfig({
     },
     terserOptions: {
       compress: {
-        drop_console: process.env.NODE_ENV === 'production',
+        drop_console: false, // 保留 console.log 用于调试
         drop_debugger: true,
-        pure_funcs: process.env.NODE_ENV === 'production' ? ['console.log', 'console.info', 'console.debug'] : []
+        pure_funcs: [] // 不移除任何函数
       },
       mangle: {
         safari10: true
