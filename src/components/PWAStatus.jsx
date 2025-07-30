@@ -21,6 +21,9 @@ const PWAStatus = () => {
   }, []);
 
   if (!isPWA && !showGuide) return null;
+  
+  // 如果已经安装，不显示任何内容
+  if (isInstalled) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">

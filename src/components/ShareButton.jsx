@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { IoShareSocialOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 
 const ShareButton = () => {
+  const [isPWA, setIsPWA] = useState(false);
+  
+  useEffect(() => {
+    const checkPWA = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          window.navigator.standalone === true;
+      setIsPWA(isStandalone);
+    };
+    
+    checkPWA();
+    window.addEventListener('load', checkPWA);
+    return () => window.removeEventListener('load', checkPWA);
+  }, []);
+  
+  // 如果是PWA模式，不显示分享按钮
+  if (isPWA) return null;
   const handleShare = async () => {
     try {
       if (navigator.share) {
