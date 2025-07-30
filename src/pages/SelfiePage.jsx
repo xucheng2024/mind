@@ -329,14 +329,6 @@ export default function SelfiePage() {
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                    className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-                    disabled={capturing}
-                  >
-                    {capturing ? 'Processing...' : 'Take a Photo'}
-                  </button>
                 </>
               ) : (
                 <Camera
@@ -366,16 +358,27 @@ export default function SelfiePage() {
                 />
               )}
             </div>
-            {/* 只有非iOS PWA才显示拍照按钮 */}
-            {!(isIOS && isPWA) && (
-              <button
-                onClick={capture}
-                disabled={capturing || !cameraReady}
-                className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-              >
-                {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
-              </button>
-            )}
+            {/* 拍照按钮移到圆框下方，风格一致 */}
+            <div className="w-full flex flex-col items-center">
+              {isIOS && isPWA ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${capturing ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                  disabled={capturing}
+                >
+                  {capturing ? 'Processing...' : 'Take a Photo'}
+                </button>
+              ) : (
+                <button
+                  onClick={capture}
+                  disabled={capturing || !cameraReady}
+                  className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                >
+                  {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center mb-4">

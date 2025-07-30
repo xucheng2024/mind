@@ -350,7 +350,7 @@ export default function RegistrationForm() {
         }}
         className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
       >
-      <RegistrationHeader title="Personal Information" />
+      <RegistrationHeader title={`Welcome name`} />
 
       {fatalError && (
         <div className="text-red-600 bg-red-50 p-4 rounded-xl mb-4 text-center border border-red-200 flex items-center gap-2 animate-shake">
