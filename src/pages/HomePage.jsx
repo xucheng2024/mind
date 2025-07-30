@@ -8,6 +8,7 @@ import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
 import Button from '../components/Button';
+import { decrypt } from '../lib/utils';
 
 
 export default function HomePage() {
@@ -59,7 +60,23 @@ export default function HomePage() {
         .single();
       
       if (!error && data) {
-        setUserInfo(data);
+        // 尝试解密姓名
+        const AES_KEY = import.meta.env.VITE_AES_KEY;
+        let decryptedName = data.full_name;
+        
+        if (AES_KEY && data.full_name && data.full_name.length > 20) {
+          try {
+            decryptedName = decrypt(data.full_name, AES_KEY);
+            console.log('✅ Name decrypted successfully');
+          } catch (error) {
+            console.log('⚠️ Name decryption failed, using original');
+          }
+        }
+        
+        setUserInfo({
+          ...data,
+          full_name: decryptedName
+        });
       }
     } catch (error) {
       console.error('Error fetching user info:', error);
@@ -189,9 +206,10 @@ export default function HomePage() {
 
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
-    // Clear all localStorage data
-    localStorage.clear();
-    // Also clear any sessionStorage if used
+    // Only clear user-related data, preserve registration data
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_row_id');
+    localStorage.removeItem('clinic_id');
     sessionStorage.clear();
     window.location.reload();
   }, 200);

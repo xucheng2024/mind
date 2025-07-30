@@ -23,7 +23,19 @@ export default function SelfiePage() {
     console.log('🎥 Checking camera permission...');
     async function checkCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // 先检查是否支持getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera API not supported');
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
         console.log('✅ Camera permission granted');
         setHasCamera(true);
         setError('');
@@ -32,12 +44,17 @@ export default function SelfiePage() {
       } catch (err) {
         console.error('❌ Camera error:', err);
         setHasCamera(false);
+        
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('Camera access denied. Please allow camera access in your browser settings.');
+          setError('Camera access denied. Please allow camera access in your browser settings and refresh the page.');
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           setError('No camera found. Please make sure your device has a camera.');
+        } else if (err.name === 'NotSupportedError') {
+          setError('Camera not supported in this browser. Please try a different browser.');
+        } else if (err.message === 'Camera API not supported') {
+          setError('Camera not supported in this browser. Please try a different browser.');
         } else {
-          setError('Unable to access camera. Please check your browser permissions.');
+          setError('Unable to access camera. Please check your browser permissions and try again.');
         }
       } finally {
         setCameraLoading(false);

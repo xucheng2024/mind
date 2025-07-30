@@ -9,6 +9,17 @@ export function encrypt(val, key) {
   return val ? CryptoJS.AES.encrypt(val.toString(), key).toString() : '';
 }
 
+export function decrypt(val, key) {
+  if (!val) return '';
+  try {
+    const bytes = CryptoJS.AES.decrypt(val, key);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return val; // 如果解密失败，返回原值
+  }
+}
+
 export function isPhone(val) {
   return /^\d+$/.test(val);
 }
