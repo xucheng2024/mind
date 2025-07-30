@@ -234,9 +234,11 @@ export default function HomePage() {
       {isLoggedIn && userInfo && (
         <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">
           <div className="w-full mb-6">
-            <div className="text-center mb-4">
-              <div className="text-lg font-bold text-gray-800 mb-1">Welcome back!</div>
-              <div className="text-sm text-gray-600">{userInfo.full_name}</div>
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className="text-lg font-bold text-gray-800">Welcome back,</span>
+                <span className="text-lg font-bold text-blue-600">{userInfo.full_name}</span>
+              </div>
             </div>
             <div className="space-y-4">
               <Button
@@ -255,6 +257,7 @@ export default function HomePage() {
               </Button>
               <Button
                 variant="ghost"
+                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                 onClick={handleLogoutClick}
               >
                 Logout
