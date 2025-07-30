@@ -181,7 +181,7 @@ export default function HomePage() {
       toast.success('Redirecting to booking...');
       navigate(`/booking/slots?clinic_id=${storedClinicId}&user_id=${storedUserId}`);
     } else {
-      toast.info('Please login first');
+      toast('Please login first');
       navigate('/booking?clinic_id=' + clinicId);
     }
   }, 200);
