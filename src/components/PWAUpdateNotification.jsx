@@ -29,9 +29,9 @@ export default function PWAUpdateNotification() {
       }
     };
 
-    // Check immediately and after delay
+    // Check immediately and after very short delay
     checkForUpdates();
-    const timeoutId = setTimeout(checkForUpdates, 2000);
+    const timeoutId = setTimeout(checkForUpdates, 200);
 
     return () => {
       window.removeEventListener('pwa-update-available', handleUpdateAvailable);

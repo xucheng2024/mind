@@ -51,8 +51,12 @@ export function registerPWA() {
     if (document.readyState === 'complete') {
       registerSW();
     } else {
-      // Wait for page load
-      window.addEventListener('load', registerSW);
+      // Wait for DOM content loaded instead of full page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', registerSW);
+      } else {
+        registerSW();
+      }
     }
   }
 }

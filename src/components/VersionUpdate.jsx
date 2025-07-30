@@ -39,8 +39,8 @@ export default function VersionUpdate() {
     // Check immediately
     checkVersion();
 
-    // Also check after a short delay to catch any late updates
-    const timeoutId = setTimeout(checkVersion, 1000);
+    // Also check after a very short delay to catch any late updates
+    const timeoutId = setTimeout(checkVersion, 100);
 
     return () => clearTimeout(timeoutId);
   }, []);
