@@ -225,13 +225,15 @@ export default function HomePage() {
       <div className="w-full flex flex-col items-center mb-10 mt-12">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
         <div className="text-base text-gray-400 font-medium">Traditional Chinese Medicine & Wellness</div>
-        <div className="mt-4 w-full max-w-sm h-32 rounded-xl overflow-hidden shadow-lg">
-          <LazyImage 
-            src="/clinic-illustration.svg" 
-            alt="Clinic" 
-            className="w-full h-full object-cover object-top"
-            placeholder="/logo.png"
-          />
+        <div className="mt-4 w-full max-w-md px-4">
+          <div className="relative w-full h-40 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-50 to-white">
+            <LazyImage 
+              src="/clinic-illustration.svg" 
+              alt="Clinic" 
+              className="w-full h-full object-contain object-center"
+              placeholder="/logo.png"
+            />
+          </div>
         </div>
       </div>
 
