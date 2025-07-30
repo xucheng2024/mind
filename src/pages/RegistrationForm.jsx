@@ -175,7 +175,13 @@ export default function RegistrationForm() {
   // 使用防抖的提交函数
   const handleSubmit = debounce(async (e) => {
     e.preventDefault();
+    console.log('🚀 RegistrationForm submit started');
+    console.log('📋 Form data:', form);
+    console.log('🏥 Clinic ID:', clinicId);
+    
     if (!validate()) {
+      console.log('❌ Form validation failed');
+      console.log('🔍 Errors:', errors);
       // 跳到第一个有错的输入框
       const errorOrder = [
         'fullName', 'idLast4', 'dob', 'phone', 'email', 'postalCode',
@@ -190,11 +196,16 @@ export default function RegistrationForm() {
       toast.error('Please fix the errors above.');
       return;
     }
+    
+    console.log('✅ Form validation passed');
     setLoading(true);
     const loadingToast = toast.loading('Processing registration...');
 
     const phoneHash = hash(form.phone);
     const emailHash = hash(form.email);
+    console.log('🔐 Hashed values:', { phoneHash, emailHash });
+    
+    console.log('🔍 Checking for duplicate users...');
     // 只查 hash 字段，不查明文
     const { data: phoneUsers, error: phoneError } = await supabase
       .from('users').select('user_id')
@@ -207,7 +218,15 @@ export default function RegistrationForm() {
       .eq('email_hash', emailHash)
       .limit(1);
 
+    console.log('📊 Supabase query results:', {
+      phoneUsers,
+      phoneError,
+      emailUsers,
+      emailError
+    });
+
     if (phoneError || emailError) {
+      console.error('❌ Supabase query failed:', { phoneError, emailError });
       toast.dismiss(loadingToast);
       toast.error('Server error, please try again later.');
       setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
@@ -216,6 +235,7 @@ export default function RegistrationForm() {
     }
 
     if (phoneUsers?.length > 0) {
+      console.log('❌ Phone number already registered');
       toast.dismiss(loadingToast);
       toast.error('This phone number has already been registered.');
       setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
@@ -223,6 +243,7 @@ export default function RegistrationForm() {
       return;
     }
     if (emailUsers?.length > 0) {
+      console.log('❌ Email already registered');
       toast.dismiss(loadingToast);
       toast.error('This email has already been registered.');
       setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
@@ -230,6 +251,7 @@ export default function RegistrationForm() {
       return;
     }
 
+    console.log('✅ No duplicate users found, updating registration data');
     updateRegistrationData({
       ...form,
       dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
@@ -241,6 +263,7 @@ export default function RegistrationForm() {
     // 清除草稿数据，因为已经成功提交
     localStorage.removeItem('registrationFormDraft');
 
+    console.log('✅ Registration successful, navigating to medical page');
     toast.dismiss(loadingToast);
     toast.success('Registration successful!');
     setLoading(false);

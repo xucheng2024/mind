@@ -3,22 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Create a mock client if environment variables are not set
-const createMockClient = () => ({
-  from: () => ({
-    select: () => Promise.resolve({ data: [], error: null }),
-    insert: () => Promise.resolve({ data: null, error: null }),
-    update: () => Promise.resolve({ data: null, error: null }),
-    delete: () => Promise.resolve({ data: null, error: null })
-  }),
-  auth: {
-    signUp: () => Promise.resolve({ data: null, error: null }),
-    signIn: () => Promise.resolve({ data: null, error: null }),
-    signOut: () => Promise.resolve({ error: null })
-  }
+console.log('🔧 Supabase Config:', {
+  url: supabaseUrl ? 'SET' : 'MISSING',
+  key: supabaseKey ? 'SET' : 'MISSING',
+  env: import.meta.env.MODE
 });
 
-export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
-  : createMockClient();
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Supabase environment variables missing!');
+  console.error('VITE_SUPABASE_URL:', supabaseUrl);
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseKey ? 'SET' : 'MISSING');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 

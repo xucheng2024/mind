@@ -25,19 +25,28 @@ export default function MedicalPage() {
   const [optionErrors, setOptionErrors] = useState({});
 
   useEffect(() => {
+    console.log('🏥 MedicalPage mounted');
+    console.log('📋 Registration data:', registrationData);
+    console.log('🏥 Clinic ID:', registrationData.clinic_id);
+    
     const cleared = {};
     healthItems.forEach(item => { cleared[item] = ''; });
     cleared.otherHealthNotes = '';
     setForm(cleared);
     // Only update medical-related data, preserve clinic_id and other important data
     const medicalData = { ...cleared };
+    console.log('🔄 Updating medical data:', medicalData);
     updateRegistrationData(medicalData);
   }, []);
 
   useEffect(() => {
+    console.log('🔍 MedicalPage registration data changed:', registrationData);
     // Check if clinic_id exists
     if (!registrationData.clinic_id) {
-      // Handle missing clinic_id
+      console.error('❌ Missing clinic_id in MedicalPage');
+      console.log('📋 Full registration data:', registrationData);
+    } else {
+      console.log(`✅ Clinic ID found: ${registrationData.clinic_id}`);
     }
   }, [registrationData]); // Added registrationData to dependency array for logs
 
