@@ -22,11 +22,21 @@ export default function SelfiePage() {
   // 检查相机权限 - PWA优化版本
   const checkCamera = async () => {
     console.log('🎥 Checking camera permission...');
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('📱 PWA Mode:', window.matchMedia('(display-mode: standalone)').matches);
+    console.log('📱 Standalone:', window.navigator.standalone);
+    
     try {
       // 先检查是否支持getUserMedia
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('❌ Camera API not supported');
         throw new Error('Camera API not supported');
       }
+
+      // 检查可用的媒体设备
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('📹 Available video devices:', videoDevices.length);
 
       // PWA环境下使用更简单的相机配置
       const constraints = {
@@ -37,10 +47,11 @@ export default function SelfiePage() {
         }
       };
 
-      console.log('🎥 Requesting camera access...');
+      console.log('🎥 Requesting camera access with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('✅ Camera permission granted');
+      console.log('📹 Stream tracks:', stream.getTracks().length);
       setHasCamera(true);
       setError('');
       
@@ -53,6 +64,8 @@ export default function SelfiePage() {
       }
     } catch (err) {
       console.error('❌ Camera error:', err);
+      console.error('❌ Error name:', err.name);
+      console.error('❌ Error message:', err.message);
       setHasCamera(false);
       
       let errorMessage = 'Unable to access camera. Please check your browser permissions and try again.';
@@ -217,6 +230,9 @@ export default function SelfiePage() {
           <div className="flex flex-col items-center justify-center h-[220px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             <div className="mt-4 text-gray-600">Checking camera access...</div>
+            <div className="mt-2 text-xs text-gray-400">
+              {window.matchMedia('(display-mode: standalone)').matches ? 'PWA Mode' : 'Browser Mode'}
+            </div>
           </div>
         ) : !hasCamera ? (
           <div className="flex flex-col items-center justify-center h-[220px] text-center">
@@ -225,6 +241,9 @@ export default function SelfiePage() {
             <div className="text-gray-400 mb-4 text-xs">
               {window.matchMedia('(display-mode: standalone)').matches ? 
                 'PWA Mode detected' : 'Browser Mode'}
+            </div>
+            <div className="text-gray-400 mb-4 text-xs">
+              User Agent: {navigator.userAgent.substring(0, 50)}...
             </div>
             <button
               onClick={handleRetryCamera}
@@ -250,10 +269,16 @@ export default function SelfiePage() {
                 videoReadyCallback={() => {
                   console.log('✅ Camera video ready');
                   setCameraReady(true);
+                  setError(''); // Clear any previous errors
                 }}
                 videoErrorCallback={(error) => {
                   console.error('❌ Camera video error:', error);
-                  setError('Camera error. Please check permissions.');
+                  console.error('❌ Camera error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                  });
+                  setError('Camera error. Please check permissions and try again.');
                   setCameraReady(false);
                 }}
                 onTakePhotoAnimationDone={() => {
