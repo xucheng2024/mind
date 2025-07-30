@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { debug } from '../src/utils/debug';
 
 const RegistrationContext = createContext();
 
@@ -22,7 +23,12 @@ export const RegistrationProvider = ({ children }) => {
   }, [registrationData]);
 
   const updateRegistrationData = (newData) => {
-    setRegistrationData((prev) => ({ ...prev, ...newData }));
+    debug.log('Updating registration data', newData);
+    setRegistrationData((prev) => {
+      const updated = { ...prev, ...newData };
+      debug.log('Updated registration data', updated);
+      return updated;
+    });
   };
 
   const clearRegistrationData = () => {

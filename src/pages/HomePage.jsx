@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
+import { debug } from '../utils/debug';
 
 export default function HomePage() {
   // 防止多次点击 check-in
@@ -19,6 +20,7 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   // Get clinic_id using the helper function
   const clinicId = getClinicId(searchParams, localStorage);
+  debug.log('HomePage clinicId', clinicId);
 
   // 这样获取 context 数据和方法
   const { registrationData, updateRegistrationData } = useRegistration();

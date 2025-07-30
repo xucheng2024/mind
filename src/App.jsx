@@ -11,6 +11,7 @@ import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { RegistrationProvider } from '../context/RegistrationContext';
+import { debug } from './utils/debug';
 
 // Lazy load all pages
 const RegistrationForm = lazy(() => import('./pages/RegistrationForm'));
@@ -31,6 +32,12 @@ const PageLoader = () => (
 );
 
 function App() {
+  // Initialize debug system
+  React.useEffect(() => {
+    debug.log('App initialized');
+    debug.success('Debug system ready');
+  }, []);
+
   return (
     <>
       <ErrorBoundary>
@@ -48,13 +55,13 @@ function App() {
           </Routes>
         </Suspense>
       </ErrorBoundary>
-                   <InstallPrompt />
-             <ManualInstallGuide />
-             <PWAStatus />
-             <PerformanceMonitor />
-             <PWAInstallButton />
-             <VersionUpdate />
-             <PWAUpdateNotification />
+      <InstallPrompt />
+      <ManualInstallGuide />
+      <PWAStatus />
+      <PerformanceMonitor />
+      <PWAInstallButton />
+      <VersionUpdate />
+      <PWAUpdateNotification />
     </>
   );
 }
