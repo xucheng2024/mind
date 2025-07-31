@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
+import PWATestButton from './components/PWATestButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { OfflineIndicator } from './components';
@@ -66,6 +67,7 @@ function App() {
       <PWAStatus />
       <PerformanceMonitor />
       <PWAInstallButton />
+      <PWATestButton />
       <VersionUpdate />
       <PWAUpdateNotification />
       <OfflineIndicator />

@@ -73,6 +73,9 @@ export function setupInstallPrompt() {
     
     // Don't show prompt automatically - wait for user gesture
     console.log('PWA install prompt ready - waiting for user gesture');
+    
+    // Dispatch custom event to notify components
+    window.dispatchEvent(new CustomEvent('pwa-install-ready'));
   });
 }
 

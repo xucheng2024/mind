@@ -24,8 +24,10 @@ export default function PWAInstallButton() {
         // Check for install prompt availability
         const checkPrompt = () => {
           if (hasInstallPrompt()) {
+            console.log('PWA install prompt available - showing button');
             setShowButton(true);
           } else {
+            console.log('PWA install prompt not available');
             setShowButton(false);
           }
         };
@@ -34,12 +36,32 @@ export default function PWAInstallButton() {
         checkPrompt();
         
         // Check periodically (but less frequently)
-        const interval = setInterval(checkPrompt, 3000);
+        const interval = setInterval(checkPrompt, 2000);
         return () => clearInterval(interval);
       }
     };
 
     checkInstallation();
+    
+    // Listen for beforeinstallprompt event
+    const handleBeforeInstallPrompt = () => {
+      console.log('beforeinstallprompt event fired');
+      setShowButton(true);
+    };
+    
+    // Listen for custom pwa-install-ready event
+    const handlePWAInstallReady = () => {
+      console.log('PWA install ready event received');
+      setShowButton(true);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-install-ready', handlePWAInstallReady);
+    
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-install-ready', handlePWAInstallReady);
+    };
   }, []);
 
   const handleInstall = () => {
