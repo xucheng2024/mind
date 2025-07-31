@@ -549,7 +549,7 @@ export default function RegistrationForm() {
               Gender <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-3" ref={genderRef}>
-              {['Male', 'Female', 'Other'].map(option => (
+              {['Male', 'Female'].map(option => (
                 <button
                   key={option}
                   type="button"
