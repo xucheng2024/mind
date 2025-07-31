@@ -2,15 +2,14 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import InstallPrompt from './components/InstallPrompt';
 import ToastProvider from './components/ToastProvider';
-import PWAStatus from './components/PWAStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
-import PWATestButton from './components/PWATestButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { OfflineIndicator } from './components';
+import SafariInstallGuide from './components/SafariInstallGuide';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { validateConfig } from './lib/config';
@@ -63,11 +62,9 @@ function App() {
           </Routes>
         </Suspense>
       </ErrorBoundary>
-      <InstallPrompt />
-      <PWAStatus />
       <PerformanceMonitor />
       <PWAInstallButton />
-      <PWATestButton />
+      <SafariInstallGuide />
       <VersionUpdate />
       <PWAUpdateNotification />
       <OfflineIndicator />

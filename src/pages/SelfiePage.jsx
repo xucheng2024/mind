@@ -3,6 +3,9 @@ import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
+import { supabase } from '../lib/supabaseClient';
+import { encrypt } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 import { 
   EnhancedButton, 
   CheckboxInput, 
@@ -188,7 +191,7 @@ export default function SelfiePage() {
 
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('📤 Submitting photo...');
     if (!imageSrc) {
@@ -196,15 +199,98 @@ export default function SelfiePage() {
       return;
     }
     
-    hapticTrigger('success');
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
+    setUploading(true);
+    setError('');
     
-    console.log('📸 Saving selfie to registration data...');
-    updateRegistrationData({ selfie: imageSrc });
-    
-    console.log('🚀 Navigating to authorization page...');
-    navigate('/register/authorize');
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `selfie_${timestamp}.jpg`;
+      
+      console.log('📤 Uploading selfie to Supabase storage...');
+      
+      // Use compressed blob if available, otherwise convert base64 to blob
+      let uploadBlob = compressedBlob;
+      if (!uploadBlob && imageSrc) {
+        // Convert base64 to blob
+        const response = await fetch(imageSrc);
+        uploadBlob = await response.blob();
+      }
+      
+      if (!uploadBlob) {
+        throw new Error('No image data available for upload');
+      }
+      
+      // 获取加密密钥
+      const AES_KEY = getAESKey();
+      if (!AES_KEY) {
+        throw new Error('Encryption key not configured');
+      }
+
+      // 将 blob 转换为 base64 以便加密
+      const reader = new FileReader();
+      const base64Data = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(uploadBlob);
+      });
+
+      // 加密图片数据
+      const encryptedData = encrypt(base64Data, AES_KEY);
+      console.log('🔐 Image data encrypted');
+
+      // 将加密后的数据转换为 blob
+      const encryptedBlob = new Blob([encryptedData], { type: 'application/octet-stream' });
+
+      // 上传加密后的数据到 Supabase storage
+      const { data, error } = await supabase.storage
+        .from('selfies')
+        .upload(filename, encryptedBlob, {
+          contentType: 'application/octet-stream',
+          cacheControl: '3600'
+        });
+      
+      if (error) {
+        console.error('❌ Upload failed:', error);
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+      
+      // 使用签名 URL 而不是 public URL
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('selfies')
+        .createSignedUrl(filename, 86400); // 24小时有效期
+
+      if (signedUrlError) {
+        console.error('❌ Failed to generate signed URL:', signedUrlError);
+        throw new Error(`Failed to generate signed URL: ${signedUrlError.message}`);
+      }
+
+      const signedUrl = signedUrlData.signedUrl;
+      console.log('🔗 Signed URL generated:', signedUrl);
+
+      hapticTrigger('success');
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+
+      console.log('📸 Saving selfie data...');
+      // 加密 URL
+      const encryptedUrl = encrypt(signedUrl, AES_KEY);
+      console.log('🔐 URL encrypted');
+
+      updateRegistrationData({ 
+        selfie: imageSrc, // 本地预览用
+        selfieUrl: encryptedUrl, // 加密的签名 URL
+        selfieFilename: encrypt(filename, AES_KEY), // 加密文件名
+        selfieSignedUrl: true,
+        selfieEncrypted: true
+      });
+      
+    } catch (err) {
+      console.error('❌ Error uploading selfie:', err);
+      setError(`Failed to upload selfie: ${err.message}`);
+      hapticTrigger('error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -299,7 +385,7 @@ export default function SelfiePage() {
                   size="lg"
                   variant="primary"
                 >
-                  Next
+                  {uploading ? 'Uploading...' : 'Next'}
                 </EnhancedButton>
               </form>
             </div>
