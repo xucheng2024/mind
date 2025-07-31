@@ -205,7 +205,7 @@ export default function SelfiePage() {
     try {
       // Generate unique filename
       const timestamp = Date.now();
-      const filename = `selfie_${timestamp}.jpg`;
+      const filename = `selfie_${timestamp}.enc`;
       
       console.log('📤 Uploading selfie to Supabase storage...');
       
@@ -254,10 +254,24 @@ export default function SelfiePage() {
         throw new Error(`Upload failed: ${error.message}`);
       }
       
+      // 验证文件是否存在
+      const { data: fileExists, error: listError } = await supabase.storage
+        .from('selfies')
+        .list('', {
+          limit: 100,
+          search: filename
+        });
+      
+      console.log('🔍 Checking if file exists:', { fileExists, listError, filename });
+      
+      if (listError) {
+        console.error('❌ Error checking file existence:', listError);
+      }
+      
       // 使用签名 URL 而不是 public URL
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('selfies')
-        .createSignedUrl(filename, 86400); // 24小时有效期
+        .createSignedUrl(filename, 157680000); // 5年有效期
 
       if (signedUrlError) {
         console.error('❌ Failed to generate signed URL:', signedUrlError);

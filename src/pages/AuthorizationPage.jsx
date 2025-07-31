@@ -3,16 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import Signature from '@uiw/react-signature';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
-import { EnhancedButton, ProgressBar } from '../components';
+import { EnhancedButton, ProgressBar, Confetti, useHapticFeedback } from '../components';
+import { supabase } from '../lib/supabaseClient';
+import { encrypt } from '../lib/utils';
+import { getAESKey } from '../lib/config';
 
 export default function AuthorizationPage() {
   const navigate = useNavigate();
   const { updateRegistrationData } = useRegistration();
+  const { trigger: hapticTrigger } = useHapticFeedback();
 
   const [isGuardian, setIsGuardian] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const signatureRef = useRef();
 
   const validate = () => {
@@ -30,9 +36,10 @@ export default function AuthorizationPage() {
     updateRegistrationData({ signature: '' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return;
+    if (loading || uploading) return;
+    
     setLoading(true);
     setSubmitted(true);
     if (!validate()) {
@@ -40,14 +47,109 @@ export default function AuthorizationPage() {
       return;
     }
 
-    const signatureDataUrl = signatureRef.current?.toDataURL?.() || '';
+    // 尝试获取签名数据
+    let signatureDataUrl = '';
+    try {
+      const svgData = signatureRef.current?.svg;
+      if (svgData) {
+        const svgString = new XMLSerializer().serializeToString(svgData);
+        signatureDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+      }
+    } catch (error) {
+      console.error('❌ Error getting signature data:', error);
+    }
+    
+    // 检查签名是否为空
+    const hasSignature = signatureDataUrl && signatureDataUrl.length > 22;
+    
+    if (!hasSignature) {
+      setErrors(prev => ({ ...prev, signature: 'Signature is required. Please sign in the box above.' }));
+      setLoading(false);
+      return;
+    }
 
-    updateRegistrationData({
-      is_guardian: isGuardian,
-      signature: signatureDataUrl
-    });
+    setUploading(true);
+    setLoading(false);
+    
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `signature_${timestamp}.enc`;
+      
+      console.log('📤 Uploading signature to Supabase storage...');
+      
+      // 获取加密密钥
+      const AES_KEY = getAESKey();
+      if (!AES_KEY) {
+        throw new Error('Encryption key not configured');
+      }
 
-    navigate('/register/submit');
+      // 将 base64 转换为 blob
+      const response = await fetch(signatureDataUrl);
+      const blob = await response.blob();
+
+      // 加密签名数据
+      const reader = new FileReader();
+      const base64Data = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+
+      const encryptedData = encrypt(base64Data, AES_KEY);
+
+      // 将加密后的数据转换为 blob
+      const encryptedBlob = new Blob([encryptedData], { type: 'application/octet-stream' });
+
+      // 上传加密后的数据到 Supabase storage
+      const { data, error } = await supabase.storage
+        .from('signatures')
+        .upload(filename, encryptedBlob, {
+          contentType: 'application/octet-stream',
+          cacheControl: '3600'
+        });
+      
+      if (error) {
+        console.error('❌ Upload failed:', error);
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+      
+      // 使用签名 URL 而不是 public URL
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('signatures')
+        .createSignedUrl(filename, 157680000); // 5年有效期
+
+      if (signedUrlError) {
+        console.error('❌ Failed to generate signed URL:', signedUrlError);
+        throw new Error(`Failed to generate signed URL: ${signedUrlError.message}`);
+      }
+
+      const signedUrl = signedUrlData.signedUrl;
+
+      hapticTrigger('success');
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+
+      // 加密 URL
+      const encryptedUrl = encrypt(signedUrl, AES_KEY);
+
+      updateRegistrationData({
+        is_guardian: isGuardian,
+        signature: signatureDataUrl, // 本地预览用
+        signatureUrl: encryptedUrl, // 加密的签名 URL
+        signatureFilename: encrypt(filename, AES_KEY), // 加密文件名
+        signatureSignedUrl: true,
+        signatureEncrypted: true
+      });
+      
+      navigate('/register/submit');
+      
+    } catch (err) {
+      console.error('❌ Error uploading signature:', err);
+      setErrors(prev => ({ ...prev, signature: `Failed to upload signature: ${err.message}` }));
+      hapticTrigger('error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const labelStyle = {
@@ -61,20 +163,12 @@ export default function AuthorizationPage() {
 
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        width: '100%',
-        maxWidth: '480px',
-        margin: '0 auto',
-        padding: '16px',
-        fontFamily: 'Arial',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '8px',
-        minHeight: '100vh',
-        boxSizing: 'border-box'
-      }}
-    >
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Confetti isActive={showConfetti} />
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
+      >
       <RegistrationHeader title="Guardian Authorization" />
       
       {/* Progress Bar */}
@@ -184,16 +278,40 @@ export default function AuthorizationPage() {
         </div>
       )}
 
-      <EnhancedButton
-        type="submit"
-        loading={loading}
-        variant="primary"
-        size="lg"
-        fullWidth
-        className="mt-6"
-      >
-        {loading ? 'Submitting...' : 'Complete'}
-      </EnhancedButton>
+      <div className="flex gap-3 mt-6">
+        <EnhancedButton
+          type="button"
+          variant="secondary"
+          size="md"
+          onClick={() => {
+            try {
+              const svgData = signatureRef.current?.svg;
+              if (svgData) {
+                const svgString = new XMLSerializer().serializeToString(svgData);
+                const dataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+                alert(`Signature has data: ${dataUrl.length} characters`);
+              } else {
+                alert('No signature data found');
+              }
+            } catch (error) {
+              console.error('❌ Error getting signature:', error);
+              alert('Error getting signature data');
+            }
+          }}
+        >
+          Test Signature
+        </EnhancedButton>
+        <EnhancedButton
+          type="submit"
+          loading={loading || uploading}
+          variant="primary"
+          size="lg"
+          fullWidth
+        >
+          {uploading ? 'Uploading...' : loading ? 'Submitting...' : 'Complete'}
+        </EnhancedButton>
+      </div>
     </form>
+    </div>
   );
 }

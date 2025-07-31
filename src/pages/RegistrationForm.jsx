@@ -29,7 +29,7 @@ export default function RegistrationForm() {
 
   const [form, setForm] = useState({
     fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
-    phone: '', email: '', postalCode: '', blockNo: '', street: '',
+    gender: '', phone: '', email: '', postalCode: '', blockNo: '', street: '',
     building: '', floor: '', unit: ''
   });
 
@@ -44,6 +44,7 @@ export default function RegistrationForm() {
   const fullNameRef = useRef();
   const idLast4Ref = useRef();
   const dobInputRef = useRef();
+  const genderRef = useRef();
   const phoneRef = useRef();
   const emailRef = useRef();
   const postalCodeRef = useRef();
@@ -69,6 +70,7 @@ export default function RegistrationForm() {
       dobDay: registrationData.dobDay || '',
       dobMonth: registrationData.dobMonth || '',
       dobYear: registrationData.dobYear || '',
+      gender: registrationData.gender || '',
       phone: registrationData.phone || '',
       email: registrationData.email || '',
       postalCode: registrationData.postalCode || '',
@@ -190,6 +192,7 @@ export default function RegistrationForm() {
     if (!form.fullName) errs.fullName = 'Full name is required';
     if (!/^[A-Za-z0-9]{4}$/.test(form.idLast4)) errs.idLast4 = 'Must be exactly 4 letters or digits';
     if (!validateDOB()) errs.dob = 'Please enter a valid date of birth (DD/MM/YYYY)';
+    if (!form.gender) errs.gender = 'Gender is required';
     if (!/^\d+$/.test(form.phone)) errs.phone = 'Phone number must be numeric';
     if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = 'Invalid email';
     if (!/^\d{6}$/.test(form.postalCode)) errs.postalCode = 'Postal code must be exactly 6 digits';
@@ -202,6 +205,7 @@ export default function RegistrationForm() {
       fullName: form.fullName ? 'OK' : 'MISSING',
       idLast4: /^[A-Za-z0-9]{4}$/.test(form.idLast4) ? 'OK' : 'INVALID',
       dob: validateDOB() ? 'OK' : 'INVALID',
+      gender: form.gender ? 'OK' : 'MISSING',
       phone: /^\d+$/.test(form.phone) ? 'OK' : 'INVALID',
       email: /^\S+@\S+\.\S+$/.test(form.email) ? 'OK' : 'INVALID',
       postalCode: /^\d{6}$/.test(form.postalCode) ? 'OK' : 'INVALID',
@@ -241,7 +245,7 @@ export default function RegistrationForm() {
       console.log('🔍 Errors:', errors);
       // 跳到第一个有错的输入框
       const errorOrder = [
-        'fullName', 'idLast4', 'dob', 'phone', 'email', 'postalCode',
+        'fullName', 'idLast4', 'dob', 'gender', 'phone', 'email', 'postalCode',
         'blockNo', 'street', 'floor', 'unit'
       ];
       for (const key of errorOrder) {
@@ -315,7 +319,8 @@ export default function RegistrationForm() {
         dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
         dobDay: form.dobDay,
         dobMonth: form.dobMonth,
-        dobYear: form.dobYear
+        dobYear: form.dobYear,
+        gender: form.gender
       });
 
       // 清除草稿数据，因为已经成功提交
@@ -400,6 +405,7 @@ export default function RegistrationForm() {
     fullName: fullNameRef,
     idLast4: idLast4Ref,
     dob: dobInputRef,
+    gender: genderRef,
     phone: phoneRef,
     email: emailRef,
     postalCode: postalCodeRef,
@@ -536,6 +542,39 @@ export default function RegistrationForm() {
             required
             maxDate={new Date().toISOString().split('T')[0]}
           />
+
+          {/* Gender Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-3" ref={genderRef}>
+              {['Male', 'Female', 'Other'].map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  className={`medical-option-button flex-1 ${
+                    form.gender === option ? 'selected' : ''
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={() => {
+                    if (!loading) {
+                      setForm({ ...form, gender: option });
+                      updateRegistrationData({ gender: option });
+                      if (errors.gender) {
+                        setErrors(prev => ({ ...prev, gender: '' }));
+                      }
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {errors.gender && (
+              <div className="text-red-500 text-xs mt-1">{errors.gender}</div>
+            )}
+          </div>
 
           {/* Phone Number */}
           <PhoneInput

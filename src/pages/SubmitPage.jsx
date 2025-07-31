@@ -79,7 +79,7 @@ export default function SubmitPage() {
         return;
       }
 
-      let selfiePath = registrationData.selfie || '';
+      let selfiePath = registrationData.selfieUrl || registrationData.selfie || '';
 
       // Only encrypt name, birthday, address, phone, email, signature, selfie, id_last4
       const AES_KEY = getAESKey();
@@ -140,7 +140,7 @@ export default function SubmitPage() {
         unit: encrypt(registrationData.unit || '', AES_KEY),
         other_health_notes: encrypt(combinedHealthNotes, AES_KEY),
         is_guardian: !!registrationData.is_guardian,
-        signature: encrypt(registrationData.signature || '', AES_KEY),
+        signature: encrypt(registrationData.signatureUrl || registrationData.signature || '', AES_KEY),
         selfie: encrypt(selfiePath, AES_KEY),
         clinic_id: registrationData.clinic_id, // Not encrypted
         user_id, // Not encrypted
