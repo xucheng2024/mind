@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
-
+import { EnhancedButton, ProgressBar } from '../components';
 
 const healthItems = [
   'HeartDisease', 'Diabetes', 'Hypertension', 'Cancer', 'Asthma',
@@ -49,10 +49,14 @@ export default function MedicalPage() {
     } else {
       console.log(`✅ Clinic ID found: ${registrationData.clinic_id}`);
     }
-  }, [registrationData]); // Added registrationData to dependency array for logs
+  }, [registrationData]);
 
   const handleSelect = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
+    // Clear error when user makes a selection
+    if (optionErrors[field]) {
+      setOptionErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
   const formatSGTime = () => {
@@ -98,75 +102,130 @@ export default function MedicalPage() {
     navigate('/register/selfie');
   };
 
+  const labelStyle = {
+    fontWeight: '600',
+    marginTop: '12px',
+    display: 'block',
+    fontSize: '14px',
+    color: '#333',
+    marginBottom: '8px'
+  };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100"
-    >
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
+    <div style={{
+      width: '100%',
+      maxWidth: '480px',
+      margin: '0 auto',
+      padding: '16px',
+      fontFamily: 'Arial',
+      backgroundColor: '#f9f9f9',
+      borderRadius: '8px',
+      minHeight: '100vh',
+      boxSizing: 'border-box',
+      overflowY: 'auto'
+    }}>
+      <form
+       onSubmit={handleSubmit} 
+       style={{
+          width: '100%',
+          maxWidth: '480px',
+          margin: '0 auto',
+          padding: '16px',
+          fontFamily: 'Arial',
+          backgroundColor: '#f9f9f9',
+          borderRadius: '8px',
+          minHeight: '100vh',
+          boxSizing: 'border-box'
+       }}
+      
+      >
         <RegistrationHeader title="Health Declaration" />
+        
+        {/* Progress Bar */}
+        <ProgressBar 
+          currentStep={2} 
+          totalSteps={4} 
+          steps={['Registration', 'Medical', 'Photo', 'Submit']}
+          className="mb-6"
+        />
 
         {healthItems.map(item => (
-          <div key={item} id={`option-${item}`} className="mb-6">
-            <div>
-              <span className="block text-base font-semibold text-gray-800 mb-2">
-                {item.replace(/([A-Z])/g, ' $1')}
-              </span>
-              <div className="flex gap-2 mt-1">
-                {['Yes', 'No', 'Unsure'].map(opt => (
-                  <button
-                    key={opt}
-                    type="button"
-                    aria-label={`Select ${opt} for ${item.replace(/([A-Z])/g, ' $1')}`}
-                    className={`px-6 py-2 rounded-full border text-base font-medium transition-all
-                      ${form[item] === opt
-                        ? 'border-blue-600 bg-blue-50 text-blue-600 shadow'
-                        : 'border-gray-300 bg-white text-gray-800 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600'}
-                      focus:outline-none`}
-                    onClick={() => handleSelect(item, opt)}
-                  >
-                    {opt.charAt(0) + opt.slice(1).toLowerCase()}
-                  </button>
-                ))}
-              </div>
+          <div key={item} id={`option-${item}`} style={{ marginBottom: '24px' }}>
+            <label style={labelStyle}>
+              {item.replace(/([A-Z])/g, ' $1')} <span style={{ color: '#dc2626' }}>*</span>
+            </label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {['YES', 'NO', 'UNSURE'].map(opt => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`medical-option-button ${form[item] === opt ? 'selected' : ''}`}
+                  onClick={() => handleSelect(item, opt)}
+                >
+                  {opt}
+                </button>
+              ))}
             </div>
             {optionErrors[item] && (
-              <div className="text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-1 animate-shake">
+              <div style={{
+                color: '#dc2626',
+                fontSize: '12px',
+                marginTop: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <svg style={{ width: '12px', height: '12px' }} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 {optionErrors[item]}
               </div>
             )}
           </div>
         ))}
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div>
+          <label style={labelStyle}>
             Other Health Notes (if any)
           </label>
           <textarea
             value={form.otherHealthNotes}
             onChange={(e) => setForm({ ...form, otherHealthNotes: e.target.value })}
-            className="w-full min-h-[80px] border border-gray-300 rounded-xl p-4 text-base resize-y focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400"
+            className="medical-textarea"
             placeholder="e.g. Allergies, previous surgeries, medications..."
           />
         </div>
 
         {error && (
-          <div className="text-red-600 bg-red-50 px-4 py-3 rounded-xl mb-4 text-center border border-red-200 flex items-center gap-2 animate-shake">
-            <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{
+            color: '#dc2626',
+            background: '#fff0f0',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            marginBottom: '12px',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {error}
           </div>
         )}
 
-        <button
+        <EnhancedButton
           type="submit"
-          className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 mt-2"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-6"
         >
           Next
-        </button>
-      </div>
-    </form>
+        </EnhancedButton>
+      </form>
+    </div>
   );
 }
 

@@ -3,6 +3,14 @@ import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
+import { 
+  EnhancedButton, 
+  CheckboxInput, 
+  useHapticFeedback,
+  LoadingSpinner,
+  Confetti,
+  ProgressBar
+} from '../components';
 
 // Native image compression function
 const compressImage = async (file) => {
@@ -42,6 +50,8 @@ export default function SelfiePage() {
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
   const [fileInputRef] = useState(() => React.createRef());
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { trigger: hapticTrigger } = useHapticFeedback();
 
   // 检查相机权限 - 简化版本
   const checkCamera = async () => {
@@ -109,6 +119,7 @@ export default function SelfiePage() {
 
   // 拍照逻辑改为用 react-camera-pro
   const capture = () => {
+    hapticTrigger('medium');
     setCapturing(true);
     console.log('📸 Taking photo...');
     if (!cameraRef.current) {
@@ -158,6 +169,7 @@ export default function SelfiePage() {
 
   const handleRetake = () => {
     console.log('🔄 Retaking photo...');
+    hapticTrigger('light');
     setImageSrc(null);
     setCompressedBlob(null);
     setError('');
@@ -184,6 +196,10 @@ export default function SelfiePage() {
       return;
     }
     
+    hapticTrigger('success');
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+    
     console.log('📸 Saving selfie to registration data...');
     updateRegistrationData({ selfie: imageSrc });
     
@@ -193,8 +209,17 @@ export default function SelfiePage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Confetti isActive={showConfetti} />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
         <RegistrationHeader title="Face Capture" />
+        
+        {/* Progress Bar */}
+        <ProgressBar 
+          currentStep={3} 
+          totalSteps={4} 
+          steps={['Registration', 'Medical', 'Photo', 'Submit']}
+          className="mb-6"
+        />
 
         {cameraLoading ? (
           <div className="flex flex-col items-center justify-center h-[220px]">
@@ -208,12 +233,13 @@ export default function SelfiePage() {
             <div className="text-gray-400 mb-4 text-xs">
               User Agent: {navigator.userAgent.substring(0, 50)}...
             </div>
-            <button
+            <EnhancedButton
               onClick={handleRetryCamera}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              variant="primary"
+              size="md"
             >
               Retry Camera
-            </button>
+            </EnhancedButton>
           </div>
         ) : !imageSrc ? (
           <div className="flex flex-col items-center mb-4">
@@ -236,13 +262,17 @@ export default function SelfiePage() {
               />
             </div>
             <div className="w-full flex flex-col items-center">
-              <button
+              <EnhancedButton
                 onClick={capture}
                 disabled={capturing || !cameraReady}
-                className={`w-full h-14 mt-8 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${(capturing || !cameraReady) ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
+                loading={capturing}
+                fullWidth
+                size="lg"
+                variant="primary"
+                className="mt-8"
               >
-                {capturing ? 'Processing...' : !cameraReady ? 'Camera Loading...' : 'Take a Photo'}
-              </button>
+                {!cameraReady ? 'Camera Loading...' : 'Take a Photo'}
+              </EnhancedButton>
             </div>
           </div>
         ) : (
@@ -253,21 +283,24 @@ export default function SelfiePage() {
               className="w-[220px] h-[220px] rounded-full object-cover mb-6 border-4 border-blue-100 shadow-inner"
             />
             <div className="flex flex-col space-y-3 w-full">
-              <button
+              <EnhancedButton
                 onClick={handleRetake}
-                type="button"
-                className="w-full h-12 rounded-xl text-lg font-semibold bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
+                variant="secondary"
+                fullWidth
+                size="lg"
               >
                 Retake Photo
-              </button>
+              </EnhancedButton>
               <form onSubmit={handleSubmit} className="w-full">
-                <button
+                <EnhancedButton
                   type="submit"
-                  className="w-full h-12 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
-                  disabled={uploading}
+                  loading={uploading}
+                  fullWidth
+                  size="lg"
+                  variant="primary"
                 >
                   Next
-                </button>
+                </EnhancedButton>
               </form>
             </div>
           </div>

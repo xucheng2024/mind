@@ -10,6 +10,13 @@ import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import { getClinicId } from '../config/clinic';
 import CryptoJS from 'crypto-js';
+import { 
+  PhoneInput, 
+  DateInput, 
+  EnhancedButton, 
+  ProgressBar,
+  useHapticFeedback 
+} from '../components';
 
 
 export default function RegistrationForm() {
@@ -18,6 +25,7 @@ export default function RegistrationForm() {
   const { registrationData, updateRegistrationData } = useRegistration();
   const [searchParams] = useSearchParams();
   const clinicId = getClinicId(searchParams, localStorage);
+  const { trigger: hapticTrigger } = useHapticFeedback();
 
   const [form, setForm] = useState({
     fullName: '', idLast4: '', dobDay: '', dobMonth: '', dobYear: '',
@@ -421,6 +429,14 @@ export default function RegistrationForm() {
         className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
       >
       <RegistrationHeader title={`Welcome name`} />
+      
+      {/* Progress Bar */}
+      <ProgressBar 
+        currentStep={1} 
+        totalSteps={4} 
+        steps={['Registration', 'Medical', 'Photo', 'Submit']}
+        className="mb-6"
+      />
 
       {fatalError && (
         <div className="text-red-600 bg-red-50 p-4 rounded-xl mb-4 text-center border border-red-200 flex items-center gap-2 animate-shake">
@@ -453,8 +469,11 @@ export default function RegistrationForm() {
               className={`w-full border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
               disabled={loading}
               placeholder="e.g. TAN AH KOW"
+              autoComplete="name"
             />
-            {errors.fullName && <div className="text-red-500 text-xs mt-1">{errors.fullName}</div>}
+            {errors.fullName && (
+              <div className="text-red-500 text-xs mt-1">{errors.fullName}</div>
+            )}
           </div>
 
           {/* Last 4 digits of NRIC or Passport Number */}
@@ -465,9 +484,6 @@ export default function RegistrationForm() {
             <input
               ref={idLast4Ref}
               type="text"
-              inputMode="text"
-              maxLength={4}
-              placeholder="e.g. 123A"
               value={form.idLast4}
               onChange={e => {
                 const val = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4);
@@ -482,108 +498,88 @@ export default function RegistrationForm() {
               }}
               className={`w-full border ${errors.idLast4 ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
               disabled={loading}
+              placeholder="e.g. 123A"
+              maxLength={4}
+              autoComplete="off"
             />
-            {errors.idLast4 && <div className="text-red-500 text-xs mt-1">{errors.idLast4}</div>}
+            {errors.idLast4 && (
+              <div className="text-red-500 text-xs mt-1">{errors.idLast4}</div>
+            )}
           </div>
 
           {/* Date of Birth */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date of Birth <span className="text-red-500">*</span>
-              <span className="text-xs text-gray-500 ml-2">(DD/MM/YYYY)</span>
-            </label>
-            <IMaskInput
-              mask="00/00/0000"
-              placeholder="DD/MM/YYYY"
-              value={`${form.dobDay}/${form.dobMonth}/${form.dobYear}`}
-              onAccept={handleDOBChange}
-              onBlur={() => {
-                // onBlur 时进行最终验证
-                if (form.dobDay && form.dobMonth && form.dobYear) {
-                  const isValid = validateDOB();
-                  if (!isValid) {
-                    setErrors(prev => ({ ...prev, dob: 'Please enter a valid date of birth' }));
-                  }
+          <DateInput
+            value={`${form.dobDay || ''}${form.dobMonth ? '/' + form.dobMonth : ''}${form.dobYear ? '/' + form.dobYear : ''}`}
+            onChange={(e, formatted) => {
+              const parts = formatted.split('/');
+              const day = parts[0] || '';
+              const month = parts[1] || '';
+              const year = parts[2] || '';
+              
+              setForm({ ...form, dobDay: day, dobMonth: month, dobYear: year });
+              updateRegistrationData({ dobDay: day, dobMonth: month, dobYear: year });
+              
+              if (day && month && year) {
+                setErrors(prev => ({ ...prev, dob: '' }));
+              }
+            }}
+            onBlur={() => {
+              if (form.dobDay && form.dobMonth && form.dobYear) {
+                const isValid = validateDOB();
+                if (!isValid) {
+                  setErrors(prev => ({ ...prev, dob: 'Please enter a valid date of birth' }));
                 }
-              }}
-              inputMode="numeric"
-              type="tel"
-              ref={dobInputRef}
-              className={`w-full border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
-              style={{
-                fontFamily: 'monospace',
-                letterSpacing: '0.5px'
-              }}
-            />
-            {errors.dob && (
-              <div className="text-red-500 text-xs mt-1 flex items-start gap-1">
-                <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.dob}
-              </div>
-            )}
-            {!errors.dob && form.dobDay && form.dobMonth && form.dobYear && (
-              <div className="text-green-600 text-xs mt-1 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Valid date format
-              </div>
-            )}
-          </div>
+              }
+            }}
+            error={errors.dob}
+            disabled={loading}
+            required
+            maxDate={new Date().toISOString().split('T')[0]}
+          />
 
           {/* Phone Number */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              ref={phoneRef}
-              type="text"
-              inputMode="numeric"
-              value={form.phone}
-              onChange={e => {
-                const val = e.target.value.replace(/[^0-9]/g, '');
-                setForm({ ...form, phone: val });
-                if (/^\d+$/.test(val)) setErrors(prev => ({ ...prev, phone: '' }));
-              }}
-              onBlur={async () => {
-                let err = '';
-                if (!/^\d+$/.test(form.phone)) {
-                  err = 'Phone number must be numeric';
-                } else {
-                  // 查重
-                  const phoneHash = hash(form.phone);
-                  const { data, error } = await supabase
-                    .from('users')
-                    .select('user_id')
-                    .eq('phone_hash', phoneHash)
-                    .limit(1);
-                  if (error) {
-                    err = 'Server error, please try again later.';
-                  } else if (data && data.length > 0) {
-                    err = 'This phone number has already been registered.';
-                  }
+          <PhoneInput
+            ref={phoneRef}
+            value={form.phone}
+            onChange={(e, formatted) => {
+              const val = formatted.replace(/[^0-9]/g, '');
+              setForm({ ...form, phone: val });
+              if (/^\d+$/.test(val)) setErrors(prev => ({ ...prev, phone: '' }));
+            }}
+            onBlur={async () => {
+              let err = '';
+              if (!/^\d+$/.test(form.phone)) {
+                err = 'Phone number must be numeric';
+              } else {
+                // 查重
+                const phoneHash = hash(form.phone);
+                const { data, error } = await supabase
+                  .from('users')
+                  .select('user_id')
+                  .eq('phone_hash', phoneHash)
+                  .limit(1);
+                if (error) {
+                  err = 'Server error, please try again later.';
+                } else if (data && data.length > 0) {
+                  err = 'This phone number has already been registered.';
                 }
-                setErrors(prev => ({ ...prev, phone: err }));
-              }}
-              className={`w-full border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
-              disabled={loading}
-              placeholder="e.g. 91234567"
-            />
-            {errors.phone && <div className="text-red-500 text-xs mt-1">{errors.phone}</div>}
-          </div>
+              }
+              setErrors(prev => ({ ...prev, phone: err }));
+            }}
+            error={errors.phone}
+            disabled={loading}
+            required
+            placeholder="e.g. 91234567"
+          />
 
           {/* Email */}
-          <div className="mb-0">
+          <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email <span className="text-red-500">*</span>
             </label>
             <input
               ref={emailRef}
               type="email"
-              inputMode="email"
               value={form.email.toLowerCase()}
               onChange={e => {
                 const val = e.target.value.toLowerCase();
@@ -613,8 +609,11 @@ export default function RegistrationForm() {
               className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}
               disabled={loading}
               placeholder="e.g. example@email.com"
+              autoComplete="email"
             />
-            {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+            {errors.email && (
+              <div className="text-red-500 text-xs mt-1">{errors.email}</div>
+            )}
           </div>
         </div>
       </div>
@@ -792,24 +791,19 @@ export default function RegistrationForm() {
       </div>
 
       <div className="text-center mt-8 mb-6">
-        <button
+        <EnhancedButton
           type="submit"
-          disabled={loading}
-          onClick={() => console.log('🔥 SUBMIT BUTTON CLICKED!')}
-          className={`w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${loading ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none transform-none' : ''}`}
+          loading={loading}
+          onClick={() => {
+            console.log('🔥 SUBMIT BUTTON CLICKED!');
+            hapticTrigger('medium');
+          }}
+          fullWidth
+          size="lg"
+          variant="primary"
         >
-          {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Submitting...
-            </>
-          ) : (
-            'Next'
-          )}
-        </button>
+          {loading ? 'Submitting...' : 'Next'}
+        </EnhancedButton>
         <div className="text-xs text-gray-400 mt-2">
           💾 Your progress is automatically saved
         </div>

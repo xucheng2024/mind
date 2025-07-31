@@ -1,7 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import InstallPrompt from './components/InstallPrompt';
-import ShareButton from './components/ShareButton';
 import ToastProvider from './components/ToastProvider';
 import PWAStatus from './components/PWAStatus';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -10,6 +9,7 @@ import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
+import { OfflineIndicator } from './components';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { validateConfig } from './lib/config';
@@ -63,12 +63,12 @@ function App() {
         </Suspense>
       </ErrorBoundary>
       <InstallPrompt />
-      <ShareButton />
       <PWAStatus />
       <PerformanceMonitor />
       <PWAInstallButton />
       <VersionUpdate />
       <PWAUpdateNotification />
+      <OfflineIndicator />
     </>
   );
 }
@@ -77,7 +77,12 @@ export default function RootApp() {
   return (
     <QueryProvider>
       <RegistrationProvider>
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <ToastProvider>
             <App />
           </ToastProvider>

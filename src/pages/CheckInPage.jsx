@@ -6,6 +6,12 @@ import { hash, encrypt, isPhone, isEmail } from '../lib/utils';
 import { getAESKey } from '../lib/config';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
+import { 
+  EnhancedButton, 
+  LoadingSpinner, 
+  useHapticFeedback,
+  Confetti 
+} from '../components';
 
 export default function CheckInPage() {
   // Prevent concurrent auto check-in and manual check-in
@@ -16,6 +22,8 @@ export default function CheckInPage() {
   const [checkedInTime, setCheckedInTime] = useState(null);
   const [input, setInput] = useState('');
   const [businessHours, setBusinessHours] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { trigger: hapticTrigger } = useHapticFeedback();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   // Use URL params first, then localStorage
@@ -251,6 +259,9 @@ export default function CheckInPage() {
       if (user.clinic_id) localStorage.setItem('clinic_id', user.clinic_id);
       setCheckedInTime(new Date().toLocaleString());
       setSuccess(true);
+      hapticTrigger('success');
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
       toast.dismiss(loadingToast);
     } catch (err) {
       console.log('[handleSubmit] error:', err);
@@ -276,6 +287,7 @@ export default function CheckInPage() {
   // 新增：自动 check-in 时如果有 error，显示 error 信息和返回首页按钮
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Confetti isActive={showConfetti} />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
         <RegistrationHeader title="Check-in an Appointment" />
         {success ? (
@@ -285,37 +297,28 @@ export default function CheckInPage() {
           </div>
         ) : shouldShowForm ? (
           <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email or Phone Number</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Email or Phone Number
+              </label>
               <input
-                className="w-full border border-blue-300 rounded-xl p-4 text-base focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400"
+                type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder="Enter your email or phone number"
                 autoFocus
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
               />
             </div>
-            <button
+            <EnhancedButton
               type="submit"
-              disabled={loading}
-              className={`w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-600 active:border-blue-600 ${
-                loading
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none transform-none'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 border border-blue-600'
-              }`}
+              loading={loading}
+              fullWidth
+              size="lg"
+              variant="primary"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Checking in...
-                </>
-              ) : (
-                'Check-in'
-              )}
-            </button>
+              {loading ? 'Checking in...' : 'Check-in'}
+            </EnhancedButton>
             {error && (
               <div className="flex justify-center w-full">
                 <div className="text-red-500 text-xs mt-1 text-center max-w-xs w-full animate-fade-in">
@@ -352,11 +355,7 @@ export default function CheckInPage() {
         ) : (
           // 自动 check-in 时显示 loading
           <div className="flex flex-col items-center justify-center py-12">
-            <svg className="animate-spin h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <div className="text-blue-500 text-lg font-semibold">Auto check-in...</div>
+            <LoadingSpinner size="lg" variant="primary" text="Auto check-in..." />
           </div>
         )}
       </div>

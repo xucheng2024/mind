@@ -193,4 +193,4 @@ const NotificationContainer = () => {
   );
 };
 
-export default NotificationSystem; 
+export default NotificationProvider; 

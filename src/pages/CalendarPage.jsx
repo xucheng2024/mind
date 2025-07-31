@@ -9,6 +9,7 @@ import 'dayjs/locale/en';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { FaCalendarAlt, FaClock, FaUser, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
+import { EnhancedButton, Modal, LoadingSpinner } from '../components';
 
 // Set dayjs locale
 dayjs.locale('en');
@@ -124,18 +125,14 @@ export default function CalendarPage() {
             if (!startDate) return null;
             return {
               id: v.id,
-              title: `Appointment - ${startDate.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true 
-              })}`,
+              title: 'Appointment',
               start: startDate,
               end: new Date(startDate.getTime() + 30 * 60 * 1000),
               status: v.status,
               userRowId: v.user_row_id,
-              backgroundColor: '#3B82F6',
-              borderColor: '#2563EB',
-              textColor: '#FFFFFF',
+              backgroundColor: 'transparent',
+              borderColor: '#3B82F6',
+              textColor: '#3B82F6',
               extendedProps: {
                 type: 'appointment'
               }
@@ -173,13 +170,37 @@ export default function CalendarPage() {
     
     if (date > maxDate) return [];
     
-    // Query slot_availability table
+    // Query slot_availability table (only if table exists)
     const dateStr = date.toISOString().split('T')[0];
-    const { data: slotAvailability, error } = await supabase
-      .from('slot_availability')
-      .select('visit_time, is_available')
-      .eq('clinic_id', clinicId)
-      .eq('visit_date', dateStr);
+    let slotAvailability = null;
+    let error = null;
+    
+    // Query slot_availability table
+    if (clinicId) {
+      console.log('🔍 Querying slot_availability with:', { clinicId, dateStr });
+      try {
+        const result = await supabase
+          .from('slot_availability')
+          .select('visit_time, is_available')
+          .eq('clinic_id', clinicId)
+          .eq('visit_date', dateStr);
+        
+        slotAvailability = result.data;
+        error = result.error;
+        
+        if (error) {
+          console.log('⚠️ Slot availability query failed:', error.message);
+          // Continue with empty slotAvailability (all slots will be available by default)
+        } else {
+          console.log('✅ Slot availability query successful:', slotAvailability);
+        }
+      } catch (err) {
+        console.log('⚠️ Slot availability query exception:', err);
+        // Continue with empty slotAvailability (all slots will be available by default)
+      }
+    } else {
+      console.log('⚠️ No clinicId available for slot query');
+    }
     
     console.log('📊 Slot availability debug:', {
       date: dateStr,
@@ -209,10 +230,9 @@ export default function CalendarPage() {
       const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
       const slotData = slotAvailability?.find(slot => slot.visit_time === timeStr);
       
-      // If no slot_availability data found, default to available
-      const isAvailable = slotAvailability && slotAvailability.length > 0 
-        ? (slotData ? slotData.is_available : true)
-        : true; // Default to available if no slot_availability data
+      // Check if slot is available from slot_availability table
+      // If no slot_availability data found, slot is available (no booking)
+      const isAvailable = slotData ? slotData.is_available : true;
       
       slots.push({ 
         hour, 
@@ -385,14 +405,14 @@ export default function CalendarPage() {
       
       const newEvent = {
         id: Date.now(),
-        title: `Appointment - ${formatTime(hour, minute)}`,
+                      title: `${formatTime(hour, minute)}`,
         start: new Date(date),
         end: new Date(date.getTime() + 30 * 60 * 1000),
         status: 'booked',
         userRowId: userRowId,
-        backgroundColor: '#3B82F6',
-        borderColor: '#2563EB',
-        textColor: '#FFFFFF',
+        backgroundColor: 'transparent',
+        borderColor: '#3B82F6',
+        textColor: '#3B82F6',
         extendedProps: {
           type: 'appointment'
         }
@@ -484,14 +504,14 @@ export default function CalendarPage() {
       
       const newEvent = {
         id: Date.now(),
-        title: `Appointment - ${formatTime(changeAppointment.hour, changeAppointment.minute)}`,
+                      title: `${formatTime(changeAppointment.hour, changeAppointment.minute)}`,
         start: new Date(newDate),
         end: new Date(newDate.getTime() + 30 * 60 * 1000),
         status: 'booked',
         userRowId: userRowId,
-        backgroundColor: '#3B82F6',
-        borderColor: '#2563EB',
-        textColor: '#FFFFFF',
+        backgroundColor: 'transparent',
+        borderColor: '#3B82F6',
+        textColor: '#3B82F6',
         extendedProps: {
           type: 'appointment'
         }
@@ -526,24 +546,13 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Debug Info - Temporary */}
-      {businessHours && (
-        <div className="bg-yellow-100 p-4 mb-4">
-          <h3 className="font-bold">Debug - Business Hours:</h3>
-          <pre className="text-xs">{JSON.stringify(businessHours, null, 2)}</pre>
-          <div className="mt-2">
-            <h4 className="font-bold">Date Tests:</h4>
-            <p>8/5/2024: {new Date('2024-08-05').toDateString()} - Day: {['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date('2024-08-05').getDay()]}</p>
-            <p>8/6/2024: {new Date('2024-08-06').toDateString()} - Day: {['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date('2024-08-06').getDay()]}</p>
-          </div>
-        </div>
-      )}
+
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-4xl mx-auto">
           {/* Calendar */}
-          <div className="lg:col-span-2">
+          <div>
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
               <div className="p-6">
                 {loading ? (
@@ -577,7 +586,7 @@ export default function CalendarPage() {
                     eventTimeFormat={{
                       hour: '2-digit',
                       minute: '2-digit',
-                      hour12: true
+                      hour12: false
                     }}
                     dayHeaderFormat={{
                       weekday: 'short'
@@ -592,7 +601,7 @@ export default function CalendarPage() {
                       week: 'Week',
                       list: 'List'
                     }}
-                    className="mobile-friendly-calendar"
+
                     dayCellDidMount={(arg) => {
                       // Add click and touch handlers to day cells for better mobile support
                       const handleDateClick = () => {
@@ -627,6 +636,8 @@ export default function CalendarPage() {
                         arg.el.style.opacity = '0.3';
                         arg.el.style.pointerEvents = 'none';
                       }
+                      
+
                     }}
                   />
                 )}
@@ -634,83 +645,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* User Info */}
-            {userInfo && (
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                    <FaUser className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Patient Info</h3>
-                    <p className="text-sm text-gray-500">Your details</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <FaUser className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      {userInfo.first_name} {userInfo.last_name}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <FaPhone className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{userInfo.phone}</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Clinic Info */}
-            {clinicInfo && (
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
-                    <FaMapMarkerAlt className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Clinic Info</h3>
-                    <p className="text-sm text-gray-500">Location & hours</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{clinicInfo.address}</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <FaClock className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      {businessHours?.monday?.open} - {businessHours?.monday?.close}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Stats */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Appointments</span>
-                  <span className="text-lg font-semibold text-blue-600">{events.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="text-lg font-semibold text-green-600">
-                    {events.filter(e => {
-                      const now = new Date();
-                      return e.start.getMonth() === now.getMonth() && 
-                             e.start.getFullYear() === now.getFullYear();
-                    }).length}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -762,8 +697,8 @@ export default function CalendarPage() {
                     </div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-2">Already Booked</h4>
                     <p className="text-gray-500 mb-4">Cancel to change.</p>
-                    <button
-                      className="mt-4 px-6 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors duration-200"
+                    <EnhancedButton
+                      variant="danger"
                       onClick={() => {
                         // Find today's appointment and trigger cancel modal
                         const today = new Date(selectedDate);
@@ -779,7 +714,7 @@ export default function CalendarPage() {
                       }}
                     >
                       Cancel Appointment
-                    </button>
+                    </EnhancedButton>
                   </div>
                 ) : availableHours.length === 0 ? (
                   <div className="text-center py-8">
@@ -873,9 +808,19 @@ export default function CalendarPage() {
                           if (slotDate > maxDate) isDisabled = true;
                           if (slotEnd <= now) isDisabled = true;
                           
-                          // Skip unavailable slots
+                          // Show all slots, but disable unavailable ones
                           if (!slot.isAvailable) {
-                            return null;
+                            return (
+                              <div key={`${slot.hour}:${slot.minute}`} className="flex flex-col items-center">
+                                <button
+                                  className="px-4 py-3 rounded-xl border font-medium text-sm bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed w-full"
+                                  disabled={true}
+                                >
+                                  {formatTime(slot.hour, slot.minute)}
+                                </button>
+                                <span className="text-xs text-red-500 mt-1">Not within business hours</span>
+                              </div>
+                            );
                           }
                           
                           if (userHasOtherBooking && !isBooked && !isDisabled) {
@@ -953,13 +898,14 @@ export default function CalendarPage() {
                 Are you sure you want to cancel your appointment?
               </p>
               <div className="flex gap-3">
-                <button
+                <EnhancedButton
                   onClick={confirmCancelBooking}
-                  className="flex-1 bg-red-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-red-600 transition-colors duration-200"
+                  variant="danger"
+                  fullWidth
                 >
                   Yes, Cancel
-                </button>
-                <button
+                </EnhancedButton>
+                <EnhancedButton
                   onClick={() => {
                     setConfirmCancel(null);
                     setShowModal(false);
@@ -968,10 +914,11 @@ export default function CalendarPage() {
                     setUserHasOtherBooking(false);
                     setActiveTab('am');
                   }}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
+                  variant="secondary"
+                  fullWidth
                 >
                   Keep Appointment
-                </button>
+                </EnhancedButton>
               </div>
             </div>
           </div>

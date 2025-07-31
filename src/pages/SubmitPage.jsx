@@ -6,6 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { hash, encrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
 import cacheManager from '../lib/cache';
+import { 
+  EnhancedButton, 
+  LoadingSpinner, 
+  useHapticFeedback,
+  Confetti,
+  ProgressBar 
+} from '../components';
 
 export default function SubmitPage() {
   const navigate = useNavigate();
@@ -14,7 +21,9 @@ export default function SubmitPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [restartError, setRestartError] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
   const submittedRef = useRef(false);
+  const { trigger: hapticTrigger } = useHapticFeedback();
 
   console.log('[SubmitPage] Page loaded, registrationData:', registrationData);
 
@@ -214,6 +223,9 @@ export default function SubmitPage() {
       // Only show successful registration if all are successful
       setSubmitted(true);
       setLoading(false);
+      hapticTrigger('success');
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
       console.log('[SubmitPage] Registration successful');
     };
 
@@ -232,6 +244,7 @@ export default function SubmitPage() {
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Confetti isActive={showConfetti} />
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in flex flex-col items-center text-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -245,13 +258,17 @@ export default function SubmitPage() {
           </svg>
           <h2 className="text-green-600 text-2xl font-bold mb-2">Registration Completed</h2>
           <p className="mb-8 text-base text-gray-700">Thank you! You’re successfully registered.</p>
-          <button
-            aria-label="Back Home"
-            onClick={() => navigate('/')}
-            className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+          <EnhancedButton
+            onClick={() => {
+              hapticTrigger('light');
+              navigate('/');
+            }}
+            fullWidth
+            size="lg"
+            variant="primary"
           >
             Back Home
-          </button>
+          </EnhancedButton>
         </div>
       </div>
     );
@@ -276,13 +293,18 @@ export default function SubmitPage() {
               <line x1="17" y1="7" x2="7" y2="17" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"/>
             </svg>
             <h2 className="text-red-600 text-xl font-bold mb-2">{errorMessage}</h2>
-            <button
-              aria-label="Back Home"
-              onClick={() => navigate('/')}
-              className="w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 mt-4"
+            <EnhancedButton
+              onClick={() => {
+                hapticTrigger('light');
+                navigate('/');
+              }}
+              fullWidth
+              size="lg"
+              variant="primary"
+              className="mt-4"
             >
               Back Home
-            </button>
+            </EnhancedButton>
           </div>
         )}
       </div>

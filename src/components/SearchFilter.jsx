@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
-import { debounce } from '../lib/utils';
+import { debounce } from '../lib/performance';
 
 export default function SearchFilter({
   onSearch,

@@ -3,6 +3,10 @@ import RegistrationHeader from '../components/RegistrationHeader';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sha256Hex, isPhone, isEmail } from '../lib/utils';
+import { 
+  EnhancedButton, 
+  useHapticFeedback 
+} from '../components';
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
@@ -11,6 +15,7 @@ export default function BookingPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { trigger: hapticTrigger } = useHapticFeedback();
 
   // Check for saved login info
   useEffect(() => {
@@ -127,34 +132,31 @@ export default function BookingPage() {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
         <RegistrationHeader title="Book a New Appointment" />
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email or Phone Number</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Email or Phone Number
+            </label>
             <input
-              className="w-full border border-gray-300 rounded-xl p-4 text-base focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400"
+              type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Enter your email or phone number"
               autoFocus
-              type="text"
               aria-label="Email or Phone Number"
               maxLength={100}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
             />
           </div>
-          <button
+          <EnhancedButton
             type="submit"
-            disabled={loading}
-            className={`w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 ${loading ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none transform-none' : ''}`}
+            loading={loading}
+            fullWidth
+            size="lg"
+            variant="primary"
+            onClick={() => hapticTrigger('light')}
           >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-                Checking...
-              </span>
-            ) : 'Next'}
-          </button>
+            {loading ? 'Checking...' : 'Next'}
+          </EnhancedButton>
           {error && (
             <div className="text-red-600 text-sm p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 animate-shake">
               <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +169,10 @@ export default function BookingPage() {
             <button
               className="text-gray-400 text-xs underline hover:text-blue-600 transition"
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                hapticTrigger('light');
+                navigate('/');
+              }}
             >
               Back Home
             </button>

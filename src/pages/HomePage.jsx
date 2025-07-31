@@ -7,10 +7,16 @@ import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
-import Button from '../components/Button';
 import { decrypt } from '../lib/utils';
 import { getAESKey } from '../lib/config';
 import cacheManager from '../lib/cache';
+import { 
+  EnhancedButton, 
+  LoadingSpinner, 
+  useHapticFeedback,
+  Confetti,
+  SkeletonLoader 
+} from '../components';
 
 
 export default function HomePage() {
@@ -21,6 +27,8 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [userInfo, setUserInfo] = React.useState(null);
   const [logoutLoading, setLogoutLoading] = React.useState(false);
+  const [showConfetti, setShowConfetti] = React.useState(false);
+  const { trigger: hapticTrigger } = useHapticFeedback();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // Get clinic_id using the helper function
@@ -181,7 +189,7 @@ export default function HomePage() {
     setCheckinError('');
     // 新增：营业时间判断
     if (!isWithinBusinessHours(businessHours)) {
-      toast.error('Not within business hours, please try later.');
+      setCheckinError('Not within business hours, please try later.');
       setCheckNavLoading(false);
       return;
     }
@@ -303,6 +311,7 @@ export default function HomePage() {
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
     console.log('🚪 Logging out...');
+    hapticTrigger('medium');
     setLogoutLoading(true);
     // 使用缓存管理器清除登录信息，但保留clinic_id
     cacheManager.clearLoginInfo();
@@ -314,6 +323,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-white to-blue-50">
+      <Confetti isActive={showConfetti} />
       {/* 品牌区块 */}
       <div className="w-full flex flex-col items-center mb-10 mt-12">
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
@@ -341,28 +351,40 @@ export default function HomePage() {
               </div>
             </div>
             <div className="space-y-4">
-              <Button
+              <EnhancedButton
                 variant="primary"
-                onClick={handleBookingClick}
+                onClick={() => {
+                  hapticTrigger('light');
+                  handleBookingClick();
+                }}
+                fullWidth
+                size="lg"
               >
                 Book Appointment
-              </Button>
-              <Button
+              </EnhancedButton>
+              <EnhancedButton
                 variant="secondary"
-                onClick={handleHomeCheckIn}
+                onClick={() => {
+                  hapticTrigger('light');
+                  handleHomeCheckIn();
+                }}
                 loading={checkNavLoading}
                 disabled={checkNavLoading}
+                fullWidth
+                size="lg"
               >
                 On-site Check-in
-              </Button>
-              <Button
-                variant="secondary"
+              </EnhancedButton>
+              <EnhancedButton
+                variant="outline"
                 onClick={handleLogoutClick}
                 loading={logoutLoading}
                 disabled={logoutLoading}
+                fullWidth
+                size="lg"
               >
                 Logout
-              </Button>
+              </EnhancedButton>
               {checkinError && (
                 <div className="flex justify-center w-full">
                   <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-2 mt-3 text-center text-sm font-medium max-w-xs w-full animate-fade-in">
@@ -381,31 +403,46 @@ export default function HomePage() {
           <div className="w-full mb-8">
             <div className="text-lg font-bold text-gray-800 mb-1">First-time Visitor</div>
             <div className="text-xs text-gray-400 mb-4">First visit to clinic now</div>
-            <Button
+            <EnhancedButton
               variant="primary"
-              onClick={handleRegisterClick}
+              onClick={() => {
+                hapticTrigger('light');
+                handleRegisterClick();
+              }}
+              fullWidth
+              size="lg"
             >
               Register & Check-in
-            </Button>
+            </EnhancedButton>
           </div>
           <div className="w-full">
             <div className="text-lg font-bold text-gray-800 mb-1">Returning Visitor</div>
             <div className="text-xs text-gray-400 mb-4">For patients who already have an account.</div>
             <div className="space-y-4">
-              <Button
+              <EnhancedButton
                 variant="primary"
-                onClick={handleBookingClick}
+                onClick={() => {
+                  hapticTrigger('light');
+                  handleBookingClick();
+                }}
+                fullWidth
+                size="lg"
               >
                 Book Appointment
-              </Button>
-              <Button
+              </EnhancedButton>
+              <EnhancedButton
                 variant="secondary"
-                onClick={handleHomeCheckIn}
+                onClick={() => {
+                  hapticTrigger('light');
+                  handleHomeCheckIn();
+                }}
                 loading={checkNavLoading}
                 disabled={checkNavLoading}
+                fullWidth
+                size="lg"
               >
                 On-site Check-in
-              </Button>
+              </EnhancedButton>
 
               {checkinError && (
                 <div className="flex justify-center w-full">

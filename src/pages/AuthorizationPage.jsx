@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Signature from '@uiw/react-signature';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
+import { EnhancedButton, ProgressBar } from '../components';
 
 export default function AuthorizationPage() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function AuthorizationPage() {
     updateRegistrationData({ signature: '' });
   };
 
-  const handleNext = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
@@ -43,103 +44,156 @@ export default function AuthorizationPage() {
 
     updateRegistrationData({
       is_guardian: isGuardian,
-      signature: signatureDataUrl,
+      signature: signatureDataUrl
     });
 
     navigate('/register/submit');
   };
 
+  const labelStyle = {
+    fontWeight: '600',
+    marginTop: '16px',
+    display: 'block',
+    fontSize: '14px',
+    color: '#333'
+  };
+
+
+
   return (
     <form
-      onSubmit={handleNext}
-      className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100"
+      onSubmit={handleSubmit}
+      style={{
+        width: '100%',
+        maxWidth: '480px',
+        margin: '0 auto',
+        padding: '16px',
+        fontFamily: 'Arial',
+        backgroundColor: '#f9f9f9',
+        borderRadius: '8px',
+        minHeight: '100vh',
+        boxSizing: 'border-box'
+      }}
     >
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in">
-        <RegistrationHeader title="Guardian Authorization" />
+      <RegistrationHeader title="Guardian Authorization" />
+      
+      {/* Progress Bar */}
+      <ProgressBar 
+        currentStep={4} 
+        totalSteps={4} 
+        steps={['Registration', 'Medical', 'Photo', 'Submit']}
+        className="mb-6"
+      />
 
-        <p className="text-base text-gray-600 leading-relaxed mb-6">
-          If the patient is under 18 or physically/mentally incapacitated, the following must be signed by the patient's legal guardian or authorized representative.
-        </p>
+      <p style={{ fontSize: '14px', lineHeight: '1.6' }}>
+        If the patient is under 18 or physically/mentally incapacitated, the following must be signed by
+        the patient's legal guardian or authorized representative.
+      </p>
 
-        <label className="block text-base font-medium text-gray-700 mb-2">
-          Are you a Guardian or a Representative? <span className="text-red-500">*</span>
-        </label>
-        <div className="flex gap-3 mb-4">
-          {[true, false].map((val) => (
-            <button
-              type="button"
-              key={val ? 'Yes' : 'No'}
-              className={`px-7 py-2 rounded-full border text-base font-semibold transition-all
-                ${isGuardian === val
-                  ? 'border-blue-600 bg-blue-50 text-blue-600 shadow'
-                  : 'border-gray-300 bg-white text-gray-800 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600'}
-                focus:outline-none`}
-              onClick={() => {
-                setIsGuardian(val);
-                setErrors(prev => ({ ...prev, guardian: '' }));
-              }}
-            >
-              {val ? 'YES' : 'NO'}
-            </button>
-          ))}
-        </div>
-        {submitted && errors.guardian && (
-          <div className="text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-1 animate-shake">
-            {errors.guardian}
-          </div>
-        )}
-
-        <label className="block text-base font-medium text-gray-700 mt-6 mb-2">
-          Signature of Patient/Guardian or Representative <span className="text-red-500">*</span>
-        </label>
-        <div
-          className={`relative rounded-2xl mb-2 w-full overflow-hidden border ${errors.signature ? 'border-red-500' : 'border-gray-300'} bg-white`}
-          style={{ height: '160px' }}
-        >
-          <Signature
-            ref={signatureRef}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              borderRadius: '1rem',
-              background: 'white',
-            }}
-          />
+      <label style={labelStyle}>Are you a Guardian or a Representative? <span style={{ color: 'red' }}>*</span></label>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+        {[true, false].map((val) => (
           <button
             type="button"
-            aria-label="Clear signature"
-            onClick={handleClear}
-            className="absolute top-2 right-2 bg-white border border-gray-300 rounded-full w-8 h-8 flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm hover:bg-gray-50 transition-colors z-10"
+            key={val ? 'YES' : 'NO'}
+            className={`medical-option-button ${isGuardian === val ? 'selected' : ''}`}
+            onClick={() => {
+              setIsGuardian(val);
+              setErrors(prev => ({ ...prev, guardian: '' }));
+            }}
           >
-            ×
+            {val ? 'YES' : 'NO'}
           </button>
-        </div>
-        {submitted && errors.signature && (
-          <div className="text-red-600 text-xs mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-1 animate-shake">
-            {errors.signature}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full h-14 rounded-xl text-lg font-semibold transition-all flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 mt-6 ${loading ? 'bg-gray-300 cursor-not-allowed shadow-none transform-none' : ''}`}
-        >
-          {loading ? 'Submitting...' : 'Complete'}
-        </button>
-        <div style={{ fontSize: '0.92em', color: '#555', margin: '16px 0 8px 0', textAlign: 'center' }}>
-          By clicking <strong>Complete</strong>, you agree to the<br />
-          <a
-            href="/consent-release-indemnity.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#2563eb', textDecoration: 'underline' }}
-          >
-            Consent & Indemnity Agreement
-          </a>.
-        </div>
+        ))}
       </div>
+      {submitted && errors.guardian && <div style={{ color: 'red', fontSize: '12px' }}>{errors.guardian}</div>}
+
+      <label style={labelStyle}>Signature of Patient/Guardian or Representative <span style={{ color: 'red' }}>*</span></label>
+      <div
+        style={{
+          border: errors.signature ? '1px solid red' : '1px solid #ccc',
+          borderRadius: '16px',
+          marginBottom: '8px',
+          height: '160px',
+          width: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+          backgroundColor: 'white'
+        }}
+      >
+        <Signature
+          ref={signatureRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            borderRadius: '16px',
+            background: 'white',
+            margin: 0,
+            padding: 0
+          }}
+        />
+        <button
+          type="button"
+          aria-label="Clear signature"
+          onClick={handleClear}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            backgroundColor: 'white',
+            border: '1px solid #ccc',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#2563eb',
+            fontWeight: 'bold',
+            fontSize: '18px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            cursor: 'pointer',
+            zIndex: 10
+          }}
+        >
+          ×
+        </button>
+      </div>
+      <div style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
+        By signing, you agree to the{' '}
+        <a
+          href="/consent-release-indemnity.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#2563eb', textDecoration: 'underline' }}
+        >
+          Consent & Indemnity Agreement
+        </a>.
+      </div>
+      {submitted && errors.signature && (
+        <div style={{
+          color: 'red',
+          fontSize: '12px',
+          background: '#fff0f0',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          marginTop: '4px'
+        }}>
+          {errors.signature}
+        </div>
+      )}
+
+      <EnhancedButton
+        type="submit"
+        loading={loading}
+        variant="primary"
+        size="lg"
+        fullWidth
+        className="mt-6"
+      >
+        {loading ? 'Submitting...' : 'Complete'}
+      </EnhancedButton>
     </form>
   );
 }
