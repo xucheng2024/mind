@@ -284,6 +284,9 @@ export default function SelfiePage() {
         selfieEncrypted: true
       });
       
+      console.log('✅ Selfie uploaded successfully, navigating to authorization page...');
+      navigate('/register/authorize');
+      
     } catch (err) {
       console.error('❌ Error uploading selfie:', err);
       setError(`Failed to upload selfie: ${err.message}`);

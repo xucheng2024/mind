@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiShare, FiX, FiArrowDown } from 'react-icons/fi';
+import { FiShare, FiX, FiArrowDown, FiSmartphone, FiHome } from 'react-icons/fi';
 
 export default function SafariInstallGuide() {
   const [showGuide, setShowGuide] = useState(false);
@@ -56,42 +56,77 @@ export default function SafariInstallGuide() {
         className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm"
         style={{ zIndex: 9999 }}
       >
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
-          <div className="flex items-start justify-between mb-3">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-2xl border-0 p-6 text-white">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <FiShare className="w-5 h-5 text-blue-600" />
+              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <FiSmartphone className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-900">
-                  Install App
+                <h3 className="text-lg font-bold">
+                  📱 安装到主屏幕
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Add to Home Screen for the best experience
+                <p className="text-blue-100 text-sm mt-1">
+                  像下载APP一样简单
                 </p>
               </div>
             </div>
             <button
               onClick={handleDismiss}
-              className="text-gray-400 hover:text-gray-600 p-1"
+              className="text-white text-opacity-70 hover:text-opacity-100 p-1"
             >
-              <FiX className="w-4 h-4" />
+              <FiX className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-            <FiShare className="w-4 h-4" />
-            <span>Tap</span>
-            <FiArrowDown className="w-4 h-4" />
-            <span>"Add to Home Screen"</span>
+          {/* Benefits */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <FiHome className="w-4 h-4" />
+              </div>
+              <span className="text-sm">一键访问，无需搜索</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <FiSmartphone className="w-4 h-4" />
+              </div>
+              <span className="text-sm">离线也能使用</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <span className="text-xs">⚡</span>
+              </div>
+              <span className="text-sm">加载更快更流畅</span>
+            </div>
           </div>
 
-          <div className="mt-3 flex space-x-2">
+          {/* Installation Steps */}
+          <div className="bg-white bg-opacity-10 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-center space-x-2 text-sm mb-2">
+              <FiShare className="w-4 h-4" />
+              <span>点击分享按钮</span>
+            </div>
+            <div className="flex items-center justify-center space-x-2 text-sm">
+              <FiArrowDown className="w-4 h-4" />
+              <span>选择"添加到主屏幕"</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3">
             <button
               onClick={handleDismiss}
-              className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 px-3 rounded-md hover:bg-gray-200 transition-colors"
+              className="flex-1 bg-white bg-opacity-20 text-white text-sm font-medium py-3 px-4 rounded-xl hover:bg-opacity-30 transition-colors"
             >
-              Later
+              稍后再说
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="flex-1 bg-white text-blue-600 text-sm font-medium py-3 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              知道了
             </button>
           </div>
         </div>
