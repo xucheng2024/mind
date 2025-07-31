@@ -434,7 +434,7 @@ export default function RegistrationForm() {
       <ProgressBar 
         currentStep={1} 
         totalSteps={4} 
-        steps={['Registration', 'Medical', 'Photo', 'Submit']}
+        steps={['Profile', 'Medical', 'Photo', 'Submit']}
         className="mb-6"
       />
 

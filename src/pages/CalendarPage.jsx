@@ -546,6 +546,46 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <style>
+        {`
+          .square-calendar .fc-daygrid-day {
+            aspect-ratio: 1;
+            min-height: 80px;
+          }
+          
+          .square-calendar .fc-daygrid-day-frame {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .square-calendar .fc-daygrid-day-events {
+            flex: 1;
+            min-height: 0;
+          }
+          
+          .square-calendar .fc-daygrid-day-number {
+            padding: 8px;
+            font-weight: 500;
+          }
+          
+          .square-calendar .fc-daygrid-day.fc-day-today {
+            background-color: #eff6ff !important;
+          }
+          
+          .square-calendar .fc-daygrid-day.fc-day-past {
+            opacity: 0.7;
+          }
+          
+          .square-calendar .fc-daygrid-day.fc-day-future {
+            cursor: pointer;
+          }
+          
+          .square-calendar .fc-daygrid-day.fc-day-future:hover {
+            background-color: #f3f4f6;
+          }
+        `}
+      </style>
 
       
       {/* Main Content */}
@@ -601,6 +641,7 @@ export default function CalendarPage() {
                       week: 'Week',
                       list: 'List'
                     }}
+                    className="square-calendar"
 
                     dayCellDidMount={(arg) => {
                       // Add click and touch handlers to day cells for better mobile support

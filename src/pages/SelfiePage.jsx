@@ -217,7 +217,7 @@ export default function SelfiePage() {
         <ProgressBar 
           currentStep={3} 
           totalSteps={4} 
-          steps={['Registration', 'Medical', 'Photo', 'Submit']}
+          steps={['Profile', 'Medical', 'Photo', 'Submit']}
           className="mb-6"
         />
 
