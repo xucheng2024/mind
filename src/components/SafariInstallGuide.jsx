@@ -8,17 +8,26 @@ export default function SafariInstallGuide() {
   const [hasDismissed, setHasDismissed] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 SafariInstallGuide: Starting initialization');
+    
     // 检查是否已经安装或已经关闭过
     const checkInstallation = () => {
       const isStandalone = window.navigator.standalone === true;
       const dismissed = sessionStorage.getItem('safari_install_dismissed');
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      console.log('🔍 SafariInstallGuide: Is standalone:', isStandalone);
+      console.log('🔍 SafariInstallGuide: Has dismissed:', dismissed);
+      console.log('🔍 SafariInstallGuide: Is Safari:', isSafari);
+      console.log('🔍 SafariInstallGuide: User agent:', navigator.userAgent);
       
       setIsPWA(isStandalone);
       setHasDismissed(!!dismissed);
       
       // 只在 Safari 且未安装且未关闭过的情况下显示
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      setShowGuide(isSafari && !isStandalone && !dismissed);
+      const shouldShow = isSafari && !isStandalone && !dismissed;
+      console.log('🔍 SafariInstallGuide: Should show guide:', shouldShow);
+      setShowGuide(shouldShow);
     };
 
     checkInstallation();
@@ -29,7 +38,14 @@ export default function SafariInstallGuide() {
     sessionStorage.setItem('safari_install_dismissed', 'true');
   };
 
-  if (!showGuide || isPWA || hasDismissed) return null;
+  console.log('🔍 SafariInstallGuide: Render state - showGuide:', showGuide, 'isPWA:', isPWA, 'hasDismissed:', hasDismissed);
+
+  if (!showGuide || isPWA || hasDismissed) {
+    console.log('🔍 SafariInstallGuide: Not rendering - showGuide:', showGuide, 'isPWA:', isPWA, 'hasDismissed:', hasDismissed);
+    return null;
+  }
+
+  console.log('🔍 SafariInstallGuide: Rendering guide');
 
   return (
     <AnimatePresence>
@@ -38,6 +54,7 @@ export default function SafariInstallGuide() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
         className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm"
+        style={{ zIndex: 9999 }}
       >
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
           <div className="flex items-start justify-between mb-3">

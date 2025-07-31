@@ -10,6 +10,7 @@ import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { OfflineIndicator } from './components';
 import SafariInstallGuide from './components/SafariInstallGuide';
+import PWATestButton from './components/PWATestButton';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { validateConfig } from './lib/config';
@@ -66,6 +67,7 @@ function App() {
       <VersionUpdate />
       <PWAUpdateNotification />
       <OfflineIndicator />
+      <PWATestButton />
     </>
   );
 }

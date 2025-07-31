@@ -8,9 +8,14 @@ export default function PWAInstallButton() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 PWAInstallButton: Starting initialization');
+    
     // Check if user has dismissed the install prompt for this session
     const hasDismissed = sessionStorage.getItem('pwa_install_dismissed');
+    console.log('🔍 PWAInstallButton: Has dismissed:', hasDismissed);
+    
     if (hasDismissed) {
+      console.log('🔍 PWAInstallButton: User dismissed, not showing');
       return;
     }
 
@@ -18,12 +23,15 @@ export default function PWAInstallButton() {
     const checkInstallation = () => {
       const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                     window.navigator.standalone === true;
+      console.log('🔍 PWAInstallButton: Is PWA installed:', isPWA);
       setIsInstalled(isPWA);
       
       if (!isPWA) {
         // Check for install prompt availability
         const checkPrompt = () => {
-          if (hasInstallPrompt()) {
+          const hasPrompt = hasInstallPrompt();
+          console.log('🔍 PWAInstallButton: Has install prompt:', hasPrompt);
+          if (hasPrompt) {
             console.log('PWA install prompt available - showing button');
             setShowButton(true);
           } else {
@@ -75,9 +83,14 @@ export default function PWAInstallButton() {
     sessionStorage.setItem('pwa_install_dismissed', 'true');
   };
 
+  console.log('🔍 PWAInstallButton: Render state - isInstalled:', isInstalled, 'showButton:', showButton);
+
   if (isInstalled || !showButton) {
+    console.log('🔍 PWAInstallButton: Not rendering - isInstalled:', isInstalled, 'showButton:', showButton);
     return null;
   }
+
+  console.log('🔍 PWAInstallButton: Rendering button');
 
   return (
     <AnimatePresence>
@@ -86,6 +99,7 @@ export default function PWAInstallButton() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         className="fixed top-4 right-4 z-50"
+        style={{ zIndex: 9999 }}
       >
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm">
           <div className="flex items-start justify-between">
