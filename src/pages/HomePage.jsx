@@ -64,34 +64,35 @@ export default function HomePage() {
   // 获取用户信息
   const fetchUserInfo = async (userRowId, clinicId) => {
     try {
+      console.log('🔍 Fetching user info:', { userRowId, clinicId });
       const { data, error } = await supabase
         .from('users')
-        .select('user_id, clinic_id, full_name, row_id')
+        .select('user_id, clinic_id, row_id')
         .eq('clinic_id', clinicId)
         .eq('row_id', userRowId)
         .single();
       
+      console.log('📋 User query result:', { data, error });
+      
       if (!error && data) {
-        // 尝试解密姓名
-        const AES_KEY = getAESKey();
-        let decryptedName = data.full_name;
-        
-        if (AES_KEY && data.full_name && data.full_name.length > 20) {
-          try {
-            decryptedName = decrypt(data.full_name, AES_KEY);
-            console.log('✅ Name decrypted successfully');
-          } catch (error) {
-            console.log('⚠️ Name decryption failed, using original');
-          }
-        }
-        
         setUserInfo({
           ...data,
-          full_name: decryptedName
+          full_name: 'User' // 简化显示，不显示具体姓名
         });
+        console.log('✅ User info set successfully');
+      } else {
+        console.log('❌ User not found in database, clearing login state');
+        // 用户不存在，清除登录状态
+        cacheManager.clearLoginInfo();
+        setIsLoggedIn(false);
+        setUserInfo(null);
       }
     } catch (error) {
       console.error('Error fetching user info:', error);
+      // 出错时也清除登录状态
+      cacheManager.clearLoginInfo();
+      setIsLoggedIn(false);
+      setUserInfo(null);
     }
   };
 
@@ -208,7 +209,7 @@ export default function HomePage() {
     // 查询用户
     const { data, error } = await supabase
       .from('users')
-      .select('user_id, clinic_id, full_name, row_id')
+      .select('user_id, clinic_id, row_id')
       .eq('clinic_id', storedClinicId)
       .eq('row_id', storedUserRowId)
       .single();
@@ -339,7 +340,14 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      
 
+
+      {/* Debug info */}
+      <div className="text-sm text-gray-500 mb-4">
+        Debug: isLoggedIn={isLoggedIn ? 'true' : 'false'}, userInfo={userInfo ? 'exists' : 'null'}
+      </div>
+      
       {/* 已登录用户显示 */}
       {isLoggedIn && userInfo && (
         <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">

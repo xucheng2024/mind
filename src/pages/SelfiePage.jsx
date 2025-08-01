@@ -286,16 +286,13 @@ export default function SelfiePage() {
       setTimeout(() => setShowConfetti(false), 3000);
 
       console.log('📸 Saving selfie data...');
-      // 加密 URL
-      const encryptedUrl = encrypt(signedUrl, AES_KEY);
-      console.log('🔐 URL encrypted');
+      console.log('🔗 Signed URL generated:', signedUrl);
 
       updateRegistrationData({ 
         selfie: imageSrc, // 本地预览用
-        selfieUrl: encryptedUrl, // 加密的签名 URL
-        selfieFilename: encrypt(filename, AES_KEY), // 加密文件名
-        selfieSignedUrl: true,
-        selfieEncrypted: true
+        selfieUrl: signedUrl, // 直接存储签名 URL，不加密
+        selfieFilename: filename, // 不加密文件名
+        selfieSignedUrl: true
       });
       
       console.log('✅ Selfie uploaded successfully, navigating to authorization page...');

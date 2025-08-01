@@ -129,16 +129,14 @@ export default function AuthorizationPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
 
-      // 加密 URL
-      const encryptedUrl = encrypt(signedUrl, AES_KEY);
+      console.log('🔗 Signed URL generated:', signedUrl);
 
       updateRegistrationData({
         is_guardian: isGuardian,
         signature: signatureDataUrl, // 本地预览用
-        signatureUrl: encryptedUrl, // 加密的签名 URL
-        signatureFilename: encrypt(filename, AES_KEY), // 加密文件名
-        signatureSignedUrl: true,
-        signatureEncrypted: true
+        signatureUrl: signedUrl, // 直接存储签名 URL，不加密
+        signatureFilename: filename, // 不加密文件名
+        signatureSignedUrl: true
       });
       
       navigate('/register/submit');
@@ -279,28 +277,6 @@ export default function AuthorizationPage() {
       )}
 
       <div className="flex gap-3 mt-6">
-        <EnhancedButton
-          type="button"
-          variant="secondary"
-          size="md"
-          onClick={() => {
-            try {
-              const svgData = signatureRef.current?.svg;
-              if (svgData) {
-                const svgString = new XMLSerializer().serializeToString(svgData);
-                const dataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
-                alert(`Signature has data: ${dataUrl.length} characters`);
-              } else {
-                alert('No signature data found');
-              }
-            } catch (error) {
-              console.error('❌ Error getting signature:', error);
-              alert('Error getting signature data');
-            }
-          }}
-        >
-          Test Signature
-        </EnhancedButton>
         <EnhancedButton
           type="submit"
           loading={loading || uploading}

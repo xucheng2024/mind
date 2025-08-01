@@ -137,7 +137,7 @@ export default function CheckInPage() {
         // Query user
         const { data, error: dbError } = await supabase
           .from('users')
-          .select('user_id, clinic_id, full_name, row_id')
+          .select('user_id, clinic_id, row_id')
           .eq('clinic_id', clinicId)
           .eq('row_id', userRowId) // Use row_id here
           .limit(1);
@@ -218,7 +218,7 @@ export default function CheckInPage() {
       console.log('[handleSubmit] Detected email hash:', emailHash);
       userQuery = supabase
         .from('users')
-        .select('user_id, clinic_id, full_name, row_id')
+        .select('user_id, clinic_id, row_id')
         .eq('clinic_id', clinicId)
         .eq('email_hash', emailHash)
         .limit(1);
@@ -227,7 +227,7 @@ export default function CheckInPage() {
       console.log('[handleSubmit] Detected phone hash:', phoneHash);
       userQuery = supabase
         .from('users')
-        .select('user_id, clinic_id, full_name, row_id')
+        .select('user_id, clinic_id, row_id')
         .eq('clinic_id', clinicId)
         .eq('phone_hash', phoneHash)
         .limit(1);

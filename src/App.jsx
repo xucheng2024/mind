@@ -25,6 +25,7 @@ const BookingPage = lazy(() => import('./pages/BookingPage'));
 const CheckInPage = lazy(() => import('./pages/CheckInPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const TestDataPage = lazy(() => import('./pages/TestDataPage'));
 
 // Loading component
 const PageLoader = () => (
@@ -56,6 +57,7 @@ function App() {
             <Route path="/register/authorize" element={<AuthorizationPage />} />
             <Route path="/register/selfie" element={<SelfiePage />} />
             <Route path="/register/submit" element={<SubmitPage />} />
+            <Route path="/test" element={<TestDataPage />} />
             <Route path="/" element={<HomePage />} />
           </Routes>
         </Suspense>
