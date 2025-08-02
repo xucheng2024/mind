@@ -191,7 +191,7 @@ export default function SubmitPage() {
         user_row_id, // Use row_id as foreign key
         visit_time: new Date().toISOString(),
         book_time: new Date().toISOString(),
-        status: 'checked-in',
+        status: 'booked',
         is_first: true,
         clinic_id: registrationData.clinic_id,
       };
