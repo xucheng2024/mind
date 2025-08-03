@@ -22,7 +22,7 @@ const AuthorizationPage = lazy(() => import('./pages/AuthorizationPage'));
 const SelfiePage = lazy(() => import('./pages/SelfiePage'));
 const SubmitPage = lazy(() => import('./pages/SubmitPage'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
-const CheckInPage = lazy(() => import('./pages/CheckInPage'));
+
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const TestDataPage = lazy(() => import('./pages/TestDataPage'));
@@ -49,7 +49,7 @@ function App() {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/check-in" element={<CheckInPage />} />
+
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/booking/slots" element={<CalendarPage />} />
             <Route path="/register" element={<RegistrationForm />} />
