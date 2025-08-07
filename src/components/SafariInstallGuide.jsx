@@ -8,25 +8,17 @@ export default function SafariInstallGuide() {
   const [hasDismissed, setHasDismissed] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 SafariInstallGuide: Starting initialization');
-    
     // 检查是否已经安装或已经关闭过
     const checkInstallation = () => {
       const isStandalone = window.navigator.standalone === true;
       const dismissed = sessionStorage.getItem('safari_install_dismissed');
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       
-      console.log('🔍 SafariInstallGuide: Is standalone:', isStandalone);
-      console.log('🔍 SafariInstallGuide: Has dismissed:', dismissed);
-      console.log('🔍 SafariInstallGuide: Is Safari:', isSafari);
-      console.log('🔍 SafariInstallGuide: User agent:', navigator.userAgent);
-      
       setIsPWA(isStandalone);
       setHasDismissed(!!dismissed);
       
       // 只在 Safari 且未安装且未关闭过的情况下显示
       const shouldShow = isSafari && !isStandalone && !dismissed;
-      console.log('🔍 SafariInstallGuide: Should show guide:', shouldShow);
       setShowGuide(shouldShow);
     };
 
@@ -38,14 +30,9 @@ export default function SafariInstallGuide() {
     sessionStorage.setItem('safari_install_dismissed', 'true');
   };
 
-  console.log('🔍 SafariInstallGuide: Render state - showGuide:', showGuide, 'isPWA:', isPWA, 'hasDismissed:', hasDismissed);
-
   if (!showGuide || isPWA || hasDismissed) {
-    console.log('🔍 SafariInstallGuide: Not rendering - showGuide:', showGuide, 'isPWA:', isPWA, 'hasDismissed:', hasDismissed);
     return null;
   }
-
-  console.log('🔍 SafariInstallGuide: Rendering guide');
 
   return (
     <AnimatePresence>

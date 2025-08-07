@@ -50,12 +50,7 @@ const ProgressBar = ({
         </div>
       )}
       
-      {/* Progress Text */}
-      <div className="text-center mt-2">
-        <span className="text-sm text-gray-600">
-          Step {currentStep} of {totalSteps}
-        </span>
-      </div>
+
     </div>
   );
 };

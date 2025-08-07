@@ -36,16 +36,13 @@ export default function HomePage() {
   // 检查登录状态
   useEffect(() => {
     const checkLoginStatus = () => {
-      console.log('🔍 HomePage - Checking login status...');
       // 使用缓存管理器检查登录状态
       if (cacheManager.isLoggedIn()) {
         const loginInfo = cacheManager.getLoginInfo();
-        console.log('✅ HomePage - User logged in:', loginInfo);
         setIsLoggedIn(true);
         // 获取用户信息
         fetchUserInfo(loginInfo.userRowId, loginInfo.clinicId);
       } else {
-        console.log('❌ HomePage - User not logged in');
         setIsLoggedIn(false);
         setUserInfo(null);
       }
@@ -60,24 +57,29 @@ export default function HomePage() {
   // 获取用户信息
   const fetchUserInfo = async (userRowId, clinicId) => {
     try {
-      console.log('🔍 Fetching user info:', { userRowId, clinicId });
+      // Get AES key for decryption
+      const AES_KEY = getAESKey();
+      if (!AES_KEY) {
+        console.error('Encryption key not configured');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('users')
-        .select('user_id, clinic_id, row_id')
+        .select('user_id, clinic_id, row_id, full_name')
         .eq('clinic_id', clinicId)
         .eq('row_id', userRowId)
         .single();
       
-      console.log('📋 User query result:', { data, error });
-      
       if (!error && data) {
+        // Decrypt the user's name
+        const decryptedFullName = decrypt(data.full_name, AES_KEY);
+        
         setUserInfo({
           ...data,
-          full_name: 'User' // 简化显示，不显示具体姓名
+          full_name: decryptedFullName
         });
-        console.log('✅ User info set successfully');
       } else {
-        console.log('❌ User not found in database, clearing login state');
         // 用户不存在，清除登录状态
         cacheManager.clearLoginInfo();
         setIsLoggedIn(false);
@@ -98,11 +100,6 @@ export default function HomePage() {
 
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
-    console.log('🏠 HomePage: Clicking Register button');
-    
-    // 清除所有表单数据，但保留clinic_id
-    console.log('🧹 Clearing registration form data...');
-    
     // 保存当前的clinic_id
     const currentClinicId = registrationData.clinic_id || clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
     
@@ -142,31 +139,25 @@ export default function HomePage() {
       indemnityAgreed: false
     });
     
-    console.log('✅ Registration form data cleared, navigating to register with clinic_id:', currentClinicId);
     navigate('/register?clinic_id=' + currentClinicId);
   }, 200);
 
   // 防抖的预约按钮点击
   const handleBookingClick = debounce(() => {
-    console.log('🎯 HomePage - Book appointment clicked');
     const storedUserRowId = localStorage.getItem('user_row_id');
     const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
-    console.log('📋 HomePage - Stored data:', { storedUserRowId, storedClinicId, clinicId });
     
     if (storedUserRowId && storedClinicId) {
       const url = `/booking/slots?clinic_id=${storedClinicId}&user_row_id=${storedUserRowId}`;
-      console.log('🚀 HomePage - Navigating to:', url);
       navigate(url);
     } else {
       const url = '/booking?clinic_id=' + clinicId;
-      console.log('⚠️ HomePage - Missing data, navigating to:', url);
       navigate(url);
     }
   }, 200);
 
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
-    console.log('🚪 Logging out...');
     hapticTrigger('medium');
     setLogoutLoading(true);
     // 使用缓存管理器清除登录信息，但保留clinic_id
@@ -198,10 +189,7 @@ export default function HomePage() {
       
 
 
-      {/* Debug info */}
-      <div className="text-sm text-gray-500 mb-4">
-        Debug: isLoggedIn={isLoggedIn ? 'true' : 'false'}, userInfo={userInfo ? 'exists' : 'null'}
-      </div>
+
       
       {/* 已登录用户显示 */}
       {isLoggedIn && userInfo && (

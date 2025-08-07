@@ -58,12 +58,10 @@ export default function SelfiePage() {
 
   // 检查相机权限 - 简化版本
   const checkCamera = async () => {
-    console.log('🎥 Checking camera permission...');
-    
     try {
       // 检查是否支持getUserMedia
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error('❌ Camera API not supported');
+        console.error('Camera API not supported');
         throw new Error('Camera API not supported');
       }
 
@@ -76,10 +74,8 @@ export default function SelfiePage() {
         }
       };
 
-      console.log('🎥 Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      console.log('✅ Camera permission granted');
       setHasCamera(true);
       setCameraReady(true); // 直接设置相机为ready状态
       setError('');
@@ -88,11 +84,10 @@ export default function SelfiePage() {
       if (stream && stream.getTracks) {
         stream.getTracks().forEach(track => {
           track.stop();
-          console.log('🎥 Camera stream stopped');
         });
       }
     } catch (err) {
-      console.error('❌ Camera error:', err);
+      console.error('Camera error:', err);
       setHasCamera(false);
       
       let errorMessage = 'Unable to access camera. Please check your browser permissions and try again.';
@@ -124,16 +119,14 @@ export default function SelfiePage() {
   const capture = () => {
     hapticTrigger('medium');
     setCapturing(true);
-    console.log('📸 Taking photo...');
     if (!cameraRef.current) {
-      console.error('❌ Camera ref not available');
+      console.error('Camera ref not available');
       setError('Camera not ready. Please wait and try again.');
       setCapturing(false);
       return;
     }
     try {
       const image = cameraRef.current.takePhoto();
-      console.log('📸 Photo taken:', image ? 'Success' : 'Failed');
       if (image) {
         setError('');
         // base64 to blob
@@ -171,7 +164,6 @@ export default function SelfiePage() {
 
 
   const handleRetake = () => {
-    console.log('🔄 Retaking photo...');
     hapticTrigger('light');
     setImageSrc(null);
     setCompressedBlob(null);
@@ -180,7 +172,6 @@ export default function SelfiePage() {
   };
 
   const handleRetryCamera = () => {
-    console.log('🔄 Retrying camera...');
     setError('');
     setCameraLoading(true);
     setCameraReady(false);
@@ -193,7 +184,6 @@ export default function SelfiePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('📤 Submitting photo...');
     if (!imageSrc) {
       setError('Please take a selfie first.');
       return;
@@ -207,7 +197,7 @@ export default function SelfiePage() {
       const timestamp = Date.now();
       const filename = `selfie_${timestamp}.enc`;
       
-      console.log('📤 Uploading selfie to Supabase storage...');
+
       
       // Use compressed blob if available, otherwise convert base64 to blob
       let uploadBlob = compressedBlob;
@@ -236,7 +226,7 @@ export default function SelfiePage() {
 
       // 加密图片数据
       const encryptedData = encrypt(base64Data, AES_KEY);
-      console.log('🔐 Image data encrypted');
+      
 
       // 将加密后的数据转换为 blob
       const encryptedBlob = new Blob([encryptedData], { type: 'application/octet-stream' });
@@ -262,7 +252,7 @@ export default function SelfiePage() {
           search: filename
         });
       
-      console.log('🔍 Checking if file exists:', { fileExists, listError, filename });
+      
       
       if (listError) {
         console.error('❌ Error checking file existence:', listError);
@@ -279,14 +269,10 @@ export default function SelfiePage() {
       }
 
       const signedUrl = signedUrlData.signedUrl;
-      console.log('🔗 Signed URL generated:', signedUrl);
 
       hapticTrigger('success');
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
-
-      console.log('📸 Saving selfie data...');
-      console.log('🔗 Signed URL generated:', signedUrl);
 
       updateRegistrationData({ 
         selfie: imageSrc, // 本地预览用
@@ -295,11 +281,10 @@ export default function SelfiePage() {
         selfieSignedUrl: true
       });
       
-      console.log('✅ Selfie uploaded successfully, navigating to authorization page...');
       navigate('/register/authorize');
       
     } catch (err) {
-      console.error('❌ Error uploading selfie:', err);
+      console.error('Error uploading selfie:', err);
       setError(`Failed to upload selfie: ${err.message}`);
       hapticTrigger('error');
     } finally {
@@ -317,7 +302,7 @@ export default function SelfiePage() {
         <ProgressBar 
           currentStep={3} 
           totalSteps={4} 
-          steps={['Profile', 'Medical', 'Photo', 'Submit']}
+          steps={['Profile', 'Medical', 'Selfie', 'Submit']}
           className="mb-6"
         />
 

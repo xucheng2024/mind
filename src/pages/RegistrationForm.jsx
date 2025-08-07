@@ -20,7 +20,6 @@ import {
 
 
 export default function RegistrationForm() {
-  console.log('📝 RegistrationForm: Page loaded');
   const navigate = useNavigate();
   const { registrationData, updateRegistrationData } = useRegistration();
   const [searchParams] = useSearchParams();
@@ -187,7 +186,6 @@ export default function RegistrationForm() {
   };
 
   const validate = () => {
-    console.log('🔍 Starting form validation...');
     const errs = {};
     if (!form.fullName) errs.fullName = 'Full name is required';
     if (!/^[A-Za-z0-9]{4}$/.test(form.idLast4)) errs.idLast4 = 'Must be exactly 4 letters or digits';
@@ -201,48 +199,14 @@ export default function RegistrationForm() {
     if (!form.floor) errs.floor = 'Floor Number is required';
     if (!form.unit) errs.unit = 'Unit Number is required';
     
-    console.log('📋 Validation results:', {
-      fullName: form.fullName ? 'OK' : 'MISSING',
-      idLast4: /^[A-Za-z0-9]{4}$/.test(form.idLast4) ? 'OK' : 'INVALID',
-      dob: validateDOB() ? 'OK' : 'INVALID',
-      gender: form.gender ? 'OK' : 'MISSING',
-      phone: /^\d+$/.test(form.phone) ? 'OK' : 'INVALID',
-      email: /^\S+@\S+\.\S+$/.test(form.email) ? 'OK' : 'INVALID',
-      postalCode: /^\d{6}$/.test(form.postalCode) ? 'OK' : 'INVALID',
-      blockNo: form.blockNo ? 'OK' : 'MISSING',
-      street: form.street ? 'OK' : 'MISSING',
-      floor: form.floor ? 'OK' : 'MISSING',
-      unit: form.unit ? 'OK' : 'MISSING'
-    });
-    
     setErrors(errs);
     const isValid = Object.keys(errs).length === 0;
-    console.log('✅ Form validation result:', isValid ? 'PASSED' : 'FAILED');
-    if (!isValid) {
-      console.log('❌ Validation errors:', errs);
-    }
     return isValid;
   };
 
   // 使用防抖的提交函数，但不在这里处理 preventDefault
   const handleSubmit = debounce(async (e) => {
-    console.log('🔥 FORM SUBMIT TRIGGERED!'); // 测试日志
-    console.log('🚀 RegistrationForm submit started');
-    console.log('📋 Form data:', form);
-    console.log('🏥 Clinic ID:', clinicId);
-    console.log('🌐 Network info:', {
-      online: navigator.onLine,
-      connection: navigator.connection ? {
-        effectiveType: navigator.connection.effectiveType,
-        downlink: navigator.connection.downlink
-      } : 'Not supported',
-      isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
-      userAgent: navigator.userAgent
-    });
-    
     if (!validate()) {
-      console.log('❌ Form validation failed');
-      console.log('🔍 Errors:', errors);
       // 跳到第一个有错的输入框
       const errorOrder = [
         'fullName', 'idLast4', 'dob', 'gender', 'phone', 'email', 'postalCode',
@@ -258,15 +222,11 @@ export default function RegistrationForm() {
       return;
     }
     
-    console.log('✅ Form validation passed');
     setLoading(true);
     const loadingToast = toast.loading('Processing registration...');
 
     const phoneHash = hash(form.phone);
     const emailHash = hash(form.email);
-    console.log('🔐 Hashed values:', { phoneHash, emailHash });
-    
-    console.log('🔍 Checking for duplicate users...');
     try {
       // 只查 hash 字段，不查明文
       const { data: phoneUsers, error: phoneError } = await supabase
@@ -280,15 +240,7 @@ export default function RegistrationForm() {
         .eq('email_hash', emailHash)
         .limit(1);
 
-      console.log('📊 Supabase query results:', {
-        phoneUsers,
-        phoneError,
-        emailUsers,
-        emailError
-      });
-
       if (phoneError || emailError) {
-        console.error('❌ Supabase query failed:', { phoneError, emailError });
         toast.dismiss(loadingToast);
         toast.error('Server error, please try again later.');
         setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
@@ -297,7 +249,6 @@ export default function RegistrationForm() {
       }
 
       if (phoneUsers?.length > 0) {
-        console.log('❌ Phone number already registered');
         toast.dismiss(loadingToast);
         toast.error('This phone number has already been registered.');
         setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
@@ -305,15 +256,12 @@ export default function RegistrationForm() {
         return;
       }
       if (emailUsers?.length > 0) {
-        console.log('❌ Email already registered');
         toast.dismiss(loadingToast);
         toast.error('This email has already been registered.');
         setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
         setLoading(false);
         return;
       }
-
-      console.log('✅ No duplicate users found, updating registration data');
       updateRegistrationData({
         ...form,
         dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
@@ -326,12 +274,11 @@ export default function RegistrationForm() {
       // 清除草稿数据，因为已经成功提交
       localStorage.removeItem('registrationFormDraft');
 
-      console.log('✅ Registration successful, navigating to medical page');
       toast.dismiss(loadingToast);
       setLoading(false);
       navigate('/register/medical');
     } catch (error) {
-      console.error('❌ Unexpected error during registration:', error);
+      console.error('Unexpected error during registration:', error);
       toast.dismiss(loadingToast);
       toast.error('An unexpected error occurred. Please try again.');
       setLoading(false);
@@ -425,11 +372,10 @@ export default function RegistrationForm() {
       <form
         onSubmit={async (e) => {
           e.preventDefault(); // 确保阻止默认行为
-          console.log('🔥 FORM ONSUBMIT EVENT FIRED!');
           try {
             await handleSubmit(e);
           } catch (error) {
-            console.error('❌ Form submit error:', error);
+            console.error('Form submit error:', error);
           }
         }}
         className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in"
@@ -440,7 +386,7 @@ export default function RegistrationForm() {
       <ProgressBar 
         currentStep={1} 
         totalSteps={4} 
-        steps={['Profile', 'Medical', 'Photo', 'Submit']}
+        steps={['Profile', 'Medical', 'Selfie', 'Submit']}
         className="mb-6"
       />
 
@@ -833,10 +779,9 @@ export default function RegistrationForm() {
         <EnhancedButton
           type="submit"
           loading={loading}
-          onClick={() => {
-            console.log('🔥 SUBMIT BUTTON CLICKED!');
-            hapticTrigger('medium');
-          }}
+                        onClick={() => {
+                hapticTrigger('medium');
+              }}
           fullWidth
           size="lg"
           variant="primary"

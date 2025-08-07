@@ -40,7 +40,7 @@ export const RegistrationProvider = ({ children }) => {
       // Clear any blob URLs
       if (window.URL && window.URL.revokeObjectURL) {
         // This is a best effort cleanup - we can't track all blob URLs
-        console.log('🧹 Clearing blob URLs and cache...');
+    
       }
       
       // Clear any camera cache
@@ -54,7 +54,7 @@ export const RegistrationProvider = ({ children }) => {
       }
     }
     
-    console.log('🧹 Registration data cleared completely');
+
   };
 
   return (

@@ -26,12 +26,8 @@ export default function CalendarPage() {
 
   // Redirect to booking if missing
   React.useEffect(() => {
-    console.log('🔍 CalendarPage - Checking params:', { clinicId, userRowId });
     if (!clinicId || !userRowId) {
-      console.log('⚠️ CalendarPage - Missing params, redirecting to booking');
       navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
-    } else {
-      console.log('✅ CalendarPage - Params valid, proceeding');
     }
   }, [clinicId, userRowId, navigate]);
 
@@ -75,15 +71,10 @@ export default function CalendarPage() {
       .single()
       .then(({ data, error }) => {
         if (!error && data) {
-          console.log('🏥 Clinic info loaded:', {
-            clinicId,
-            businessHours: data.business_hours,
-            clinicName: data.name
-          });
           setClinicInfo(data);
           setBusinessHours(data.business_hours);
         } else {
-          console.error('❌ Failed to load clinic info:', error);
+          console.error('Failed to load clinic info:', error);
         }
       });
 
@@ -105,7 +96,6 @@ export default function CalendarPage() {
   useEffect(() => {
     if (!clinicId || !userRowId) return;
     
-    console.log('📊 CalendarPage - Fetching appointments for:', { clinicId, userRowId });
     setLoading(true);
     supabase
       .from('visits')
@@ -115,7 +105,7 @@ export default function CalendarPage() {
       .then(({ data, error }) => {
         setLoading(false);
         if (error) {
-          console.error('❌ CalendarPage - Failed to fetch appointments:', error);
+          console.error('Failed to fetch appointments:', error);
           return;
         }
         const evts = (data || [])

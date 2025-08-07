@@ -76,7 +76,7 @@ export default function AuthorizationPage() {
       const timestamp = Date.now();
       const filename = `signature_${timestamp}.enc`;
       
-      console.log('📤 Uploading signature to Supabase storage...');
+
       
       // 获取加密密钥
       const AES_KEY = getAESKey();
@@ -129,7 +129,7 @@ export default function AuthorizationPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
 
-      console.log('🔗 Signed URL generated:', signedUrl);
+      
 
       updateRegistrationData({
         is_guardian: isGuardian,
@@ -142,7 +142,7 @@ export default function AuthorizationPage() {
       navigate('/register/submit');
       
     } catch (err) {
-      console.error('❌ Error uploading signature:', err);
+      console.error('Error uploading signature:', err);
       setErrors(prev => ({ ...prev, signature: `Failed to upload signature: ${err.message}` }));
       hapticTrigger('error');
     } finally {
@@ -173,7 +173,7 @@ export default function AuthorizationPage() {
       <ProgressBar 
         currentStep={4} 
         totalSteps={4} 
-        steps={['Profile', 'Medical', 'Photo', 'Submit']}
+        steps={['Profile', 'Medical', 'Selfie', 'Submit']}
         className="mb-6"
       />
 

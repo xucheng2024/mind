@@ -25,10 +25,6 @@ export default function MedicalPage() {
   const [optionErrors, setOptionErrors] = useState({});
 
   useEffect(() => {
-    console.log('🏥 MedicalPage mounted');
-    console.log('📋 Registration data:', registrationData);
-    console.log('🏥 Clinic ID:', registrationData.clinic_id);
-    
     // 从registrationData恢复表单数据，而不是清空
     const restored = {};
     healthItems.forEach(item => { 
@@ -36,18 +32,12 @@ export default function MedicalPage() {
     });
     restored.otherHealthNotes = registrationData.otherHealthNotes || '';
     setForm(restored);
-    
-    console.log('🔄 Restored form data:', restored);
   }, [registrationData]);
 
   useEffect(() => {
-    console.log('🔍 MedicalPage registration data changed:', registrationData);
     // Check if clinic_id exists
     if (!registrationData.clinic_id) {
-      console.error('❌ Missing clinic_id in MedicalPage');
-      console.log('📋 Full registration data:', registrationData);
-    } else {
-      console.log(`✅ Clinic ID found: ${registrationData.clinic_id}`);
+      console.error('Missing clinic_id in MedicalPage');
     }
   }, [registrationData]);
 
@@ -145,7 +135,7 @@ export default function MedicalPage() {
         <ProgressBar 
           currentStep={2} 
           totalSteps={4} 
-          steps={['Profile', 'Medical', 'Photo', 'Submit']}
+          steps={['Profile', 'Medical', 'Selfie', 'Submit']}
           className="mb-6"
         />
 
