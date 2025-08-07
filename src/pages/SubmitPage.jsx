@@ -120,7 +120,7 @@ export default function SubmitPage() {
       if (combinedHealthNotes) {
         combinedHealthNotes = `${datetimePrefix}: ${combinedHealthNotes} - self declare`;
       } else {
-        combinedHealthNotes = `${datetimePrefix}: None reported - self declare`;
+        combinedHealthNotes = `${datetimePrefix}: No other medical history - self declare`;
       }
       
       // Use encrypt(val, AES_KEY) and hash(val) for encryption/hashing
