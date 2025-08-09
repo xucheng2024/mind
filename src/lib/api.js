@@ -89,7 +89,7 @@ export const apiClient = {
   },
 
   async updateVisit(visitId, visitData) {
-    const response = await fetch(`${API_BASE_URL}/api/visits/${visitId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/visits/update/${visitId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
