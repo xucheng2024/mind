@@ -132,7 +132,7 @@ async function handleCreateUser(req, res) {
     floor: encrypt(req.body.floor || ''),
     unit: encrypt(req.body.unit || ''),
     other_health_notes: encrypt(req.body.other_health_notes || ''),
-    is_guardian: encrypt(req.body.is_guardian?.toString() || 'false'),
+    is_guardian: req.body.is_guardian === true || req.body.is_guardian === 'true',
     signature: encrypt(req.body.signature || ''),
     selfie: encrypt(req.body.selfie || ''),
   };
@@ -179,7 +179,7 @@ async function handleGetUser(req, res) {
     floor: decrypt(data.floor || ''),
     unit: decrypt(data.unit || ''),
     other_health_notes: decrypt(data.other_health_notes || ''),
-    is_guardian: decrypt(data.is_guardian || '') === 'true',
+    is_guardian: data.is_guardian,
     signature: decrypt(data.signature || ''),
     selfie: decrypt(data.selfie || ''),
   };
