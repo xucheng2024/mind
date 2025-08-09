@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import { apiClient } from '../lib/api';
+
 import { v4 as uuidv4 } from 'uuid';
 import cacheManager from '../lib/cache';
 import { 
@@ -72,8 +73,9 @@ export default function SubmitPage() {
       }
 
       let selfiePath = registrationData.selfieUrl || registrationData.selfie || '';
-
-      // Encryption now handled server-side
+      let signaturePath = registrationData.signatureUrl || registrationData.signature || '';
+      
+      // URL不需要前端AES加密，统一由服务端处理
       
       // Format current time as prefix
       const now = new Date();
@@ -129,8 +131,8 @@ export default function SubmitPage() {
         unit: registrationData.unit || '',
         other_health_notes: combinedHealthNotes,
         is_guardian: !!registrationData.is_guardian,
-        signature: registrationData.signatureUrl || registrationData.signature || '',
-        selfie: selfiePath,
+        signature: signaturePath, // 签名URL，服务端统一加密
+        selfie: selfiePath, // 自拍URL，服务端统一加密
         clinic_id: registrationData.clinic_id,
         user_id,
         created_at: new Date().toISOString(),

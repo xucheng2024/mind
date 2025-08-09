@@ -109,21 +109,26 @@ export default function AuthorizationPage() {
         throw new Error('Upload verification failed');
       }
       
-      // Get decrypted file URL from server (server handles decryption)
-      const decryptedUrl = apiClient.getDecryptedFileUrl('signatures', filename);
+      // Get signed URL from server (有时效性的安全URL)
+      const signedUrlResult = await apiClient.getSignedUrl('signatures', filename, 94608000); // 3年过期 (3*365*24*3600)
+      const signedUrl = signedUrlResult.data.signedUrl;
+      
+      console.log('✅ 获取到signature的signed URL:', {
+        expires: signedUrlResult.data.expiresAt,
+        filename: filename
+      });
 
       hapticTrigger('success');
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
 
-      
-
       updateRegistrationData({
         is_guardian: isGuardian,
         signature: signatureDataUrl, // 本地预览用
-        signatureUrl: decryptedUrl, // Server-side decrypted URL
+        signatureUrl: signedUrl, // Signed URL，submit时统一加密
         signatureFilename: filename, // 文件名
-        signatureSignedUrl: true
+        signatureSignedUrl: true,
+        signatureExpiresAt: signedUrlResult.data.expiresAt // 过期时间
       });
       
       navigate('/register/submit');

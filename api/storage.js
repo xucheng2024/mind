@@ -60,8 +60,11 @@ export default async function handler(req, res) {
       case 'download':
         await handleDownload(req, res);
         break;
+      case 'signed-url':
+        await handleSignedUrl(req, res);
+        break;
       default:
-        res.status(400).json({ error: 'Invalid action. Valid actions: upload, list, download' });
+        res.status(400).json({ error: 'Invalid action. Valid actions: upload, list, download, signed-url' });
     }
   } catch (error) {
     console.error('API error:', error);
@@ -175,4 +178,48 @@ async function handleDownload(req, res) {
   res.setHeader('Cache-Control', 'private, max-age=3600');
   
   res.send(fileBuffer);
+}
+
+async function handleSignedUrl(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  const { bucket, filename, expiresIn = 94608000 } = req.query; // 默认3年过期 (3*365*24*3600)
+  
+  if (!bucket || !filename) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: bucket, filename' 
+    });
+  }
+  
+  try {
+    // 生成有时效性的signed URL
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(filename, parseInt(expiresIn));
+    
+    if (error) {
+      console.error('Storage signed URL error:', error);
+      return res.status(404).json({ error: 'Failed to create signed URL' });
+    }
+    
+    if (!data?.signedUrl) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    console.log(`✅ Created signed URL for ${bucket}/${filename}, expires in ${expiresIn}s`);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        signedUrl: data.signedUrl,
+        expiresAt: new Date(Date.now() + parseInt(expiresIn) * 1000).toISOString(),
+        expiresIn: parseInt(expiresIn)
+      }
+    });
+  } catch (error) {
+    console.error('Signed URL generation error:', error);
+    res.status(500).json({ error: 'Failed to generate signed URL' });
+  }
 }

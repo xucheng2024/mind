@@ -236,8 +236,14 @@ export default function SelfiePage() {
         throw new Error('Upload verification failed');
       }
       
-      // Get decrypted file URL from server (server handles decryption)
-      const decryptedUrl = apiClient.getDecryptedFileUrl('selfies', filename);
+      // Get signed URL from server (有时效性的安全URL)
+      const signedUrlResult = await apiClient.getSignedUrl('selfies', filename, 94608000); // 3年过期 (3*365*24*3600)
+      const signedUrl = signedUrlResult.data.signedUrl;
+      
+      console.log('✅ 获取到selfie的signed URL:', {
+        expires: signedUrlResult.data.expiresAt,
+        filename: filename
+      });
 
       hapticTrigger('success');
       setShowConfetti(true);
@@ -245,9 +251,10 @@ export default function SelfiePage() {
 
       updateRegistrationData({ 
         selfie: imageSrc, // 本地预览用
-        selfieUrl: decryptedUrl, // Server-side decrypted URL
+        selfieUrl: signedUrl, // Signed URL，submit时统一加密
         selfieFilename: filename, // 文件名
-        selfieSignedUrl: true
+        selfieSignedUrl: true,
+        selfieExpiresAt: signedUrlResult.data.expiresAt // 过期时间
       });
       
       navigate('/register/authorize');

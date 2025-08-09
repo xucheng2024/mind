@@ -185,7 +185,19 @@ export const apiClient = {
 
 
 
-  // Download and decrypt file (returns decrypted file URL through server)
+  // Get signed URL for encrypted file (returns signed URL through server)
+  async getSignedUrl(bucket, filename, expiresIn = 94608000) { // 默认3年过期 (3*365*24*3600)
+    const response = await fetch(`${API_BASE_URL}/api/storage?action=signed-url&bucket=${bucket}&filename=${filename}&expiresIn=${expiresIn}`);
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get signed URL');
+    }
+    
+    return response.json();
+  },
+
+  // Download and decrypt file (returns decrypted file URL through server) - 保留向后兼容
   getDecryptedFileUrl(bucket, filename) {
     return `${API_BASE_URL}/api/storage?action=download&bucket=${bucket}&filename=${filename}`;
   },

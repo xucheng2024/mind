@@ -1,6 +1,7 @@
 // Vercel API route for all user operations
 import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import CryptoJS from 'crypto-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -16,25 +17,50 @@ const supabase = createClient(
   }
 );
 
+// AES加密密钥 - 必须从环境变量获取
+const AES_SECRET_KEY = process.env.AES_KEY;
+
+if (!AES_SECRET_KEY) {
+  console.error('❌ 错误: 未设置 AES_KEY 环境变量');
+  throw new Error('AES_KEY environment variable is required');
+}
+
+if (AES_SECRET_KEY.length < 32) {
+  console.error('❌ 错误: AES_KEY 长度必须至少32个字符');
+  throw new Error('AES_KEY must be at least 32 characters long');
+}
+
+console.log('🔐 服务端API已启用AES加密');
+
 function quickHash(text) {
   return Buffer.from(text.toLowerCase().trim()).toString('base64');
 }
 
 function encrypt(text) {
   if (!text) return '';
-  const salt = nanoid(8);
-  const encoded = Buffer.from(`${salt}:${text}`).toString('base64');
-  return encoded;
+  try {
+    const encrypted = CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
+    console.log(`🔐 AES加密: ${text.substring(0, 10)}... → ${encrypted.substring(0, 20)}...`);
+    return encrypted;
+  } catch (error) {
+    console.error('AES encryption error:', error);
+    return '';
+  }
 }
 
-function decrypt(encodedText) {
-  if (!encodedText) return '';
+function decrypt(encryptedText) {
+  if (!encryptedText) return '';
   try {
-    const decoded = Buffer.from(encodedText, 'base64').toString('utf8');
-    const [salt, text] = decoded.split(':');
-    return text || '';
+    const decryptedBytes = CryptoJS.AES.decrypt(encryptedText, AES_SECRET_KEY);
+    const decryptedText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+    
+    if (!decryptedText) {
+      throw new Error('Decryption failed - invalid key or corrupted data');
+    }
+    
+    return decryptedText;
   } catch (error) {
-    console.error('Decryption error:', error);
+    console.error('AES decryption error:', error);
     return '';
   }
 }
