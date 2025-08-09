@@ -8,7 +8,7 @@ console.log('🔧 All VITE env vars:', Object.keys(import.meta.env).filter(key =
 export const apiClient = {
   // User operations
   async createUser(userData) {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const response = await fetch(`${API_BASE_URL}/api/users?action=create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export const apiClient = {
   },
 
   async getUser(clinicId, userRowId) {
-    const response = await fetch(`${API_BASE_URL}/api/users/${clinicId}/${userRowId}`);
+    const response = await fetch(`${API_BASE_URL}/api/users?action=get&clinicId=${clinicId}&userRowId=${userRowId}`);
     
     if (!response.ok) {
       const error = await response.json();
@@ -36,7 +36,7 @@ export const apiClient = {
   },
 
   async queryUser(clinicId, phoneHash, emailHash) {
-    const response = await fetch(`${API_BASE_URL}/api/users/query`, {
+    const response = await fetch(`${API_BASE_URL}/api/users?action=query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export const apiClient = {
 
   // Check for duplicate users during registration
   async checkDuplicate(clinicId, phone, email) {
-    const response = await fetch(`${API_BASE_URL}/api/users/check-duplicate`, {
+    const response = await fetch(`${API_BASE_URL}/api/users?action=check-duplicate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export const apiClient = {
 
   // Visit operations
   async createVisit(visitData) {
-    const response = await fetch(`${API_BASE_URL}/api/visits`, {
+    const response = await fetch(`${API_BASE_URL}/api/visits?action=create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export const apiClient = {
   },
 
   async updateVisit(visitId, visitData) {
-    const response = await fetch(`${API_BASE_URL}/api/visits/update/${visitId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/visits?action=update&id=${visitId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ export const apiClient = {
 
   // Validate user
   async validateUser(clinicId, userRowId) {
-    const response = await fetch(`${API_BASE_URL}/api/users/validate/${clinicId}/${userRowId}`);
+    const response = await fetch(`${API_BASE_URL}/api/users?action=validate&clinicId=${clinicId}&userRowId=${userRowId}`);
     
     if (!response.ok) {
       const error = await response.json();
@@ -167,7 +167,7 @@ export const apiClient = {
 
   // Storage operations (compression handled on frontend)
   async uploadFile(bucket, filename, fileData, contentType = 'application/octet-stream') {
-    const response = await fetch(`${API_BASE_URL}/api/storage/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/storage?action=upload`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -183,56 +183,26 @@ export const apiClient = {
     return response.json();
   },
 
-  async createSignedUrl(bucket, filename, expiresIn = 157680000) {
-    const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ bucket, filename, expiresIn }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create signed URL');
-    }
-    
-    return response.json();
-  },
+
 
   // Download and decrypt file (returns decrypted file URL through server)
   getDecryptedFileUrl(bucket, filename) {
-    return `${API_BASE_URL}/api/storage/download/${bucket}/${filename}`;
+    return `${API_BASE_URL}/api/storage?action=download&bucket=${bucket}&filename=${filename}`;
   },
 
-  async listFiles(bucket, limit = 100, search = null) {
-    const queryParams = new URLSearchParams({ limit: limit.toString() });
+    async listFiles(bucket, limit = 100, search = null) {
+    const queryParams = new URLSearchParams({ action: 'list', bucket, limit: limit.toString() });
     if (search) queryParams.append('search', search);
     
-    const response = await fetch(`${API_BASE_URL}/api/storage/list/${bucket}?${queryParams}`);
+    const response = await fetch(`${API_BASE_URL}/api/storage?${queryParams}`);
     
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to list files');
     }
-    
+
     return response.json();
   },
 
-  async deleteFiles(bucket, filenames) {
-    const response = await fetch(`${API_BASE_URL}/api/storage/delete`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ bucket, filenames }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete files');
-    }
-    
-    return response.json();
-  },
+
 };
