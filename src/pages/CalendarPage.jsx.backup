@@ -5,7 +5,6 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
-import cacheManager from '../lib/cache';
 import { Calendar, Clock, Check, X, RotateCcw, AlertCircle } from 'lucide-react';
 import { useHapticFeedback } from '../components/HapticFeedback';
 import toast from 'react-hot-toast';
@@ -48,40 +47,20 @@ export default function CalendarPage() {
         ]);
         
         setClinicInfo(clinicRes.data);
-        console.log('Clinic data:', clinicRes.data);
-        console.log('Business hours from server:', clinicRes.data.business_hours);
-        console.log('Business hours type:', typeof clinicRes.data.business_hours);
-        
-        // If business_hours is null or undefined, set default hours
-        const businessHoursData = clinicRes.data.business_hours || {
-          monday: { open: '09:00', close: '17:00', closed: false },
-          tuesday: { open: '09:00', close: '17:00', closed: false },
-          wednesday: { open: '09:00', close: '17:00', closed: false },
-          thursday: { open: '09:00', close: '17:00', closed: false },
-          friday: { open: '09:00', close: '17:00', closed: false },
-          saturday: { open: '09:00', close: '12:00', closed: false },
-          sunday: { open: '09:00', close: '12:00', closed: true }
-        };
-        
-        console.log('Using business hours:', businessHoursData);
-        setBusinessHours(businessHoursData);
+        setBusinessHours(clinicRes.data.business_hours);
         
         const appointments = (visitsRes.data || [])
           .filter(v => v.status === 'booked')
-          .map(v => {
-            const startTime = new Date(v.book_time || v.visit_time);
-            const timeString = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
-            return {
-              id: v.id,
-              title: timeString,
-              start: startTime,
-              end: new Date(startTime.getTime() + 30 * 60 * 1000),
-              backgroundColor: '#3B82F6',
-              borderColor: '#3B82F6',
-              textColor: 'white',
-              userRowId: v.user_row_id
-            };
-          })
+          .map(v => ({
+            id: v.id,
+            title: '● Appointment',
+            start: new Date(v.book_time || v.visit_time),
+            end: new Date((new Date(v.book_time || v.visit_time)).getTime() + 30 * 60 * 1000),
+            backgroundColor: '#3B82F6',
+            borderColor: '#3B82F6',
+            textColor: 'white',
+            userRowId: v.user_row_id
+          }))
           .filter(e => e.start);
         
         setEvents(appointments);
@@ -98,22 +77,11 @@ export default function CalendarPage() {
 
   // Get available slots for date
   const getAvailableSlots = async (date) => {
-    console.log('getAvailableSlots called with date:', date);
-    console.log('businessHours:', businessHours);
-    
-    if (!businessHours) {
-      console.log('No business hours available');
-      return [];
-    }
+    if (!businessHours) return [];
     
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const dayConfig = businessHours[weekdays[date.getDay()]];
-    console.log('Day config for', weekdays[date.getDay()], ':', dayConfig);
-    
-    if (!dayConfig || dayConfig.closed) {
-      console.log('Clinic closed on this day');
-      return 'closed';
-    }
+    if (!dayConfig || dayConfig.closed) return 'closed';
     
     const [startH, startM = 0] = dayConfig.open.split(':').map(Number);
     const [endH, endM = 0] = dayConfig.close.split(':').map(Number);
@@ -124,11 +92,8 @@ export default function CalendarPage() {
     
     try {
       const dateStr = date.toISOString().split('T')[0];
-      console.log('Fetching slots for date:', dateStr, 'clinic:', clinicId);
       const result = await apiClient.getSlotAvailability(clinicId, dateStr);
-      console.log('Slot availability result:', result);
       const slotAvailability = result.data || [];
-      console.log('Slot availability data:', slotAvailability);
       
       const slots = [];
       
@@ -224,21 +189,17 @@ export default function CalendarPage() {
       e.start.toDateString() === date.toDateString() && e.userRowId === userRowId
     );
     
-    // If user already has appointment on this date, show cancel/reschedule options
+    // If user already has appointment on this date, show reschedule/cancel options
     if (dateEvents.length > 0) {
       const existingEvent = dateEvents[0];
       const appointmentTime = formatTime(existingEvent.start.getHours(), existingEvent.start.getMinutes());
-      const appointmentDate = date.toLocaleDateString('en-US', { 
-        weekday: 'long', month: 'long', day: 'numeric'
-      });
       
       setModal({ 
-        type: 'cancel', 
+        type: 'reschedule', 
         data: { 
           eventId: existingEvent.id, 
-          date,
-          appointmentTime,
-          appointmentDate
+          date, 
+          currentTime: appointmentTime
         } 
       });
       return;
@@ -263,35 +224,27 @@ export default function CalendarPage() {
       return;
     }
     
+    // Check if user has appointment on other dates (for change functionality)
+    const userHasOtherBooking = events.some(e => 
+      e.start.toDateString() !== date.toDateString() && e.userRowId === userRowId
+    );
+    
     setModal({ 
       type: 'book', 
-      data: { date, slots, userHasOtherBooking: false } 
+      data: { date, slots, userHasOtherBooking } 
     });
   }, [events, userRowId, trigger]);
 
-  // Handle event click - show cancel dialog for user's own appointments
+  // Handle event click
   const handleEventClick = useCallback((clickInfo) => {
-    trigger('light');
-    const event = clickInfo.event;
-    
-    // Only show dialog for user's own appointments
-    if (event.extendedProps.userRowId === userRowId) {
-      const appointmentTime = formatTime(event.start.getHours(), event.start.getMinutes());
-      const appointmentDate = event.start.toLocaleDateString('en-US', { 
-        weekday: 'long', month: 'long', day: 'numeric'
-      });
-      
+    trigger('medium');
+    if (clickInfo.event.extendedProps.userRowId === userRowId) {
       setModal({ 
         type: 'cancel', 
-        data: { 
-          eventId: event.id, 
-          date: new Date(event.start),
-          appointmentTime,
-          appointmentDate
-        } 
+        data: { eventId: clickInfo.event.id } 
       });
     }
-  }, [trigger, userRowId]);
+  }, [userRowId, trigger]);
 
   // Book appointment
   const bookAppointment = async (hour, minute) => {
@@ -301,23 +254,10 @@ export default function CalendarPage() {
       date.setHours(hour, minute, 0, 0);
       
       // Validate user and check existing bookings
-      const [validateResult, { data: existingBookings }] = await Promise.all([
+      const [, { data: existingBookings }] = await Promise.all([
         apiClient.validateUser(clinicId, userRowId),
         apiClient.getUserVisits(clinicId, userRowId)
       ]);
-      
-      // Update cached user name if available
-      if (validateResult.data?.full_name) {
-        const currentLoginInfo = cacheManager.getLoginInfo();
-        if (currentLoginInfo.userId && currentLoginInfo.userRowId) {
-          cacheManager.saveLoginInfo(
-            currentLoginInfo.userId, 
-            currentLoginInfo.userRowId, 
-            currentLoginInfo.clinicId,
-            validateResult.data.full_name
-          );
-        }
-      }
       
       const today = new Date(modal.data.date);
       today.setHours(0, 0, 0, 0);
@@ -334,7 +274,7 @@ export default function CalendarPage() {
       }
       
       // Create appointment
-      const createResponse = await apiClient.createVisit({
+      await apiClient.createVisit({
         user_row_id: userRowId,
         clinic_id: clinicId,
         book_time: date.toISOString(),
@@ -343,11 +283,10 @@ export default function CalendarPage() {
         is_first: false,
       });
       
-      // Update UI with the actual ID from server
-      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      // Update UI
       const newEvent = {
-        id: createResponse.data?.id || createResponse.id,
-        title: timeString,
+        id: Date.now(),
+        title: '● Appointment',
         start: date,
         end: new Date(date.getTime() + 30 * 60 * 1000),
         backgroundColor: '#3B82F6',
@@ -358,7 +297,7 @@ export default function CalendarPage() {
       
       setEvents(prev => [...prev, newEvent]);
       setModal({ type: null, data: null });
-      toast.success(`Appointment booked: ${formatTime(hour, minute)}`);
+      toast.success(`Appointment booked for ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
       
     } catch (error) {
       trigger('error');
@@ -398,7 +337,7 @@ export default function CalendarPage() {
       }
       
       // Create new appointment
-      const createResponse = await apiClient.createVisit({
+      await apiClient.createVisit({
         user_row_id: userRowId,
         clinic_id: clinicId,
         book_time: date.toISOString(),
@@ -407,11 +346,10 @@ export default function CalendarPage() {
         is_first: false,
       });
       
-      // Update UI with the actual ID from server
-      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      // Update UI
       const newEvent = {
-        id: createResponse.data?.id || createResponse.id,
-        title: timeString,
+        id: Date.now(),
+        title: '● Appointment',
         start: date,
         end: new Date(date.getTime() + 30 * 60 * 1000),
         backgroundColor: '#3B82F6',
@@ -426,7 +364,7 @@ export default function CalendarPage() {
       ]);
       
       setModal({ type: null, data: null });
-      toast.success(`Appointment changed to: ${formatTime(hour, minute)}`);
+      toast.success(`Appointment changed to ${formatTime(hour, minute)}`);
       
     } catch (error) {
       trigger('error');
@@ -458,55 +396,72 @@ export default function CalendarPage() {
       
       return (
         <div {...commonModalProps}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-scale-in border border-gray-100">
-            <div className="px-6 py-5 border-b border-gray-100">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-scale-in">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    Select Time
+                  <h3 className="text-xl font-bold mb-1">
+                    {userHasOtherBooking ? 'Change Appointment' : 'Book Appointment'}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-blue-100">
                     {date.toLocaleDateString('en-US', { 
-                      month: 'long', day: 'numeric', weekday: 'long'
+                      weekday: 'long', month: 'long', day: 'numeric'
                     })}
                   </p>
+                  {userHasOtherBooking && (
+                    <p className="text-xs text-blue-200 mt-1">
+                      This will cancel your existing appointment
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setModal({ type: null, data: null })}
-                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
             
-            <div className="p-6">
+            <div className="p-8">
               {[
                 { label: 'Morning', slots: amSlots },
                 { label: 'Afternoon', slots: pmSlots }
               ].map(({ label, slots }) => 
                 slots.length > 0 && (
-                  <div key={label} className="mb-5 last:mb-0">
-                    <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">{label}</h4>
-                    <div className="grid grid-cols-4 gap-2">
+                  <div key={label} className="mb-6 last:mb-0">
+                    <h4 className="text-sm font-semibold text-gray-600 mb-3">{label}</h4>
+                    <div className="grid grid-cols-3 gap-3">
                       {slots.map(slot => {
                         const isClickable = slot.isAvailable;
+                        const isFull = slot.isFull;
                         
                         return (
                           <button
                             key={`${slot.hour}:${slot.minute}`}
                             onClick={() => {
                               if (!isClickable) return;
-                              bookAppointment(slot.hour, slot.minute);
+                              if (userHasOtherBooking) {
+                                changeAppointment(slot.hour, slot.minute);
+                              } else {
+                                bookAppointment(slot.hour, slot.minute);
+                              }
                             }}
                             disabled={!isClickable}
-                            className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
+                            className={`px-4 py-4 rounded-2xl border-2 transition-all duration-200 text-center font-medium ${
                               !isClickable
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-dashed border-gray-300'
-                                : 'bg-white text-gray-700 hover:bg-blue-500 hover:text-white border border-gray-300 hover:border-blue-500'
+                                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : userHasOtherBooking 
+                                  ? 'border-yellow-300 bg-yellow-50 text-yellow-700 hover:border-yellow-400 hover:bg-yellow-100' 
+                                  : 'border-gray-200 text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700'
                             }`}
                           >
-                            {formatTime(slot.hour, slot.minute)}
+                            <div className="text-lg font-bold">{formatTime(slot.hour, slot.minute)}</div>
+                            <div className="text-xs mt-1">
+                              {isFull ? 'Full (2/2)' : 
+                               slot.bookingCount > 0 ? `Available (${slot.bookingCount}/2)` :
+                               userHasOtherBooking ? 'Change to' : 'Available'}
+                            </div>
                           </button>
                         );
                       })}
@@ -520,32 +475,85 @@ export default function CalendarPage() {
       );
     }
 
-
-
-    if (modal.type === 'cancel') {
+    if (modal.type === 'reschedule') {
+      const { currentTime, date } = modal.data;
+      
       return (
         <div {...commonModalProps}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scale-in border border-gray-100">
-            <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-amber-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Already Booked
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                To reschedule, please cancel first
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Existing Appointment</h3>
+              <p className="text-gray-600 mb-2">
+                You have an appointment on{' '}
+                <span className="font-semibold">
+                  {date.toLocaleDateString('en-US', { 
+                    weekday: 'long', month: 'long', day: 'numeric'
+                  })}
+                </span>
               </p>
-              <div className="space-y-3">
+              <p className="text-gray-600 mb-8">
+                at <span className="font-semibold text-blue-600">{currentTime}</span>
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={async () => {
+                    // Show available slots for rescheduling
+                    const slots = await getAvailableSlots(date);
+                    if (Array.isArray(slots) && slots.some(s => s.isAvailable)) {
+                      setModal({ 
+                        type: 'book', 
+                        data: { date, slots, userHasOtherBooking: true } 
+                      });
+                    } else {
+                      toast.error('No other available time slots on this day');
+                    }
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-2xl font-semibold transition-colors"
+                >
+                  Reschedule to Different Time
+                </button>
                 <button
                   onClick={cancelAppointment}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors"
+                  className="bg-red-500 hover:bg-red-600 text-white py-4 rounded-2xl font-semibold transition-colors"
                 >
                   Cancel Appointment
                 </button>
                 <button
                   onClick={() => setModal({ type: null, data: null })}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-2xl font-semibold transition-colors"
+                >
+                  Keep Current Appointment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (modal.type === 'cancel') {
+      return (
+        <div {...commonModalProps}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <X className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Cancel Appointment?</h3>
+              <p className="text-gray-600 mb-8">This action cannot be undone</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={cancelAppointment}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 rounded-2xl font-semibold transition-colors"
+                >
+                  Cancel Appointment
+                </button>
+                <button
+                  onClick={() => setModal({ type: null, data: null })}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-2xl font-semibold transition-colors"
                 >
                   Keep
                 </button>
@@ -560,133 +568,45 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <style>
         {`
-          .fc-day-today { background: #f8fafc !important; }
-          .fc-day-past { opacity: 0.4; }
-          .fc-day-future:hover { background: #f1f5f9; }
-          .fc-event { 
-            border-radius: 6px !important; 
-            font-weight: 500; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            cursor: pointer !important;
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 20px !important;
-          }
-          .fc-event-main {
-            padding: 2px 4px !important;
-            height: 100% !important;
-            width: 100% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-          .fc-event-title {
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            text-align: center !important;
-            width: 100% !important;
-          }
-          .fc-event-time {
-            display: none !important;
-          }
-          .fc-event-title-container {
-            padding: 0 !important;
-          }
-          .fc-daygrid-event .fc-event-main {
-            padding: 1px 2px !important;
-          }
-          .fc-daygrid-event {
-            margin: 1px !important;
-            border-radius: 4px !important;
-          }
-          .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 600 !important; color: #111827; }
-          .fc-button { border-radius: 6px !important; font-size: 0.875rem !important; }
-          .fc-button-primary { background: #4f46e5 !important; border: none !important; }
-          .fc-button-primary:hover { background: #4338ca !important; }
-          .fc-toolbar { margin-bottom: 1rem !important; }
-          .fc-daygrid-day { 
-            border: 1px solid #f3f4f6 !important; 
-            aspect-ratio: 1 !important;
-            height: 0 !important;
-            padding-bottom: 14.28% !important;
-            position: relative !important;
-          }
-          .fc-daygrid-day-frame {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            height: 100% !important;
-          }
-          .fc-daygrid-day-top {
-            position: absolute !important;
-            top: 2px !important;
-            left: 2px !important;
-            right: 2px !important;
-            z-index: 2 !important;
-          }
-          .fc-daygrid-day-events {
-            position: absolute !important;
-            top: 20px !important;
-            left: 2px !important;
-            right: 2px !important;
-            bottom: 2px !important;
-          }
-          .fc-daygrid-day-number {
-            font-size: 12px !important;
-            font-weight: 500 !important;
-          }
-          
-          /* Mobile specific adjustments */
-          @media (max-width: 768px) {
-            .fc-daygrid-day {
-              min-height: 60px !important;
-              height: 60px !important;
-              padding-bottom: 0 !important;
-            }
-            .fc-daygrid-day-number {
-              font-size: 11px !important;
-            }
-            .fc-event {
-              font-size: 9px !important;
-              min-height: 16px !important;
-            }
-            .fc-event-title {
-              font-size: 9px !important;
-            }
-          }
+          .fc-day-today { background: #f0f9ff !important; }
+          .fc-day-past { opacity: 0.6; }
+          .fc-day-future:hover { background: #f8fafc; }
+          .fc-event { border-radius: 8px !important; font-weight: 500; }
+          .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 700 !important; color: #1e293b; }
+          .fc-button { border-radius: 12px !important; }
+          .fc-button-primary { background: #3b82f6 !important; border: none !important; }
+          .fc-button-primary:hover { background: #2563eb !important; }
           
           @keyframes scale-in {
-            from { transform: scale(0.95); opacity: 0; }
+            from { transform: scale(0.9); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
           }
-          .animate-scale-in { animation: scale-in 0.15s ease-out; }
+          .animate-scale-in { animation: scale-in 0.2s ease-out; }
         `}
       </style>
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Appointment Calendar</h1>
-              <p className="text-sm text-gray-600">{clinicInfo?.name || 'Select your appointment time'}</p>
+              <h1 className="text-2xl font-bold text-gray-900">Book Appointment</h1>
+              <p className="text-gray-600">{clinicInfo?.name || 'Select your preferred time'}</p>
             </div>
           </div>
         </div>
       </div>
       
       {/* Calendar */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="p-8">
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
@@ -706,8 +626,6 @@ export default function CalendarPage() {
                 select={handleDateSelect}
                 eventClick={handleEventClick}
                 height="auto"
-                displayEventTime={false}
-                eventDisplay="block"
                 selectConstraint={{
                   start: new Date(),
                   end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -732,50 +650,15 @@ export default function CalendarPage() {
                       if (!dayConfig || dayConfig.closed) {
                         arg.el.style.opacity = '0.5';
                         arg.el.style.backgroundColor = '#f3f4f6';
-                        arg.el.style.pointerEvents = 'none';
                         arg.el.title = 'Clinic closed';
                       } else {
-                        // Always allow clicking for valid business days
                         arg.el.style.cursor = 'pointer';
-                        arg.el.style.pointerEvents = 'auto';
-                        arg.el.title = 'Click to book or manage appointment';
+                        arg.el.title = 'Click to book appointment';
                       }
                     } else {
                       arg.el.style.cursor = 'pointer';
-                      arg.el.style.pointerEvents = 'auto';
-                      arg.el.title = 'Click to book or manage appointment';
                     }
                   }
-                }}
-                datesSet={() => {
-                  // Force re-render when dates change to ensure click handlers work
-                  setTimeout(() => {
-                    const cells = document.querySelectorAll('.fc-daygrid-day');
-                    cells.forEach(cell => {
-                      const dateStr = cell.getAttribute('data-date');
-                      if (dateStr) {
-                        const cellDate = new Date(dateStr);
-                        const now = new Date();
-                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        const maxDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-                        
-                        if (cellDate >= today && cellDate <= maxDate) {
-                          if (businessHours) {
-                            const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                            const dayConfig = businessHours[weekdays[cellDate.getDay()]];
-                            
-                            if (dayConfig && !dayConfig.closed) {
-                              cell.style.cursor = 'pointer';
-                              cell.style.pointerEvents = 'auto';
-                            }
-                          } else {
-                            cell.style.cursor = 'pointer';
-                            cell.style.pointerEvents = 'auto';
-                          }
-                        }
-                      }
-                    });
-                  }, 100);
                 }}
               />
             )}

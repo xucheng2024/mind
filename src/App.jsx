@@ -13,6 +13,7 @@ import SafariInstallGuide from './components/SafariInstallGuide';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { validateConfig } from './lib/config';
+import HapticFeedback from './components/HapticFeedback';
 
 
 // Lazy load all pages
@@ -40,6 +41,9 @@ function App() {
     if (!validateConfig()) {
       console.error('Environment configuration validation failed');
     }
+    
+    // Initialize haptic feedback user interaction tracking
+    HapticFeedback.initUserInteraction();
   }, []);
 
   return (

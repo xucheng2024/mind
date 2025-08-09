@@ -1,9 +1,6 @@
 // Environment Configuration
 export const config = {
-  // Encryption
-  AES_KEY: import.meta.env.VITE_AES_KEY,
-  
-  // Supabase
+  // Supabase (for storage only - database operations via server API)
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
   
@@ -11,13 +8,13 @@ export const config = {
   APP_NAME: import.meta.env.VITE_APP_NAME || 'AppClinic',
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.3.0',
   
-  // Resend API
-  RESEND_API_KEY: import.meta.env.RESEND_API_KEY,
+  // API Base URL
+  API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
 };
 
-// Validation
+// Validation - AES_KEY removed since encryption is server-side only
 export const validateConfig = () => {
-  const required = ['AES_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
   const missing = required.filter(key => !config[key]);
   
   if (missing.length > 0) {
@@ -28,11 +25,5 @@ export const validateConfig = () => {
   return true;
 };
 
-// Get AES key with validation
-export const getAESKey = () => {
-  if (!config.AES_KEY) {
-    console.warn('AES_KEY not set, please configure encryption key in VITE_AES_KEY environment variable!');
-    return null;
-  }
-  return config.AES_KEY;
-}; 
+// Note: AES encryption is now handled server-side only
+// Frontend no longer needs access to encryption keys 

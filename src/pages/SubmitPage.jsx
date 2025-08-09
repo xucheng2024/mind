@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/api';
 import { v4 as uuidv4 } from 'uuid';
-import { hash, encrypt } from '../lib/utils';
-import { getAESKey } from '../lib/config';
 import cacheManager from '../lib/cache';
 import { 
   EnhancedButton, 
@@ -54,21 +52,15 @@ export default function SubmitPage() {
       }
 
       console.log('[SubmitPage] Query user:', { user_id, clinic_id: registrationData.clinic_id });
-      // Query
-      const { data: existingUser, error } = await supabase
-        .from('users')
-        .select('user_id')
-        .match({
-          user_id,
-          clinic_id: registrationData.clinic_id,
-        })
-        .maybeSingle();
-      console.log('[SubmitPage] User query result:', { existingUser, error });
-
-      if (error) {
-        setErrorMessage('Failed to check existing user. Please try again later.');
-        setLoading(false);
-        return;
+      // Query using API to bypass RLS
+      let existingUser = null;
+      try {
+        const result = await apiClient.getUser(registrationData.clinic_id, user_id);
+        existingUser = result.data;
+        console.log('[SubmitPage] User query result:', { existingUser });
+      } catch (error) {
+        // User not found is expected for new registrations
+        console.log('[SubmitPage] User not found (expected for new registration):', error.message);
       }
 
       // Check if already registered
@@ -81,8 +73,7 @@ export default function SubmitPage() {
 
       let selfiePath = registrationData.selfieUrl || registrationData.selfie || '';
 
-      // Only encrypt name, birthday, address, phone, email, signature, selfie, id_last4
-      const AES_KEY = getAESKey();
+      // Encryption now handled server-side
       
       // Format current time as prefix
       const now = new Date();
@@ -123,65 +114,57 @@ export default function SubmitPage() {
         combinedHealthNotes = `${datetimePrefix}: No other medical history - self declare`;
       }
       
-      // Use encrypt(val, AES_KEY) and hash(val) for encryption/hashing
+      // Send plain data to API - server will handle encryption
       const userPayload = {
-        full_name: encrypt(registrationData.fullName || '', AES_KEY),
-        id_last4: encrypt(registrationData.idLast4 || '', AES_KEY),
-        dob: encrypt(registrationData.dob || `${registrationData.dobDay}/${registrationData.dobMonth}/${registrationData.dobYear}`, AES_KEY),
-        phone: encrypt(registrationData.phone || '', AES_KEY),
-        phone_hash: hash(registrationData.phone || ''),
-        email: encrypt(registrationData.email || '', AES_KEY),
-        email_hash: hash(registrationData.email || ''),
-        postal_code: encrypt(registrationData.postalCode || '', AES_KEY),
-        block_no: encrypt(registrationData.blockNo || '', AES_KEY),
-        street: encrypt(registrationData.street || '', AES_KEY),
-        building: encrypt(registrationData.building || '', AES_KEY),
-        floor: encrypt(registrationData.floor || '', AES_KEY),
-        unit: encrypt(registrationData.unit || '', AES_KEY),
-        other_health_notes: encrypt(combinedHealthNotes, AES_KEY),
+        full_name: registrationData.fullName || '',
+        id_last4: registrationData.idLast4 || '',
+        dob: registrationData.dob || `${registrationData.dobDay}/${registrationData.dobMonth}/${registrationData.dobYear}`,
+        phone: registrationData.phone || '',
+        email: registrationData.email || '',
+        postal_code: registrationData.postalCode || '',
+        block_no: registrationData.blockNo || '',
+        street: registrationData.street || '',
+        building: registrationData.building || '',
+        floor: registrationData.floor || '',
+        unit: registrationData.unit || '',
+        other_health_notes: combinedHealthNotes,
         is_guardian: !!registrationData.is_guardian,
-        signature: encrypt(registrationData.signatureUrl || registrationData.signature || '', AES_KEY),
-        selfie: encrypt(selfiePath, AES_KEY),
-        clinic_id: registrationData.clinic_id, // Not encrypted
-        user_id, // Not encrypted
-        created_at: new Date().toISOString(), // Not encrypted
+        signature: registrationData.signatureUrl || registrationData.signature || '',
+        selfie: selfiePath,
+        clinic_id: registrationData.clinic_id,
+        user_id,
+        created_at: new Date().toISOString(),
       };
 
-      // Insert users, return row_id
-      const { data: insertedUser, error: userError } = await supabase
-        .from('users')
-        .insert([userPayload])
-        .select('row_id')
-        .single();
-
-      if (userError) {
-        setErrorMessage(userError.message || 'Failed to save user information. Please try again later.');
+      // Insert users using API to bypass RLS
+      let insertedUser;
+      try {
+        const result = await apiClient.createUser(userPayload);
+        insertedUser = result.data;
+        console.log('[SubmitPage] User created successfully:', insertedUser);
+      } catch (error) {
+        console.error('[SubmitPage] User creation failed:', error);
+        setErrorMessage(error.message || 'Failed to save user information. Please try again later.');
         submittedRef.current = false;
         setLoading(false);
         return;
       }
       const user_row_id = insertedUser.row_id;
 
-      // Query if already visited
-      const { data: existingVisit, error: visitQueryError } = await supabase
-        .from('visits')
-        .select('id')
-        .match({
-          user_row_id: user_row_id,
-          clinic_id: registrationData.clinic_id,
-        })
-        .maybeSingle();
-      console.log('[SubmitPage] visit query result:', { existingVisit, visitQueryError });
-
-      if (visitQueryError) {
-        setErrorMessage('Failed to check existing visit. Please try again later.');
-        setLoading(false);
-        return;
-      }
-
-      if (existingVisit) {
-        console.log('[SubmitPage][Error] Already visited:', existingVisit);
-        setErrorMessage('This patient already has a visit record.');
+      // Check if user already has a visit
+      try {
+        const result = await apiClient.checkUserVisit(registrationData.clinic_id, user_row_id);
+        if (result.data.hasVisit) {
+          console.log('[SubmitPage][Error] Already visited:', result.data);
+          setErrorMessage('This patient already has a visit record.');
+          setLoading(false);
+          return;
+        }
+        console.log('[SubmitPage] Visit check result:', result.data);
+      } catch (error) {
+        console.error('[SubmitPage] Visit check failed:', error);
+        setErrorMessage('Failed to verify visit status. Please try again later.');
+        submittedRef.current = false;
         setLoading(false);
         return;
       }
@@ -195,10 +178,14 @@ export default function SubmitPage() {
         is_first: true,
         clinic_id: registrationData.clinic_id,
       };
-      const { error: visitError } = await supabase.from('visits').insert([visitPayload]);
-      console.log('[SubmitPage] visit insertion result:', visitError);
-      if (visitError) {
-        setErrorMessage(visitError.message || 'Failed to save visit information. Please try again later.');
+      
+      // Insert visit using API to bypass RLS
+      try {
+        const result = await apiClient.createVisit(visitPayload);
+        console.log('[SubmitPage] Visit created successfully:', result.data);
+      } catch (error) {
+        console.error('[SubmitPage] Visit creation failed:', error);
+        setErrorMessage(error.message || 'Failed to save visit information. Please try again later.');
         submittedRef.current = false;
         setLoading(false);
         return;
@@ -206,7 +193,7 @@ export default function SubmitPage() {
 
       // After successful registration, save login info for auto-login
       if (user_id && user_row_id && registrationData.clinic_id) {
-        cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id);
+        cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id, registrationData.fullName || '');
       }
       
       // Clean up all registration-related cache and data
@@ -312,4 +299,4 @@ export default function SubmitPage() {
   );
 }
 
-console.log('Supabase instance:', supabase);
+// Debug line removed - using server API instead

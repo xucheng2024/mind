@@ -111,11 +111,12 @@ class CacheManager {
   }
 
   // Save login info for auto-login
-  saveLoginInfo(userId, userRowId, clinicId) {
+  saveLoginInfo(userId, userRowId, clinicId, fullName = '') {
     try {
       localStorage.setItem('user_id', userId);
       localStorage.setItem('user_row_id', userRowId);
       localStorage.setItem('clinic_id', clinicId);
+      localStorage.setItem('user_full_name', fullName);
       localStorage.setItem('login_timestamp', Date.now().toString());
       console.log('🔐 Login info saved for auto-login');
       return true;
@@ -157,6 +158,7 @@ class CacheManager {
   clearLoginInfo() {
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_row_id');
+    localStorage.removeItem('user_full_name');
     localStorage.removeItem('login_timestamp');
     // 保留clinic_id，因为用户可能还需要注册
     console.log('🔓 Login info cleared (clinic_id preserved)');
@@ -167,7 +169,8 @@ class CacheManager {
     const loginInfo = {
       userId: localStorage.getItem('user_id'),
       userRowId: localStorage.getItem('user_row_id'),
-      clinicId: localStorage.getItem('clinic_id')
+      clinicId: localStorage.getItem('clinic_id'),
+      fullName: localStorage.getItem('user_full_name') || ''
     };
     console.log('📋 CacheManager - Getting login info:', loginInfo);
     return loginInfo;

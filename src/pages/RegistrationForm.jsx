@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/api';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { IMaskInput } from 'react-imask';
-import { hash, encrypt } from '../lib/utils';
-import { getAESKey } from '../lib/config';
+// Remove unused imports - server handles hashing and encryption
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import { getClinicId } from '../config/clinic';
-import CryptoJS from 'crypto-js';
 import { 
   PhoneInput, 
   DateInput, 
@@ -225,37 +223,28 @@ export default function RegistrationForm() {
     setLoading(true);
     const loadingToast = toast.loading('Processing registration...');
 
-    const phoneHash = hash(form.phone);
-    const emailHash = hash(form.email);
     try {
-      // 只查 hash 字段，不查明文
-      const { data: phoneUsers, error: phoneError } = await supabase
-        .from('users').select('user_id')
-        .eq('clinic_id', clinicId)
-        .eq('phone_hash', phoneHash)
-        .limit(1);
-      const { data: emailUsers, error: emailError } = await supabase
-        .from('users').select('user_id')
-        .eq('clinic_id', clinicId)
-        .eq('email_hash', emailHash)
-        .limit(1);
-
-      if (phoneError || emailError) {
+      // Check for duplicates using server API
+      const duplicateResult = await apiClient.checkDuplicate(clinicId, form.phone, form.email);
+      
+      if (!duplicateResult.success) {
         toast.dismiss(loadingToast);
         toast.error('Server error, please try again later.');
         setErrors((prev) => ({ ...prev, phone: 'Server error, please try again later.' }));
         setLoading(false);
         return;
       }
+      
+      const { phoneExists, emailExists } = duplicateResult.data;
 
-      if (phoneUsers?.length > 0) {
+      if (phoneExists) {
         toast.dismiss(loadingToast);
         toast.error('This phone number has already been registered.');
         setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
         setLoading(false);
         return;
       }
-      if (emailUsers?.length > 0) {
+      if (emailExists) {
         toast.dismiss(loadingToast);
         toast.error('This email has already been registered.');
         setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
@@ -362,10 +351,7 @@ export default function RegistrationForm() {
     unit: unitRef,
   };
 
-  function encryptEmail(email) {
-    const AES_KEY = getAESKey();
-    return email ? CryptoJS.AES.encrypt(email.trim().toLowerCase(), AES_KEY).toString() : '';
-  }
+  // Encryption removed - handled by server API
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -536,17 +522,14 @@ export default function RegistrationForm() {
               if (!/^\d+$/.test(form.phone)) {
                 err = 'Phone number must be numeric';
               } else {
-                // 查重
-                const phoneHash = hash(form.phone);
-                const { data, error } = await supabase
-                  .from('users')
-                  .select('user_id')
-                  .eq('phone_hash', phoneHash)
-                  .limit(1);
-                if (error) {
+                // Check for duplicate using server API
+                try {
+                  const result = await apiClient.checkDuplicate(clinicId, form.phone, null);
+                  if (result.success && result.data.phoneExists) {
+                    err = 'This phone number has already been registered.';
+                  }
+                } catch (error) {
                   err = 'Server error, please try again later.';
-                } else if (data && data.length > 0) {
-                  err = 'This phone number has already been registered.';
                 }
               }
               setErrors(prev => ({ ...prev, phone: err }));
@@ -576,17 +559,14 @@ export default function RegistrationForm() {
                 let err = '';
                 if (!/^\S+@\S+\.\S+$/.test(form.email)) err = 'Invalid email';
                 else {
-                  // 查重
-                  const emailHash = hash(form.email);
-                  const { data, error } = await supabase
-                    .from('users')
-                    .select('user_id')
-                    .eq('email_hash', emailHash)
-                    .limit(1);
-                  if (error) {
+                  // Check for duplicate using server API
+                  try {
+                    const result = await apiClient.checkDuplicate(clinicId, null, form.email);
+                    if (result.success && result.data.emailExists) {
+                      err = 'This email has already been registered.';
+                    }
+                  } catch (error) {
                     err = 'Server error, please try again later.';
-                  } else if (data && data.length > 0) {
-                    err = 'This email has already been registered.';
                   }
                 }
                 setErrors(prev => ({ ...prev, email: err }));

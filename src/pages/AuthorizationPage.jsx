@@ -4,9 +4,8 @@ import Signature from '@uiw/react-signature';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { EnhancedButton, ProgressBar, Confetti, useHapticFeedback } from '../components';
-import { supabase } from '../lib/supabaseClient';
-import { encrypt } from '../lib/utils';
-import { getAESKey } from '../lib/config';
+import { apiClient } from '../lib/api';
+import { prepareImageForUpload } from '../lib/imageUtils';
 
 export default function AuthorizationPage() {
   const navigate = useNavigate();
@@ -78,52 +77,40 @@ export default function AuthorizationPage() {
       
 
       
-      // 获取加密密钥
-      const AES_KEY = getAESKey();
-      if (!AES_KEY) {
-        throw new Error('Encryption key not configured');
-      }
-
-      // 将 base64 转换为 blob
+      // Convert signature to blob
       const response = await fetch(signatureDataUrl);
       const blob = await response.blob();
 
-      // 加密签名数据
-      const reader = new FileReader();
-      const base64Data = await new Promise((resolve) => {
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
-
-      const encryptedData = encrypt(base64Data, AES_KEY);
-
-      // 将加密后的数据转换为 blob
-      const encryptedBlob = new Blob([encryptedData], { type: 'application/octet-stream' });
-
-      // 上传加密后的数据到 Supabase storage
-      const { data, error } = await supabase.storage
-        .from('signatures')
-        .upload(filename, encryptedBlob, {
-          contentType: 'application/octet-stream',
-          cacheControl: '3600'
-        });
+      // Compress and prepare signature for upload using frontend compression
+      const { base64, compressionRatio, originalSize, compressedSize } = await prepareImageForUpload(
+        blob, 
+        filename,
+        {
+          maxSizeMB: 0.2, // Aggressive compression for signatures
+          maxWidthOrHeight: 500, // Smaller size for signatures
+          quality: 0.5, // Lower quality for better compression
+          fileType: 'image/jpeg',
+          useWebWorker: true
+        }
+      );
       
-      if (error) {
-        console.error('❌ Upload failed:', error);
-        throw new Error(`Upload failed: ${error.message}`);
+      console.log(`🖊️ Signature compression completed: ${compressionRatio} reduction (${(originalSize/1024).toFixed(2)}KB → ${(compressedSize/1024).toFixed(2)}KB)`);
+
+      // Upload compressed signature through server API (server handles encryption)
+      const uploadResult = await apiClient.uploadFile('signatures', filename, base64, 'image/jpeg');
+      
+      if (!uploadResult.success) {
+        throw new Error('Upload failed');
       }
       
-      // 使用签名 URL 而不是 public URL
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('signatures')
-        .createSignedUrl(filename, 157680000); // 5年有效期
-
-      if (signedUrlError) {
-        console.error('❌ Failed to generate signed URL:', signedUrlError);
-        throw new Error(`Failed to generate signed URL: ${signedUrlError.message}`);
+      // Verify file exists by listing files
+      const listResult = await apiClient.listFiles('signatures', 100, filename);
+      if (!listResult.success || !listResult.data?.find(file => file.name === filename)) {
+        throw new Error('Upload verification failed');
       }
-
-      const signedUrl = signedUrlData.signedUrl;
+      
+      // Get decrypted file URL from server (server handles decryption)
+      const decryptedUrl = apiClient.getDecryptedFileUrl('signatures', filename);
 
       hapticTrigger('success');
       setShowConfetti(true);
@@ -134,8 +121,8 @@ export default function AuthorizationPage() {
       updateRegistrationData({
         is_guardian: isGuardian,
         signature: signatureDataUrl, // 本地预览用
-        signatureUrl: signedUrl, // 直接存储签名 URL，不加密
-        signatureFilename: filename, // 不加密文件名
+        signatureUrl: decryptedUrl, // Server-side decrypted URL
+        signatureFilename: filename, // 文件名
         signatureSignedUrl: true
       });
       

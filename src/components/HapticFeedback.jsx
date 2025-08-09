@@ -1,49 +1,73 @@
 import React from 'react';
 
 class HapticFeedback {
+  static userHasInteracted = false;
+
+  static initUserInteraction() {
+    if (!this.userHasInteracted) {
+      const handleFirstInteraction = () => {
+        this.userHasInteracted = true;
+        document.removeEventListener('touchstart', handleFirstInteraction, true);
+        document.removeEventListener('click', handleFirstInteraction, true);
+        document.removeEventListener('keydown', handleFirstInteraction, true);
+      };
+
+      document.addEventListener('touchstart', handleFirstInteraction, true);
+      document.addEventListener('click', handleFirstInteraction, true);
+      document.addEventListener('keydown', handleFirstInteraction, true);
+    }
+  }
+
   static isSupported() {
     return 'vibrate' in navigator;
   }
 
-  static light() {
-    if (this.isSupported()) {
-      navigator.vibrate(50);
+  static canVibrate() {
+    return this.isSupported() && this.userHasInteracted;
+  }
+
+  static safeVibrate(pattern) {
+    if (this.canVibrate()) {
+      try {
+        navigator.vibrate(pattern);
+      } catch (error) {
+        console.warn('Vibration failed:', error);
+      }
     }
+  }
+
+  static light() {
+    this.safeVibrate(50);
   }
 
   static medium() {
-    if (this.isSupported()) {
-      navigator.vibrate(100);
-    }
+    this.safeVibrate(100);
   }
 
   static heavy() {
-    if (this.isSupported()) {
-      navigator.vibrate(200);
-    }
+    this.safeVibrate(200);
   }
 
   static success() {
-    if (this.isSupported()) {
-      navigator.vibrate([50, 50, 100]);
-    }
+    this.safeVibrate([50, 50, 100]);
   }
 
   static error() {
-    if (this.isSupported()) {
-      navigator.vibrate([100, 50, 100]);
-    }
+    this.safeVibrate([100, 50, 100]);
   }
 
   static warning() {
-    if (this.isSupported()) {
-      navigator.vibrate([50, 100, 50]);
-    }
+    this.safeVibrate([50, 100, 50]);
   }
 }
 
 // React Hook for haptic feedback
 export const useHapticFeedback = () => {
+  React.useEffect(() => {
+    // Initialize user interaction tracking
+    HapticFeedback.initUserInteraction();
+  }, []);
+
   const trigger = (type = 'light') => {
     switch (type) {
       case 'light':
@@ -69,7 +93,11 @@ export const useHapticFeedback = () => {
     }
   };
 
-  return { trigger, isSupported: HapticFeedback.isSupported() };
+  return { 
+    trigger, 
+    isSupported: HapticFeedback.isSupported(),
+    canVibrate: HapticFeedback.canVibrate()
+  };
 };
 
 export default HapticFeedback; 

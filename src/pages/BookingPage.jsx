@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sha256Hex, isPhone, isEmail } from '../lib/utils';
 import { 
@@ -29,14 +29,9 @@ export default function BookingPage() {
       // Validate if user is still valid
       const validateAndRedirect = async () => {
         try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('row_id')
-            .eq('clinic_id', currentClinicId)
-            .eq('row_id', savedUserRowId)
-            .single();
+          const result = await apiClient.validateUser(currentClinicId, savedUserRowId);
           
-          if (!error && data) {
+          if (result.success && result.data.valid) {
             // User valid, redirect to calendar
             navigate(`/booking/slots?clinic_id=${currentClinicId}&user_row_id=${savedUserRowId}`);
           } else {
@@ -72,30 +67,30 @@ export default function BookingPage() {
     let query;
     let hashValue;
     try {
-      if (isPhone(input)) {
-        hashValue = await sha256Hex(input);
-        query = supabase
-          .from('users')
-          .select('user_id, row_id')
-          .eq('clinic_id', clinicId)
-          .eq('phone_hash', hashValue)
-          .single();
-      } else if (isEmail(input)) {
-        hashValue = await sha256Hex(input);
-        query = supabase
-          .from('users')
-          .select('user_id, row_id')
-          .eq('clinic_id', clinicId)
-          .eq('email_hash', hashValue)
-          .single();
-      } else {
-        setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
+      let data;
+      try {
+        if (isPhone(input)) {
+          hashValue = await sha256Hex(input);
+          const result = await apiClient.queryUser(clinicId, hashValue, null);
+          data = result.data;
+        } else if (isEmail(input)) {
+          hashValue = await sha256Hex(input);
+          const result = await apiClient.queryUser(clinicId, null, hashValue);
+          data = result.data;
+        } else {
+          setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('User query failed:', error);
+        setError('No user found with this email or phone number in this clinic.');
         setLoading(false);
         return;
       }
-      const { data, error: dbError } = await query;
+      
       setLoading(false);
-      if (dbError || !data) {
+      if (!data) {
         setError('No user found with this email or phone number in this clinic.');
         return;
       }

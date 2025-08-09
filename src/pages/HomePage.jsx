@@ -1,14 +1,12 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/api';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { debounce } from '../lib/performance';
 import LazyImage from '../components/LazyImage';
 import { getClinicId, CLINIC_CONFIG } from '../config/clinic';
-import { decrypt } from '../lib/utils';
-import { getAESKey } from '../lib/config';
 import cacheManager from '../lib/cache';
 import { 
   EnhancedButton, 
@@ -21,7 +19,7 @@ import {
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [userInfo, setUserInfo] = React.useState(null);
+  const [userName, setUserName] = React.useState('');
   const [logoutLoading, setLogoutLoading] = React.useState(false);
   const [showConfetti, setShowConfetti] = React.useState(false);
   const { trigger: hapticTrigger } = useHapticFeedback();
@@ -40,11 +38,10 @@ export default function HomePage() {
       if (cacheManager.isLoggedIn()) {
         const loginInfo = cacheManager.getLoginInfo();
         setIsLoggedIn(true);
-        // 获取用户信息
-        fetchUserInfo(loginInfo.userRowId, loginInfo.clinicId);
+        setUserName(loginInfo.fullName || 'User');
       } else {
         setIsLoggedIn(false);
-        setUserInfo(null);
+        setUserName('');
       }
     };
 
@@ -54,45 +51,7 @@ export default function HomePage() {
     return () => window.removeEventListener('storage', checkLoginStatus);
   }, [clinicId]);
 
-  // 获取用户信息
-  const fetchUserInfo = async (userRowId, clinicId) => {
-    try {
-      // Get AES key for decryption
-      const AES_KEY = getAESKey();
-      if (!AES_KEY) {
-        console.error('Encryption key not configured');
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('user_id, clinic_id, row_id, full_name')
-        .eq('clinic_id', clinicId)
-        .eq('row_id', userRowId)
-        .single();
-      
-      if (!error && data) {
-        // Decrypt the user's name
-        const decryptedFullName = decrypt(data.full_name, AES_KEY);
-        
-        setUserInfo({
-          ...data,
-          full_name: decryptedFullName
-        });
-      } else {
-        // 用户不存在，清除登录状态
-        cacheManager.clearLoginInfo();
-        setIsLoggedIn(false);
-        setUserInfo(null);
-      }
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-      // 出错时也清除登录状态
-      cacheManager.clearLoginInfo();
-      setIsLoggedIn(false);
-      setUserInfo(null);
-    }
-  };
+
 
 
 
@@ -160,11 +119,11 @@ export default function HomePage() {
   const handleLogoutClick = debounce(() => {
     hapticTrigger('medium');
     setLogoutLoading(true);
-    // 使用缓存管理器清除登录信息，但保留clinic_id
+    // 清除登录信息（下次会重新验证登录）
     cacheManager.clearLoginInfo();
     // Update state immediately instead of reloading
     setIsLoggedIn(false);
-    setUserInfo(null);
+    setUserName('');
     setLogoutLoading(false);
   }, 100);
 
@@ -192,13 +151,13 @@ export default function HomePage() {
 
       
       {/* 已登录用户显示 */}
-      {isLoggedIn && userInfo && (
+      {isLoggedIn && (
         <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">
           <div className="w-full mb-6">
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <span className="text-lg font-bold text-gray-800">Welcome</span>
-                <span className="text-lg font-bold text-blue-600">{userInfo.full_name}</span>
+                <span className="text-lg font-bold text-blue-600">{userName}</span>
               </div>
             </div>
             <div className="space-y-4">

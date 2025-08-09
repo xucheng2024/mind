@@ -3,9 +3,8 @@ import { Camera } from 'react-camera-pro';
 import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
-import { supabase } from '../lib/supabaseClient';
-import { encrypt } from '../lib/utils';
-import { getAESKey } from '../lib/config';
+import { apiClient } from '../lib/api';
+import { prepareImageForUpload } from '../lib/imageUtils';
 import { 
   EnhancedButton, 
   CheckboxInput, 
@@ -211,64 +210,34 @@ export default function SelfiePage() {
         throw new Error('No image data available for upload');
       }
       
-      // 获取加密密钥
-      const AES_KEY = getAESKey();
-      if (!AES_KEY) {
-        throw new Error('Encryption key not configured');
-      }
-
-      // 将 blob 转换为 base64 以便加密
+      // Convert already compressed blob to base64 (compression already done by native compressImage)
       const reader = new FileReader();
-      const base64Data = await new Promise((resolve) => {
-        reader.onloadend = () => resolve(reader.result);
+      const base64 = await new Promise((resolve) => {
+        reader.onloadend = () => {
+          // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
         reader.readAsDataURL(uploadBlob);
       });
-
-      // 加密图片数据
-      const encryptedData = encrypt(base64Data, AES_KEY);
       
+      console.log(`🖼️ Using native compression: ${(uploadBlob.size/1024).toFixed(2)}KB`);
 
-      // 将加密后的数据转换为 blob
-      const encryptedBlob = new Blob([encryptedData], { type: 'application/octet-stream' });
-
-      // 上传加密后的数据到 Supabase storage
-      const { data, error } = await supabase.storage
-        .from('selfies')
-        .upload(filename, encryptedBlob, {
-          contentType: 'application/octet-stream',
-          cacheControl: '3600'
-        });
+      // Upload compressed image through server API (server handles encryption)
+      const uploadResult = await apiClient.uploadFile('selfies', filename, base64, 'image/jpeg');
       
-      if (error) {
-        console.error('❌ Upload failed:', error);
-        throw new Error(`Upload failed: ${error.message}`);
+      if (!uploadResult.success) {
+        throw new Error('Upload failed');
       }
       
-      // 验证文件是否存在
-      const { data: fileExists, error: listError } = await supabase.storage
-        .from('selfies')
-        .list('', {
-          limit: 100,
-          search: filename
-        });
-      
-      
-      
-      if (listError) {
-        console.error('❌ Error checking file existence:', listError);
+      // Verify file exists by listing files
+      const listResult = await apiClient.listFiles('selfies', 100, filename);
+      if (!listResult.success || !listResult.data?.find(file => file.name === filename)) {
+        throw new Error('Upload verification failed');
       }
       
-      // 使用签名 URL 而不是 public URL
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('selfies')
-        .createSignedUrl(filename, 157680000); // 5年有效期
-
-      if (signedUrlError) {
-        console.error('❌ Failed to generate signed URL:', signedUrlError);
-        throw new Error(`Failed to generate signed URL: ${signedUrlError.message}`);
-      }
-
-      const signedUrl = signedUrlData.signedUrl;
+      // Get decrypted file URL from server (server handles decryption)
+      const decryptedUrl = apiClient.getDecryptedFileUrl('selfies', filename);
 
       hapticTrigger('success');
       setShowConfetti(true);
@@ -276,8 +245,8 @@ export default function SelfiePage() {
 
       updateRegistrationData({ 
         selfie: imageSrc, // 本地预览用
-        selfieUrl: signedUrl, // 直接存储签名 URL，不加密
-        selfieFilename: filename, // 不加密文件名
+        selfieUrl: decryptedUrl, // Server-side decrypted URL
+        selfieFilename: filename, // 文件名
         selfieSignedUrl: true
       });
       
