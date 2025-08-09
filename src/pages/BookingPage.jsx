@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { sha256Hex, isPhone, isEmail } from '../lib/utils';
+import { isPhone, isEmail } from '../lib/utils';
+
+// Hash function that matches backend quickHash
+function quickHash(text) {
+  return btoa(text.toLowerCase().trim());
+}
 import { 
   EnhancedButton, 
   useHapticFeedback 
@@ -70,11 +75,11 @@ export default function BookingPage() {
       let data;
       try {
         if (isPhone(input)) {
-          hashValue = await sha256Hex(input);
+          hashValue = quickHash(input);
           const result = await apiClient.queryUser(clinicId, hashValue, null);
           data = result.data;
         } else if (isEmail(input)) {
-          hashValue = await sha256Hex(input);
+          hashValue = quickHash(input);
           const result = await apiClient.queryUser(clinicId, null, hashValue);
           data = result.data;
         } else {
