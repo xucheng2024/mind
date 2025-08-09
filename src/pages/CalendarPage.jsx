@@ -6,9 +6,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import cacheManager from '../lib/cache';
-import { Calendar, Clock, Check, X, RotateCcw, AlertCircle, Home } from 'lucide-react';
+import { Calendar, Clock, Check, X, RotateCcw, AlertCircle } from 'lucide-react';
 import { useHapticFeedback } from '../components/HapticFeedback';
-import { EnhancedButton } from '../components';
 import toast from 'react-hot-toast';
 
 export default function CalendarPage() {
@@ -782,18 +781,6 @@ export default function CalendarPage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Back to Home Button */}
-      <div className="fixed bottom-6 left-6 z-40">
-        <EnhancedButton
-          onClick={() => navigate('/')}
-          className="bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-lg"
-          size="sm"
-        >
-          <Home className="w-4 h-4 mr-2" />
-          Back Home
-        </EnhancedButton>
       </div>
 
       {/* Modal */}
