@@ -188,6 +188,10 @@ async function handleGetUser(req, res) {
 }
 
 async function handleCheckDuplicate(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
   const { clinicId, phone, email } = req.body;
   
   if (!clinicId || (!phone && !email)) {
@@ -244,6 +248,10 @@ async function handleCheckDuplicate(req, res) {
 }
 
 async function handleQueryUser(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
   const { clinicId, phoneHash, emailHash } = req.body;
   
   let query = supabase.from('users').select('user_id, row_id');
