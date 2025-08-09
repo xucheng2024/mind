@@ -107,7 +107,7 @@ export const apiClient = {
 
   // Get user visits
   async getUserVisits(clinicId, userRowId) {
-    const response = await fetch(`${API_BASE_URL}/api/visits/${clinicId}/${userRowId}`);
+    const response = await fetch(`${API_BASE_URL}/api/visits?action=get&clinicId=${clinicId}&userRowId=${userRowId}`);
     
     if (!response.ok) {
       const error = await response.json();
@@ -143,7 +143,7 @@ export const apiClient = {
 
   // Check if user has existing visit
   async checkUserVisit(clinicId, userRowId) {
-    const response = await fetch(`${API_BASE_URL}/api/visits/check/${clinicId}/${userRowId}`);
+    const response = await fetch(`${API_BASE_URL}/api/visits?action=check&clinicId=${clinicId}&userRowId=${userRowId}`);
     
     if (!response.ok) {
       const error = await response.json();
