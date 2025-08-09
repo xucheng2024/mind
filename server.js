@@ -13,11 +13,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Debug environment
+console.log('🚀 Server starting...');
+console.log('📍 PORT:', PORT);
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+console.log('🔗 FRONTEND_URL:', process.env.FRONTEND_URL);
+
 // Security middleware
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',  // Vite dev server
+    'https://appclinic.vercel.app',  // Production frontend
+    'https://appclinic-git-main-xuchengs-projects-27b3e479.vercel.app',  // Preview deployments
     process.env.FRONTEND_URL
   ].filter(Boolean),
   credentials: true
