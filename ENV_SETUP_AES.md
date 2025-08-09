@@ -59,7 +59,7 @@ Error: AES_KEY must be at least 32 characters long
 
 - **服务端加密**: 所有用户数据使用AES-256加密后存储到数据库
 - **前端无加密**: 前端不处理任何敏感数据加密，所有加密由服务端统一处理
-- **文件加密**: 图片文件通过storage API使用base64+salt加密存储
+- **文件加密**: 图片文件通过storage API使用AES-256加密存储 ✅ (已修复)
 
 ## 安全注意事项
 
