@@ -9,7 +9,7 @@ export const config = {
   APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.3.0',
   
   // API Base URL
-  API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  API_URL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001'),
 };
 
 // Validation - AES_KEY removed since encryption is server-side only
