@@ -71,12 +71,7 @@ export default async function handler(req, res) {
         await handleValidateUser(req, res);
         break;
       default:
-        // Default POST creates user
-        if (req.method === 'POST') {
-          await handleCreateUser(req, res);
-        } else {
-          res.status(400).json({ error: 'Invalid action' });
-        }
+        res.status(400).json({ error: 'Invalid action. Valid actions: create, get, check-duplicate, query, validate' });
     }
   } catch (error) {
     console.error('API error:', error);

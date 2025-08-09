@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         await handleDownload(req, res);
         break;
       default:
-        res.status(400).json({ error: 'Invalid action' });
+        res.status(400).json({ error: 'Invalid action. Valid actions: upload, list, download' });
     }
   } catch (error) {
     console.error('API error:', error);

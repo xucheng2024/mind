@@ -44,12 +44,7 @@ export default async function handler(req, res) {
         await handleCheckVisit(req, res);
         break;
       default:
-        // Default POST creates visit
-        if (req.method === 'POST') {
-          await handleCreateVisit(req, res);
-        } else {
-          res.status(400).json({ error: 'Invalid action' });
-        }
+        res.status(400).json({ error: 'Invalid action. Valid actions: create, update, get, check' });
     }
   } catch (error) {
     console.error('API error:', error);
