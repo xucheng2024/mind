@@ -254,6 +254,13 @@ async function handleQueryUser(req, res) {
   
   const { clinicId, phoneHash, emailHash } = req.body;
   
+  // Debug logging
+  console.log('🔍 QueryUser Debug:', {
+    clinicId,
+    phoneHash: phoneHash || 'null',
+    emailHash: emailHash || 'null'
+  });
+  
   let query = supabase.from('users').select('user_id, row_id');
   
   if (phoneHash) {
