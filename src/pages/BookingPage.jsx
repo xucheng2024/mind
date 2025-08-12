@@ -17,8 +17,9 @@ export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const clinicId = searchParams.get('clinic_id') || '';
   const [input, setInput] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { trigger: hapticTrigger } = useHapticFeedback();
 
@@ -59,6 +60,13 @@ export default function BookingPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+      console.log('Form submission already in progress, ignoring duplicate request');
+      return;
+    }
+    
     setError('');
     if (!input.trim()) {
       setError('Please enter your email or phone number.');
@@ -68,10 +76,13 @@ export default function BookingPage() {
       setError('Clinic ID is missing.');
       return;
     }
-    setLoading(true);
-    let query;
-    let hashValue;
+    
     try {
+      setIsSubmitting(true);
+      setLoading(true);
+      
+      let query;
+      let hashValue;
       let data;
       try {
         if (isPhone(input)) {
@@ -84,29 +95,29 @@ export default function BookingPage() {
           data = result.data;
         } else {
           setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
-          setLoading(false);
           return;
         }
       } catch (error) {
         console.error('User query failed:', error);
         setError('No user found with this email or phone number in this clinic.');
-        setLoading(false);
         return;
       }
       
-      setLoading(false);
       if (!data) {
         setError('No user found with this email or phone number in this clinic.');
         return;
       }
+      
       // Save user_id and clinic_id to localStorage for free login
       if (data.user_id) localStorage.setItem('user_id', data.user_id);
       if (data.row_id) localStorage.setItem('user_row_id', data.row_id);
       if (clinicId) localStorage.setItem('clinic_id', clinicId);
       navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}&user_row_id=${data.row_id}`);
     } catch (err) {
-      setLoading(false);
       setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 

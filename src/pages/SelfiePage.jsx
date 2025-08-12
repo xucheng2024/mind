@@ -53,6 +53,7 @@ export default function SelfiePage() {
   const [cameraReady, setCameraReady] = useState(false);
   const [fileInputRef] = useState(() => React.createRef());
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { trigger: hapticTrigger } = useHapticFeedback();
 
   // 检查相机权限 - 简化版本
@@ -183,20 +184,26 @@ export default function SelfiePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+      console.log('Form submission already in progress, ignoring duplicate request');
+      return;
+    }
+    
     if (!imageSrc) {
       setError('Please take a selfie first.');
       return;
     }
     
-    setUploading(true);
-    setError('');
-    
     try {
+      setIsSubmitting(true);
+      setUploading(true);
+      setError('');
+      
       // Generate unique filename
       const timestamp = Date.now();
       const filename = `selfie_${timestamp}.enc`;
-      
-
       
       // Use compressed blob if available, otherwise convert base64 to blob
       let uploadBlob = compressedBlob;
@@ -265,6 +272,7 @@ export default function SelfiePage() {
       hapticTrigger('error');
     } finally {
       setUploading(false);
+      setIsSubmitting(false);
     }
   };
 

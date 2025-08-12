@@ -17,6 +17,7 @@ export default function AuthorizationPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const signatureRef = useRef();
 
@@ -37,7 +38,7 @@ export default function AuthorizationPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading || uploading) return;
+    if (loading || uploading || isSubmitting) return;
     
     setLoading(true);
     setSubmitted(true);
@@ -67,15 +68,14 @@ export default function AuthorizationPage() {
       return;
     }
 
-    setUploading(true);
-    setLoading(false);
-    
     try {
+      setIsSubmitting(true);
+      setUploading(true);
+      setLoading(false);
+      
       // Generate unique filename
       const timestamp = Date.now();
       const filename = `signature_${timestamp}.enc`;
-      
-
       
       // Convert signature to blob
       const response = await fetch(signatureDataUrl);
@@ -132,13 +132,13 @@ export default function AuthorizationPage() {
       });
       
       navigate('/register/submit');
-      
-    } catch (err) {
-      console.error('Error uploading signature:', err);
-      setErrors(prev => ({ ...prev, signature: `Failed to upload signature: ${err.message}` }));
+    } catch (error) {
+      console.error('❌ Error during signature upload:', error);
+      setErrors(prev => ({ ...prev, signature: 'Failed to upload signature. Please try again.' }));
       hapticTrigger('error');
     } finally {
       setUploading(false);
+      setIsSubmitting(false);
     }
   };
 

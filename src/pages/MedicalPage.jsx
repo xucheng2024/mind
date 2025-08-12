@@ -23,6 +23,7 @@ export default function MedicalPage() {
 
   const [error, setError] = useState('');
   const [optionErrors, setOptionErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // 从registrationData恢复表单数据，而不是清空
@@ -64,6 +65,13 @@ export default function MedicalPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+      console.log('Form submission already in progress, ignoring duplicate request');
+      return;
+    }
+    
     const errs = {};
     for (const item of healthItems) {
       if (!form[item]) {
@@ -80,16 +88,22 @@ export default function MedicalPage() {
     }
     setError('');
 
-    // 只在点击 Next 时处理备注内容
-    const prefix = formatSGTime();
-    let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : '';
-    if (!notes) {
-      notes = 'None reported';
-    } else {
-      notes = `${prefix}: ${notes}`;
+    try {
+      setIsSubmitting(true);
+      
+      // 只在点击 Next 时处理备注内容
+      const prefix = formatSGTime();
+      let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : '';
+      if (!notes) {
+        notes = 'None reported';
+      } else {
+        notes = `${prefix}: ${notes}`;
+      }
+      updateRegistrationData({ ...form, otherHealthNotes: notes });
+      navigate('/register/selfie');
+    } finally {
+      setIsSubmitting(false);
     }
-    updateRegistrationData({ ...form, otherHealthNotes: notes });
-    navigate('/register/selfie');
   };
 
   const labelStyle = {
@@ -211,8 +225,10 @@ export default function MedicalPage() {
           size="lg"
           fullWidth
           className="mt-6"
+          loading={isSubmitting}
+          disabled={isSubmitting}
         >
-          Next
+          {isSubmitting ? 'Processing...' : 'Next'}
         </EnhancedButton>
       </form>
     </div>
