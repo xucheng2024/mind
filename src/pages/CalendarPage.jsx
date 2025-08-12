@@ -765,13 +765,25 @@ export default function CalendarPage() {
             border-radius: 12px;
             margin: 4px;
             width: calc(14.28% - 8px);
-            height: 48px;
-            line-height: 48px;
+            height: 0;
+            padding-bottom: calc(14.28% - 8px);
+            position: relative;
             font-size: 16px;
             font-weight: 500;
             background: transparent;
             border: none;
             color: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .react-datepicker__day > span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1;
           }
           
           .react-datepicker__day:hover {
@@ -803,10 +815,8 @@ export default function CalendarPage() {
           /* Mobile touch optimization */
           @media (max-width: 768px) {
             .react-datepicker__day {
-              height: 56px;
-              line-height: 56px;
-              font-size: 18px;
               margin: 6px;
+              padding-bottom: calc(14.28% - 12px);
               width: calc(14.28% - 12px);
             }
             
@@ -826,7 +836,7 @@ export default function CalendarPage() {
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Appointment Calendar</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
               <p className="text-sm text-gray-600">{clinicInfo?.name || 'Select your appointment time'}</p>
             </div>
           </div>
@@ -843,8 +853,9 @@ export default function CalendarPage() {
                 <span className="ml-3 text-gray-600">Loading calendar...</span>
               </div>
             ) : (
-              <div className="flex items-center justify-center min-h-[80vh] px-4">
-                  {/* Date Picker - Full Screen Calendar */}
+              <div className="space-y-6">
+                {/* Date Picker - Full Screen Calendar */}
+                <div className="flex items-center justify-center">
                   <div className="w-full max-w-5xl">
                     <DatePicker
                       selected={selectedDate}
@@ -879,7 +890,7 @@ export default function CalendarPage() {
                           </button>
                           
                           <h2 className="text-3xl font-bold text-gray-900">
-                            {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            {date.toLocaleDateString('en-US', { month: 'long' })}
                           </h2>
                           
                           <button
@@ -901,7 +912,50 @@ export default function CalendarPage() {
                     />
                   </div>
                 </div>
-              )}
+                
+                {/* Appointments Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Appointments</h3>
+                  {events.length > 0 ? (
+                    <div className="space-y-3">
+                      {events.map(event => (
+                        <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <Clock className="w-4 h-4 text-blue-600" />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {event.start.toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  weekday: 'short'
+                                })}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {event.start.toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleEventClick({ event })}
+                            className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">Your appointment times will be displayed here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
