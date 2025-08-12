@@ -9,6 +9,7 @@ import cacheManager from '../lib/cache';
 import { Calendar, Clock, Check, X, RotateCcw, AlertCircle } from 'lucide-react';
 import { useHapticFeedback } from '../components/HapticFeedback';
 import toast from 'react-hot-toast';
+import { logSubmitBook, logCancelAppointment } from '../lib/logger';
 
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
@@ -295,10 +296,24 @@ export default function CalendarPage() {
 
   // Book appointment
   const bookAppointment = async (hour, minute) => {
-    try {
-      trigger('success');
-      const date = new Date(modal.data.date);
-      date.setHours(hour, minute, 0, 0);
+          try {
+        trigger('success');
+        const date = new Date(modal.data.date);
+        date.setHours(hour, minute, 0, 0);
+        
+                // Log the booking action
+        await logSubmitBook({
+          clinic_id: clinicId,
+          user_id: userRowId,
+          appointment_id: null, // Will be set after creation
+          service_type: 'consultation',
+          doctor_id: null,
+          appointment_date: date.toISOString(),
+          duration_minutes: 30,
+          booking_method: 'web_app',
+          payment_status: 'pending',
+          total_amount: null
+        });
       
       // Validate user and check existing bookings
       const [validateResult, { data: existingBookings }] = await Promise.all([
@@ -343,10 +358,26 @@ export default function CalendarPage() {
         is_first: false,
       });
       
+      const appointmentId = createResponse.data?.id || createResponse.id;
+      
+      // Log the successful booking with actual appointment ID
+      await logSubmitBook({
+        clinic_id: clinicId,
+        user_id: userRowId,
+        appointment_id: appointmentId,
+        service_type: 'consultation',
+        doctor_id: null,
+        appointment_date: date.toISOString(),
+        duration_minutes: 30,
+        booking_method: 'web_app',
+        payment_status: 'pending',
+        total_amount: null
+      });
+      
       // Update UI with the actual ID from server
       const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       const newEvent = {
-        id: createResponse.data?.id || createResponse.id,
+        id: appointmentId,
         title: timeString,
         start: date,
         end: new Date(date.getTime() + 30 * 60 * 1000),
@@ -371,6 +402,23 @@ export default function CalendarPage() {
   const cancelAppointment = async () => {
     try {
       trigger('warning');
+      
+      // Get event details for logging
+      const event = events.find(e => e.id === modal.data.eventId);
+      if (event) {
+        // Log the cancellation action
+        await logCancelAppointment({
+          clinic_id: clinicId,
+          user_id: userRowId,
+          appointment_id: modal.data.eventId,
+          original_date: event.start.toISOString(),
+          cancellation_reason: 'user_requested',
+          cancellation_method: 'web_app',
+          refund_amount: null,
+          refund_status: 'not_applicable'
+        });
+      }
+      
       await apiClient.updateVisit(modal.data.eventId, { status: 'canceled' });
       setEvents(prev => prev.filter(e => e.id !== modal.data.eventId));
       setModal({ type: null, data: null });

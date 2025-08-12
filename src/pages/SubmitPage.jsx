@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRegistration } from '../../context/RegistrationContext';
-import { apiClient } from '../lib/api';
-
 import { v4 as uuidv4 } from 'uuid';
-import cacheManager from '../lib/cache';
+import { apiClient } from '../lib/api';
+import { cacheManager } from '../lib/cache';
+import { useRegistration } from '../context/RegistrationContext';
+import { useHapticFeedback } from '../components';
+import Confetti from '../components/Confetti';
+import { logUserRegistration, logSubmitBook } from '../lib/logger';
+
 import { 
   EnhancedButton, 
   LoadingSpinner, 
-  useHapticFeedback,
-  Confetti,
   ProgressBar 
 } from '../components';
 
@@ -144,6 +145,18 @@ export default function SubmitPage() {
         const result = await apiClient.createUser(userPayload);
         insertedUser = result.data;
         console.log('[SubmitPage] User created successfully:', insertedUser);
+        
+        // Log user registration
+        await logUserRegistration({
+          clinic_id: registrationData.clinic_id,
+          user_id: user_id,
+          email: registrationData.email || '',
+          phone: registrationData.phone || '',
+          registration_method: 'web_form',
+          user_type: 'patient',
+          registration_source: 'web_app'
+        });
+        
       } catch (error) {
         console.error('[SubmitPage] User creation failed:', error);
         setErrorMessage(error.message || 'Failed to save user information. Please try again later.');
@@ -185,6 +198,21 @@ export default function SubmitPage() {
       try {
         const result = await apiClient.createVisit(visitPayload);
         console.log('[SubmitPage] Visit created successfully:', result.data);
+        
+        // Log first visit booking
+        await logSubmitBook({
+          clinic_id: registrationData.clinic_id,
+          user_id: user_id,
+          appointment_id: result.data?.id || result.id,
+          service_type: 'first_consultation',
+          doctor_id: null,
+          appointment_date: new Date().toISOString(),
+          duration_minutes: 30,
+          booking_method: 'web_form',
+          payment_status: 'pending',
+          total_amount: null
+        });
+        
       } catch (error) {
         console.error('[SubmitPage] Visit creation failed:', error);
         setErrorMessage(error.message || 'Failed to save visit information. Please try again later.');
