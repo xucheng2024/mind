@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { Calendar, Clock, Check, X, RotateCcw, AlertCircle } from 'lucide-react'
 import { useHapticFeedback } from '../components/HapticFeedback';
 import toast from 'react-hot-toast';
 import { logSubmitBook, logCancelAppointment } from '../lib/logger';
+import { debounce } from '../lib/debounce';
 
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
@@ -24,6 +25,7 @@ export default function CalendarPage() {
   const [businessHours, setBusinessHours] = useState(null);
   const [clinicInfo, setClinicInfo] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [actionLoading, setActionLoading] = useState(false);
   
   // Month navigation functions
   const nextMonth = () => {
@@ -362,9 +364,12 @@ export default function CalendarPage() {
     }
   }, [trigger, userRowId]);
 
-  // Book appointment
-  const bookAppointment = async (hour, minute) => {
-          try {
+  // Book appointment with debounce
+  const bookAppointment = useMemo(
+    () => debounce(async (hour, minute) => {
+      if (actionLoading) return;
+      try {
+        setActionLoading(true);
         trigger('success');
         const date = new Date(modal.data.date);
         date.setHours(hour, minute, 0, 0);
@@ -463,36 +468,47 @@ export default function CalendarPage() {
       trigger('error');
       console.error('Booking failed:', error);
       toast.error('Booking failed. Please try again.');
+    } finally {
+      setActionLoading(false);
     }
-  };
+  }, 300),
+  [modal, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]);
 
-  // Cancel appointment
-  const cancelAppointment = async () => {
-    try {
-      trigger('warning');
-      
-      // Get event details for logging
-      const event = events.find(e => e.id === modal.data.eventId);
-      if (event) {
-        // Log the cancellation action with original book_time
-        await logCancelAppointment({
-          clinic_id: clinicId,
-          user_id: userRowId,
-          appointment_id: modal.data.eventId,
-          original_date: event.start.toISOString()
-        });
-      }
-      
-      await apiClient.updateVisit(modal.data.eventId, { status: 'canceled' });
-      setEvents(prev => prev.filter(e => e.id !== modal.data.eventId));
-      setModal({ type: null, data: null });
-      toast.success('Appointment cancelled');
-    } catch (error) {
-      trigger('error');
-      console.error('Cancel failed:', error);
-      toast.error('Failed to cancel appointment');
-    }
-  };
+  // Cancel appointment with debounce
+  const cancelAppointment = useMemo(
+    () => 
+      debounce(async () => {
+        if (actionLoading) return;
+        try {
+          setActionLoading(true);
+          trigger('warning');
+          
+          // Get event details for logging
+          const event = events.find(e => e.id === modal.data.eventId);
+          if (event) {
+            // Log the cancellation action with original book_time
+            await logCancelAppointment({
+              clinic_id: clinicId,
+              user_id: userRowId,
+              appointment_id: modal.data.eventId,
+              original_date: event.start.toISOString()
+            });
+          }
+          
+          await apiClient.updateVisit(modal.data.eventId, { status: 'canceled' });
+          setEvents(prev => prev.filter(e => e.id !== modal.data.eventId));
+          setModal({ type: null, data: null });
+          toast.success('Appointment cancelled');
+        } catch (error) {
+          trigger('error');
+          console.error('Cancel failed:', error);
+          toast.error('Failed to cancel appointment');
+        } finally {
+          setActionLoading(false);
+        }
+      }, 300),
+    [events, modal.data, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]
+  );
 
   const formatTime = (hour, minute = 0) => 
     `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -536,10 +552,16 @@ export default function CalendarPage() {
                 Keep Appointment
               </button>
               <button
-                onClick={() => cancelAppointment()}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                onClick={() => {
+                  if (actionLoading) return;
+                  cancelAppointment();
+                }}
+                disabled={actionLoading}
+                className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors ${
+                  actionLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                Yes, Cancel
+                {actionLoading ? 'Cancelling...' : 'Yes, Cancel'}
               </button>
             </div>
           </div>
@@ -617,11 +639,11 @@ export default function CalendarPage() {
                                 return (
                                   <button
                                     key={`${slot.hour}:${slot.minute}`}
-                                    onClick={() => {
+                                    onClick={useCallback(() => {
                                       if (!isClickable) return;
                                       bookAppointment(slot.hour, slot.minute);
-                                    }}
-                                    disabled={!isClickable}
+                                    }, [isClickable, bookAppointment, slot.hour, slot.minute])}
+                                    disabled={!isClickable || loading}
                                     className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
                                       !isClickable
                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-dashed border-gray-300'
