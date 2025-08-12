@@ -110,6 +110,11 @@ export class PerformanceOptimizer {
   }
 }
 
+// Export individual functions for backward compatibility
+export const debounce = PerformanceOptimizer.debounce;
+export const throttle = PerformanceOptimizer.throttle;
+export const measurePerformance = PerformanceOptimizer.measurePerformance;
+
 // React performance hooks
 export const usePerformanceOptimizedCallback = (callback, deps) => {
   return React.useCallback(PerformanceOptimizer.measurePerformance(
