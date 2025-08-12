@@ -249,14 +249,28 @@ export default function CalendarPage() {
       return;
     }
     
+    // Immediately show modal with loading state
+    setModal({ 
+      type: 'book', 
+      data: { 
+        date, 
+        slots: [], 
+        userHasOtherBooking: false,
+        isLoading: true 
+      } 
+    });
+    
+    // Fetch slots in background
     const slots = await getAvailableSlots(date);
     
     if (slots === 'closed') {
+      setModal({ type: null, data: null });
       toast.error('Clinic is closed on this day');
       return;
     }
     
     if (!Array.isArray(slots)) {
+      setModal({ type: null, data: null });
       toast.error('Unable to load available time slots');
       return;
     }
@@ -264,13 +278,20 @@ export default function CalendarPage() {
     // Include all slots but mark availability
     const availableSlots = slots.filter(s => s.isAvailable);
     if (availableSlots.length === 0) {
+      setModal({ type: null, data: null });
       toast.error('No available time slots');
       return;
     }
     
+    // Update modal with actual data
     setModal({ 
       type: 'book', 
-      data: { date, slots, userHasOtherBooking: false } 
+      data: { 
+        date, 
+        slots, 
+        userHasOtherBooking: false,
+        isLoading: false 
+      } 
     });
   }, [events, userRowId, trigger]);
 
@@ -447,9 +468,7 @@ export default function CalendarPage() {
     };
 
     if (modal.type === 'book') {
-      const { date, slots, userHasOtherBooking } = modal.data;
-      const amSlots = slots.filter(s => s.hour < 12);
-      const pmSlots = slots.filter(s => s.hour >= 12);
+      const { date, slots, userHasOtherBooking, isLoading } = modal.data;
       
       return (
         <div {...commonModalProps}>
@@ -476,38 +495,70 @@ export default function CalendarPage() {
             </div>
             
             <div className="p-6">
-              {[
-                { label: 'Morning', slots: amSlots },
-                { label: 'Afternoon', slots: pmSlots }
-              ].map(({ label, slots }) => 
-                slots.length > 0 && (
-                  <div key={label} className="mb-5 last:mb-0">
-                    <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">{label}</h4>
+              {isLoading ? (
+                // Loading skeleton
+                <div className="space-y-4">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
                     <div className="grid grid-cols-4 gap-2">
-                      {slots.map(slot => {
-                        const isClickable = slot.isAvailable;
-                        
-                        return (
-                          <button
-                            key={`${slot.hour}:${slot.minute}`}
-                            onClick={() => {
-                              if (!isClickable) return;
-                              bookAppointment(slot.hour, slot.minute);
-                            }}
-                            disabled={!isClickable}
-                            className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
-                              !isClickable
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-dashed border-gray-300'
-                                : 'bg-white text-gray-700 hover:bg-blue-500 hover:text-white border border-gray-300 hover:border-blue-500'
-                            }`}
-                          >
-                            {formatTime(slot.hour, slot.minute)}
-                          </button>
-                        );
-                      })}
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
+                      ))}
                     </div>
                   </div>
-                )
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Actual time slots
+                (() => {
+                  const amSlots = slots.filter(s => s.hour < 12);
+                  const pmSlots = slots.filter(s => s.hour >= 12);
+                  
+                  return (
+                    <>
+                      {[
+                        { label: 'Morning', slots: amSlots },
+                        { label: 'Afternoon', slots: pmSlots }
+                      ].map(({ label, slots }) => 
+                        slots.length > 0 && (
+                          <div key={label} className="mb-5 last:mb-0">
+                            <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">{label}</h4>
+                            <div className="grid grid-cols-4 gap-2">
+                              {slots.map(slot => {
+                                const isClickable = slot.isAvailable;
+                                
+                                return (
+                                  <button
+                                    key={`${slot.hour}:${slot.minute}`}
+                                    onClick={() => {
+                                      if (!isClickable) return;
+                                      bookAppointment(slot.hour, slot.minute);
+                                    }}
+                                    disabled={!isClickable}
+                                    className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
+                                      !isClickable
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-dashed border-gray-300'
+                                        : 'bg-white text-gray-700 hover:bg-blue-500 hover:text-white border border-gray-300 hover:border-blue-500'
+                                    }`}
+                                  >
+                                    {formatTime(slot.hour, slot.minute)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </>
+                  );
+                })()
               )}
             </div>
           </div>
