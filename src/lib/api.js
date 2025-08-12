@@ -1,27 +1,56 @@
 // API client for database operations (bypasses RLS)
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://appclinic.vercel.app' : 'http://localhost:3001');
 
-console.log('🔗 API Base URL:', API_BASE_URL);
-console.log('🌍 Environment:', import.meta.env.MODE);
-console.log('🔧 All VITE env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+import { requestInterceptor } from './apiInterceptors';
+
+// Fetch with timeout and retry
+async function fetchWithRetry(url, options, retries = 3, timeout = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    requestInterceptor.onRequest();  // 请求开始时显示加载状态
+    
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    requestInterceptor.onResponse();  // 请求完成时清除加载状态
+    
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (retries > 0 && error.name === 'AbortError') {
+      return fetchWithRetry(url, options, retries - 1, timeout);
+    }
+    requestInterceptor.onError(error);  // 处理错误情况
+    throw error;
+  }
+}
 
 export const apiClient = {
   // User operations
   async createUser(userData) {
-    const response = await fetch(`${API_BASE_URL}/api/users?action=create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create user');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users?action=create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user');
+      }
+      
+      return data;
+    } catch (error) {
+      throw new Error(`Create user failed: ${error.message}`);
     }
-    
-    return response.json();
   },
 
   async getUser(clinicId, userRowId) {

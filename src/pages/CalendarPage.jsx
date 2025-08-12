@@ -23,7 +23,32 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false);
   const [businessHours, setBusinessHours] = useState(null);
   const [clinicInfo, setClinicInfo] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   
+  // Month navigation functions
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  // Check if a date is within business hours
+  const isWithinBusinessHours = useCallback((date) => {
+    if (!businessHours) return true;
+    
+    const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayConfig = businessHours[weekdays[date.getDay()]];
+    
+    // If the day is marked as closed or no config exists
+    if (!dayConfig || dayConfig.closed) {
+      return false;
+    }
+    
+    return true;
+  }, [businessHours]);
+
   // Modal states
   const [modal, setModal] = useState({ type: null, data: null });
   
@@ -44,10 +69,17 @@ export default function CalendarPage() {
     }
   }, []);
 
-  // Redirect if missing params
+  // Redirect if missing params (skip in development)
   useEffect(() => {
     if (!clinicId || !userRowId) {
-      navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
+      // In development, use default values for testing
+      if (import.meta.env.DEV) {
+        clinicId = 'test-clinic';
+        userRowId = 'test-user';
+        console.log('🧪 Development mode: Using test credentials');
+      } else {
+        navigate(`/booking${clinicId ? ('?clinic_id=' + clinicId) : ''}`);
+      }
     }
   }, [clinicId, userRowId, navigate]);
 
@@ -213,12 +245,16 @@ export default function CalendarPage() {
     setSelectedDate(date);
     
     // Validate date constraints
-    if (date < new Date()) {
-      toast.error('Cannot book appointments in the past');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selectedDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (selectedDay < today) {
+      toast.error('Cannot book appointments for past dates');
       return;
     }
     
-    const maxDate = new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000);
+    const maxDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
     if (date > maxDate) {
       toast.error('Can only book up to 14 days in advance');
       return;
@@ -229,8 +265,15 @@ export default function CalendarPage() {
       e.start.toDateString() === date.toDateString() && e.userRowId === userRowId
     );
     
-    // If user already has appointment on this date, show cancel/reschedule options
+    // If user already has appointment on this date, show cancel dialog
     if (dateEvents.length > 0) {
+      setModal({
+        type: 'cancel',
+        data: {
+          eventId: dateEvents[0].id,
+          date: dateEvents[0].start
+        }
+      });
       const existingEvent = dateEvents[0];
       const appointmentTime = formatTime(existingEvent.start.getHours(), existingEvent.start.getMinutes());
       const appointmentDate = date.toLocaleDateString('en-US', { 
@@ -466,6 +509,43 @@ export default function CalendarPage() {
         }
       }
     };
+
+    if (modal.type === 'confirmCancel') {
+      const { event } = modal.data;
+      return (
+        <div {...commonModalProps}>
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Cancel Appointment</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to cancel your appointment on{' '}
+              {event.start.toLocaleDateString('en-US', { 
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+              })} at {event.start.toLocaleTimeString('en-US', { 
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              })}?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setModal({ type: null, data: null })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+              >
+                Keep Appointment
+              </button>
+              <button
+                onClick={() => cancelAppointment()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     if (modal.type === 'book') {
       const { date, slots, userHasOtherBooking, isLoading } = modal.data;
@@ -723,6 +803,14 @@ export default function CalendarPage() {
             max-width: none !important;
           }
           
+          .react-datepicker__navigation {
+            display: none !important;
+          }
+          
+          .react-datepicker__current-month {
+            display: none !important;
+          }
+          
           .react-datepicker__header {
             background: transparent;
             border: none;
@@ -762,11 +850,11 @@ export default function CalendarPage() {
           }
           
           .react-datepicker__day {
-            border-radius: 12px;
+            border-radius: 8px;
             margin: 4px;
-            width: calc(14.28% - 8px);
-            height: 48px;
-            line-height: 48px;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
             font-size: 16px;
             font-weight: 500;
             background: transparent;
@@ -791,57 +879,96 @@ export default function CalendarPage() {
             background-color: #3b82f6;
             color: white;
           }
+
+          /* 已预约日期的样式 */
+          .react-datepicker__day--highlighted {
+            position: relative;
+          }
+
+          .react-datepicker__day--highlighted::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 6px;
+            height: 6px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+          }
           
           .react-datepicker__day--outside-month {
             color: #d1d5db;
           }
           
           .react-datepicker__day--disabled {
-            color: #9ca3af;
-            cursor: not-allowed;
+            color: #d1d5db !important;
+            cursor: not-allowed !important;
+            background-color: #f3f4f6 !important;
+            opacity: 0.5;
           }
-          
+
+          .react-datepicker__day--disabled:hover {
+            background-color: #f3f4f6 !important;
+            color: #d1d5db !important;
+            transform: none !important;
+          }
+
           /* Mobile touch optimization */
           @media (max-width: 768px) {
             .react-datepicker__day {
-              height: 56px;
-              line-height: 56px;
+              width: 45px;
+              height: 45px;
+              line-height: 45px;
               font-size: 18px;
-              margin: 6px;
-              width: calc(14.28% - 12px);
+              margin: 4px;
             }
             
-            .react-datepicker__day-name {
-              font-size: 18px;
-              padding: 20px 8px;
-            }
+                      .react-datepicker__day-name {
+            font-size: 18px;
+            padding: 20px 8px;
+          }
+          
+
           }
         `}
       </style>
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Calendar</h1>
-              <p className="text-sm text-gray-600">{clinicInfo?.name || 'Select your appointment time'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Calendar */}
       
       {/* Calendar */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-6">
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={prevMonth}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Previous month"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button
+                onClick={nextMonth}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Next month"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
             {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="ml-3 text-gray-600">Loading calendar...</span>
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <span className="text-gray-600 font-medium">Loading your calendar...</span>
+                <span className="text-sm text-gray-500">This may take a moment</span>
               </div>
             ) : (
               <div className="space-y-6">
@@ -852,49 +979,21 @@ export default function CalendarPage() {
                       selected={selectedDate}
                       onChange={handleDateSelect}
                       inline
-                      minDate={new Date()}
+                      minDate={new Date(new Date().setHours(0, 0, 0, 0))}
                       maxDate={new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000)}
                       className="w-full"
                       showTimeSelect={false}
-                      dateFormat="MMM dd, yyyy"
                       showMonthDropdown={false}
                       showYearDropdown={false}
                       dropdownMode="select"
-                      renderCustomHeader={({
-                        date,
-                        decreaseMonth,
-                        increaseMonth,
-                        prevMonthButtonDisabled,
-                        nextMonthButtonDisabled,
-                      }) => (
-                        <div className="flex items-center justify-between mb-6">
-                          <button
-                            type="button"
-                            onClick={decreaseMonth}
-                            disabled={prevMonthButtonDisabled}
-                            className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          
-                          <h2 className="text-3xl font-bold text-gray-900">
-                            {date.toLocaleDateString('en-US', { month: 'long' })}
-                          </h2>
-                          
-                          <button
-                            type="button"
-                            onClick={increaseMonth}
-                            disabled={nextMonthButtonDisabled}
-                            className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                      dateFormat="MMM dd, yyyy"
+                      openToDate={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                      disabledKeyboardNavigation
+                      calendarStartDay={1}
+                      renderCustomHeader={() => null}
+                      filterDate={isWithinBusinessHours}
+                      highlightDates={events.map(event => event.start)}
                     />
                   </div>
                 </div>
@@ -905,28 +1004,34 @@ export default function CalendarPage() {
                   {events.length > 0 ? (
                     <div className="space-y-3">
                       {events.map(event => (
-                        <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                           <div className="flex items-center space-x-3">
-                            <Clock className="w-4 h-4 text-blue-600" />
+                            <div className="flex-shrink-0">
+                              <Clock className="w-5 h-5 text-blue-600" />
+                            </div>
                             <div>
                               <p className="font-medium text-gray-900">
                                 {event.start.toLocaleDateString('en-US', { 
-                                  month: 'short', 
+                                  month: 'long', 
                                   day: 'numeric',
-                                  weekday: 'short'
+                                  weekday: 'long'
                                 })}
                               </p>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 mt-1">
                                 {event.start.toLocaleTimeString('en-US', { 
                                   hour: '2-digit', 
-                                  minute: '2-digit' 
+                                  minute: '2-digit',
+                                  hour12: true
                                 })}
                               </p>
                             </div>
                           </div>
                           <button
-                            onClick={() => handleEventClick({ event })}
-                            className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            onClick={() => setModal({
+                              type: 'confirmCancel',
+                              data: { eventId: event.id, event: event }
+                            })}
+                            className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
                           >
                             Cancel
                           </button>
