@@ -1,5 +1,5 @@
 // PWA Service Worker
-const CACHE_NAME = 'clinic-app-v1';
+const CACHE_NAME = 'clinic-app-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -52,6 +52,24 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-HTTP(S) requests
   if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
+  // Don't cache API requests
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Don't cache dynamic assets (JS, CSS) to prevent touch event issues
+  if (event.request.url.includes('/assets/') && 
+      (event.request.url.includes('.js') || event.request.url.includes('.css'))) {
+    // Always fetch fresh assets to prevent touch event conflicts
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // Fallback to cache only if network fails
+        return caches.match(event.request);
+      })
+    );
     return;
   }
 

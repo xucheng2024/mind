@@ -4,7 +4,11 @@ export function registerPWA() {
     isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
     hasServiceWorker: 'serviceWorker' in navigator,
     env: import.meta.env.MODE,
-    location: window.location.href
+    location: window.location.href,
+    userAgent: navigator.userAgent,
+    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+    hasTouch: 'ontouchstart' in window,
+    maxTouchPoints: navigator.maxTouchPoints
   });
 
   // Skip Service Worker registration in development
@@ -104,4 +108,24 @@ export function hasInstallPrompt() {
 export function isPWAInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches ||
          window.navigator.standalone === true;
+}
+
+// Check if running in PWA mode and log relevant info
+export function logPWAMode() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isIOSStandalone = window.navigator.standalone === true;
+  const isPWA = isStandalone || isIOSStandalone;
+  
+  console.log('📱 PWA Mode Detection:', {
+    isPWA,
+    isStandalone,
+    isIOSStandalone,
+    displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
+    userAgent: navigator.userAgent,
+    hasTouch: 'ontouchstart' in window,
+    maxTouchPoints: navigator.maxTouchPoints,
+    platform: navigator.platform
+  });
+  
+  return isPWA;
 } 
