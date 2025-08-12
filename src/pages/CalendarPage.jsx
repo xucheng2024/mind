@@ -761,11 +761,9 @@ export default function CalendarPage() {
                 <span className="ml-3 text-gray-600">Loading calendar...</span>
               </div>
             ) : (
-              <div className="space-y-4">
-                  {/* Date Picker - Direct Calendar Display */}
-                  <div className="bg-white rounded-lg border border-gray-100 p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Select Date</h3>
-                    
+              <div className="flex items-center justify-center min-h-[70vh]">
+                  {/* Date Picker - Full Screen Calendar */}
+                  <div className="w-full max-w-4xl">
                     <DatePicker
                       selected={selectedDate}
                       onChange={handleDateSelect}
@@ -775,55 +773,41 @@ export default function CalendarPage() {
                       className="w-full"
                       showTimeSelect={false}
                       dateFormat="MMM dd, yyyy"
+                      renderCustomHeader={({
+                        date,
+                        decreaseMonth,
+                        increaseMonth,
+                        prevMonthButtonDisabled,
+                        nextMonthButtonDisabled,
+                      }) => (
+                        <div className="flex items-center justify-between mb-4">
+                          <button
+                            onClick={decreaseMonth}
+                            disabled={prevMonthButtonDisabled}
+                            className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          
+                          <h2 className="text-2xl font-bold text-gray-900">
+                            {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          </h2>
+                          
+                          <button
+                            onClick={increaseMonth}
+                            disabled={nextMonthButtonDisabled}
+                            className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     />
-                    
-                    {selectedDate && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-blue-900">
-                          <span className="font-medium">Selected:</span> {selectedDate.toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </p>
-                      </div>
-                    )}
                   </div>
-                  
-                  {/* Existing Appointments */}
-                  {events.length > 0 && (
-                    <div className="bg-white rounded-lg border border-gray-100 p-6">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Appointments</h3>
-                      <div className="space-y-3">
-                        {events.map(event => (
-                          <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <Clock className="w-4 h-4 text-blue-600" />
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {event.start.toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric' 
-                                  })}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  {event.start.toLocaleTimeString('en-US', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleEventClick({ event })}
-                              className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
           </div>
