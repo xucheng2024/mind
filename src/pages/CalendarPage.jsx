@@ -702,13 +702,15 @@ export default function CalendarPage() {
                               {slots.map(slot => {
                                 const isClickable = slot.isAvailable;
                                 
+                                const handleSlotClick = () => {
+                                  if (!isClickable) return;
+                                  bookAppointment(slot.hour, slot.minute);
+                                };
+                                
                                 return (
                                   <button
                                     key={`${slot.hour}:${slot.minute}`}
-                                    onClick={useCallback(() => {
-                                      if (!isClickable) return;
-                                      bookAppointment(slot.hour, slot.minute);
-                                    }, [isClickable, bookAppointment, slot.hour, slot.minute])}
+                                    onClick={handleSlotClick}
                                     disabled={!isClickable || loading}
                                     className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
                                       !isClickable
