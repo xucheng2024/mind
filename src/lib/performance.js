@@ -1,129 +1,145 @@
 // Performance optimization utilities
+export class PerformanceOptimizer {
+  static debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 
-// Preload critical resources
-export const preloadResource = (href, as = 'fetch') => {
-  const link = document.createElement('link');
-  link.rel = 'preload';
-  link.href = href;
-  link.as = as;
-  document.head.appendChild(link);
-};
+  static throttle(func, limit) {
+    let inThrottle;
+    return function executedFunction(...args) {
+      if (!inThrottle) {
+        func.apply(this, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
 
-// Lazy load images
-export const lazyLoadImage = (img) => {
-  if ('IntersectionObserver' in window) {
-    const imageObserver = new IntersectionObserver((entries, observer) => {
+  static measurePerformance(name, fn) {
+    return async (...args) => {
+      const start = performance.now();
+      try {
+        const result = await fn(...args);
+        const end = performance.now();
+        console.log(`⚡ ${name} completed in ${(end - start).toFixed(2)}ms`);
+        return result;
+      } catch (error) {
+        const end = performance.now();
+        console.error(`❌ ${name} failed after ${(end - start).toFixed(2)}ms:`, error);
+        throw error;
+      }
+    };
+  }
+
+  static createIntersectionObserver(callback, options = {}) {
+    return new IntersectionObserver(callback, {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1,
+      ...options
+    });
+  }
+
+  static batchDOMUpdates(updates) {
+    // Use requestAnimationFrame to batch DOM updates
+    requestAnimationFrame(() => {
+      updates.forEach(update => update());
+    });
+  }
+
+  static optimizeImages() {
+    // Lazy load images
+    const images = document.querySelectorAll('img[data-src]');
+    const imageObserver = this.createIntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const img = entry.target;
           img.src = img.dataset.src;
-          img.classList.remove('lazy');
+          img.removeAttribute('data-src');
           imageObserver.unobserve(img);
         }
       });
     });
 
-    imageObserver.observe(img);
-  } else {
-    // Fallback for older browsers
-    img.src = img.dataset.src;
+    images.forEach(img => imageObserver.observe(img));
   }
-};
 
-// Debounce function for performance
-export const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
+  static preloadCriticalResources() {
+    // Preload critical resources
+    const criticalResources = [
+      '/logo.png',
+      '/clinic-illustration.svg'
+    ];
+
+    criticalResources.forEach(resource => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = resource.endsWith('.png') ? 'image' : 'image';
+      link.href = resource;
+      document.head.appendChild(link);
+    });
+  }
+
+  static optimizeAnimations() {
+    // Reduce motion for users who prefer it
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.style.setProperty('--animation-duration', '0.01ms');
+      document.documentElement.style.setProperty('--transition-duration', '0.01ms');
+    }
+  }
+
+  static cleanupEventListeners() {
+    // Clean up any lingering event listeners
+    const cleanup = () => {
+      // Remove any global event listeners that might be causing memory leaks
+      window.removeEventListener('scroll', null);
+      window.removeEventListener('resize', null);
+      window.removeEventListener('touchstart', null);
     };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
 
-// Throttle function for performance
-export const throttle = (func, limit) => {
-  let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
-    if (!inThrottle) {
-      func.apply(context, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-};
-
-// Cache management
-export const clearOldCaches = async () => {
-  if ('caches' in window) {
-    const cacheNames = await caches.keys();
-    const oldCaches = cacheNames.filter(name => 
-      name.startsWith('clinic-app-') && 
-      name !== 'clinic-app-v1'
-    );
-    await Promise.all(oldCaches.map(name => caches.delete(name)));
+    // Clean up on page unload
+    window.addEventListener('beforeunload', cleanup);
   }
+}
+
+// React performance hooks
+export const usePerformanceOptimizedCallback = (callback, deps) => {
+  return React.useCallback(PerformanceOptimizer.measurePerformance(
+    callback.name || 'Callback',
+    callback
+  ), deps);
 };
 
-// Performance monitoring
-export const measurePerformance = (name, fn) => {
-  const start = performance.now();
-  const result = fn();
-  const end = performance.now();
-  console.log(`${name} took ${end - start}ms`);
-  return result;
+export const usePerformanceOptimizedMemo = (factory, deps) => {
+  return React.useMemo(() => {
+    const start = performance.now();
+    const result = factory();
+    const end = performance.now();
+    console.log(`⚡ Memo computation completed in ${(end - start).toFixed(2)}ms`);
+    return result;
+  }, deps);
 };
 
-// Memory management
-export const cleanupMemory = () => {
-  if ('memory' in performance) {
-    const memory = performance.memory;
-    console.log('Memory usage:', {
-      used: Math.round(memory.usedJSHeapSize / 1048576) + 'MB',
-      total: Math.round(memory.totalJSHeapSize / 1048576) + 'MB',
-      limit: Math.round(memory.jsHeapSizeLimit / 1048576) + 'MB'
-    });
-  }
-};
-
-// Service Worker update check
-export const checkForUpdates = async () => {
-  if ('serviceWorker' in navigator) {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (registration) {
-      await registration.update();
-    }
-  }
-};
-
-// Network status monitoring
-export const monitorNetworkStatus = (callback) => {
-  if ('connection' in navigator) {
-    const connection = navigator.connection;
-    connection.addEventListener('change', () => {
-      callback({
-        effectiveType: connection.effectiveType,
-        downlink: connection.downlink,
-        rtt: connection.rtt,
-        saveData: connection.saveData
-      });
-    });
-  }
-};
-
-// Critical CSS inlining
-export const inlineCriticalCSS = () => {
-  const criticalCSS = `
-    /* Critical CSS for above-the-fold content */
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-    .loading { display: flex; align-items: center; justify-content: center; }
-  `;
+// Initialize performance optimizations
+export const initializePerformanceOptimizations = () => {
+  // Optimize animations
+  PerformanceOptimizer.optimizeAnimations();
   
-  const style = document.createElement('style');
-  style.textContent = criticalCSS;
-  document.head.appendChild(style);
-}; 
+  // Preload critical resources
+  PerformanceOptimizer.preloadCriticalResources();
+  
+  // Clean up event listeners
+  PerformanceOptimizer.cleanupEventListeners();
+  
+  console.log('🚀 Performance optimizations initialized');
+};
+
+export default PerformanceOptimizer; 

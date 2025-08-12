@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import RootApp from './App'
 import './index.css'
 import { registerPWA, setupInstallPrompt } from './pwa'
+import { initializePerformanceOptimizations } from './lib/performance'
 
 // Suppress passive event listener warnings in development
 if (import.meta.env.DEV) {
@@ -39,6 +40,9 @@ if (import.meta.env.DEV) {
     return originalAddEventListener.call(this, type, listener, options);
   };
 }
+
+// Initialize performance optimizations
+initializePerformanceOptimizations();
 
 // Register PWA
 registerPWA()

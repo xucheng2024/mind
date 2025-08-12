@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const EnhancedButton = ({
+const EnhancedButton = React.memo(({
   children,
   onClick,
   disabled = false,
@@ -13,64 +13,79 @@ const EnhancedButton = ({
   type = 'button',
   ...props
 }) => {
-  const baseClasses = `
-    relative inline-flex items-center justify-center font-semibold
-    transition-all duration-200 ease-out
-    focus:outline-none focus:ring-4 focus:ring-offset-2
-    disabled:cursor-not-allowed disabled:opacity-70
-    ${fullWidth ? 'w-full' : ''}
-  `;
+  // Memoize animation config to prevent recreation on every render
+  const animationConfig = React.useMemo(() => ({
+    whileHover: !disabled && !loading ? { scale: 1.02 } : {},
+    whileTap: !disabled && !loading ? { scale: 0.98 } : {}
+  }), [disabled, loading]);
 
-  const variants = {
-    primary: `
-      bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
-      focus:ring-blue-500 shadow-lg hover:shadow-xl
-      transform hover:-translate-y-0.5 active:translate-y-0
-    `,
-    secondary: `
-      bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400
-      focus:ring-gray-500 shadow-md hover:shadow-lg
-      transform hover:-translate-y-0.5 active:translate-y-0
-    `,
-    outline: `
-      bg-transparent border-2 border-blue-600 text-blue-600
-      hover:bg-blue-600 hover:text-white active:bg-blue-700
-      focus:ring-blue-500
-    `,
-    danger: `
-      bg-red-600 text-white hover:bg-red-700 active:bg-red-800
-      focus:ring-red-500 shadow-lg hover:shadow-xl
-      transform hover:-translate-y-0.5 active:translate-y-0
-    `,
-    success: `
-      bg-green-600 text-white hover:bg-green-700 active:bg-green-800
-      focus:ring-green-500 shadow-lg hover:shadow-xl
-      transform hover:-translate-y-0.5 active:translate-y-0
-    `
-  };
+  // Memoize button classes to prevent recalculation
+  const buttonClasses = React.useMemo(() => {
+    const baseClasses = `
+      relative inline-flex items-center justify-center font-semibold
+      transition-all duration-200 ease-out
+      focus:outline-none focus:ring-4 focus:ring-offset-2
+      disabled:cursor-not-allowed disabled:opacity-70
+      ${fullWidth ? 'w-full' : ''}
+    `;
 
-  const sizes = {
-    sm: 'px-4 py-2 text-sm rounded-lg',
-    md: 'px-6 py-3 text-base rounded-xl',
-    lg: 'px-8 py-4 text-lg rounded-xl',
-    xl: 'px-10 py-5 text-xl rounded-2xl'
-  };
+    const variants = {
+      primary: `
+        bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
+        focus:ring-blue-500 shadow-lg hover:shadow-xl
+        transform hover:-translate-y-0.5 active:translate-y-0
+      `,
+      secondary: `
+        bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400
+        focus:ring-gray-500 shadow-md hover:shadow-lg
+        transform hover:-translate-y-0.5 active:translate-y-0
+      `,
+      outline: `
+        bg-transparent border-2 border-blue-600 text-blue-600
+        hover:bg-blue-600 hover:text-white active:bg-blue-700
+        focus:ring-blue-500
+      `,
+      danger: `
+        bg-red-600 text-white hover:bg-red-700 active:bg-red-800
+        focus:ring-red-500 shadow-lg hover:shadow-xl
+        transform hover:-translate-y-0.5 active:translate-y-0
+      `,
+      success: `
+        bg-green-600 text-white hover:bg-green-700 active:bg-green-800
+        focus:ring-green-500 shadow-lg hover:shadow-xl
+        transform hover:-translate-y-0.5 active:translate-y-0
+      `
+    };
 
-  const buttonClasses = `
-    ${baseClasses}
-    ${variants[variant]}
-    ${sizes[size]}
-    ${className}
-  `;
+    const sizes = {
+      sm: 'px-4 py-2 text-sm rounded-lg',
+      md: 'px-6 py-3 text-base rounded-xl',
+      lg: 'px-8 py-4 text-lg rounded-xl',
+      xl: 'px-10 py-5 text-xl rounded-2xl'
+    };
+
+    return `
+      ${baseClasses}
+      ${variants[variant]}
+      ${sizes[size]}
+      ${className}
+    `;
+  }, [variant, size, fullWidth, className]);
+
+  // Memoize click handler
+  const handleClick = React.useCallback((e) => {
+    if (onClick && !disabled && !loading) {
+      onClick(e);
+    }
+  }, [onClick, disabled, loading]);
 
   return (
     <motion.button
       type={type}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled || loading}
       className={buttonClasses}
-      whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
-      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
+      {...animationConfig}
       {...props}
     >
       {loading && (
@@ -107,6 +122,8 @@ const EnhancedButton = ({
       </motion.span>
     </motion.button>
   );
-};
+});
+
+EnhancedButton.displayName = 'EnhancedButton';
 
 export default EnhancedButton; 

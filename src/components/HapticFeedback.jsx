@@ -2,20 +2,40 @@ import React from 'react';
 
 class HapticFeedback {
   static userHasInteracted = false;
+  static listenersAdded = false; // Prevent duplicate listeners
+  static eventHandlers = new Map(); // Store handlers for cleanup
 
   static initUserInteraction() {
-    if (!this.userHasInteracted) {
-      const handleFirstInteraction = () => {
-        this.userHasInteracted = true;
-        document.removeEventListener('touchstart', handleFirstInteraction, true);
-        document.removeEventListener('click', handleFirstInteraction, true);
-        document.removeEventListener('keydown', handleFirstInteraction, true);
-      };
+    if (this.listenersAdded) return; // Already initialized
+    
+    const handleFirstInteraction = () => {
+      this.userHasInteracted = true;
+      this.removeListeners();
+    };
 
-      document.addEventListener('touchstart', handleFirstInteraction, true);
-      document.addEventListener('click', handleFirstInteraction, true);
-      document.addEventListener('keydown', handleFirstInteraction, true);
+    // Store handler reference for cleanup
+    this.eventHandlers.set('firstInteraction', handleFirstInteraction);
+    
+    // Add listeners with passive option for better performance
+    document.addEventListener('touchstart', handleFirstInteraction, { passive: true });
+    document.addEventListener('click', handleFirstInteraction, { passive: true });
+    document.addEventListener('keydown', handleFirstInteraction, { passive: true });
+    
+    this.listenersAdded = true;
+  }
+
+  static removeListeners() {
+    if (!this.listenersAdded) return;
+    
+    const handler = this.eventHandlers.get('firstInteraction');
+    if (handler) {
+      document.removeEventListener('touchstart', handler, { passive: true });
+      document.removeEventListener('click', handler, { passive: true });
+      document.removeEventListener('keydown', handler, { passive: true });
+      this.eventHandlers.delete('firstInteraction');
     }
+    
+    this.listenersAdded = false;
   }
 
   static isSupported() {
@@ -59,6 +79,12 @@ class HapticFeedback {
   static warning() {
     this.safeVibrate([50, 100, 50]);
   }
+
+  // Cleanup method for component unmounting
+  static cleanup() {
+    this.removeListeners();
+    this.userHasInteracted = false;
+  }
 }
 
 // React Hook for haptic feedback
@@ -66,9 +92,14 @@ export const useHapticFeedback = () => {
   React.useEffect(() => {
     // Initialize user interaction tracking
     HapticFeedback.initUserInteraction();
+    
+    // Cleanup on unmount
+    return () => {
+      HapticFeedback.cleanup();
+    };
   }, []);
 
-  const trigger = (type = 'light') => {
+  const trigger = React.useCallback((type = 'light') => {
     switch (type) {
       case 'light':
         HapticFeedback.light();
@@ -91,7 +122,7 @@ export const useHapticFeedback = () => {
       default:
         HapticFeedback.light();
     }
-  };
+  }, []);
 
   return { 
     trigger, 

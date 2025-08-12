@@ -24,18 +24,7 @@ export { default as HapticFeedback, useHapticFeedback } from './HapticFeedback';
 // Legacy components (for backward compatibility)
 export { default as Button } from './Button';
 export { default as ConfirmDialog } from './ConfirmDialog';
-export { 
-  LineChartComponent, 
-  AreaChartComponent, 
-  BarChartComponent, 
-  PieChartComponent, 
-  RadarChartComponent, 
-  StatsCard, 
-  DashboardGrid, 
-  ChartContainer 
-} from './DataVisualization';
 export { default as ErrorBoundary } from './ErrorBoundary';
-export { default as InfiniteScroll } from './InfiniteScroll';
 export { default as InstallPrompt } from './InstallPrompt';
 export { default as LazyImage } from './LazyImage';
 export { default as ManualInstallGuide } from './ManualInstallGuide';
@@ -51,4 +40,17 @@ export { default as SearchFilter } from './SearchFilter';
 export { default as ShareButton } from './ShareButton';
 export { default as ToastProvider } from './ToastProvider';
 export { default as VersionUpdate } from './VersionUpdate';
-export { default as VirtualList } from './VirtualList'; 
+
+// Removed unused heavy components to reduce bundle size
+// export { 
+//   LineChartComponent, 
+//   AreaChartComponent, 
+//   BarChartComponent, 
+//   PieChartComponent, 
+//   RadarChartComponent, 
+//   StatsCard, 
+//   DashboardGrid, 
+//   ChartContainer 
+// } from './DataVisualization';
+// export { default as InfiniteScroll } from './InfiniteScroll';
+// export { default as VirtualList } from './VirtualList'; 

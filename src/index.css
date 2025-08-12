@@ -55,8 +55,10 @@ html, body, #root {
   @apply min-h-screen flex flex-col px-4 sm:px-8 max-w-md sm:max-w-lg mx-auto bg-white rounded-xl shadow-lg border border-gray-100 border-b border-gray-200 pt-2;
 }
 
+/* Optimized input styles with minimal transitions */
 input, select, textarea {
-  @apply w-full border border-gray-300 rounded-md p-3 text-base bg-white mb-2 focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-150;
+  @apply w-full border border-gray-300 rounded-md p-3 text-base bg-white mb-2 focus:outline-none focus:border-blue-500 placeholder-gray-400;
+  transition: border-color 150ms ease, box-shadow 150ms ease; /* Only transition necessary properties */
 }
 
 /* Enhanced input overrides */
@@ -74,7 +76,7 @@ input, select, textarea {
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease; /* Optimized transitions */
   outline: none;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }

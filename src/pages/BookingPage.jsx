@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -8,12 +8,13 @@ import { isPhone, isEmail } from '../lib/utils';
 function quickHash(text) {
   return btoa(text.toLowerCase().trim());
 }
+
 import { 
   EnhancedButton, 
   useHapticFeedback 
 } from '../components';
 
-export default function BookingPage() {
+const BookingPage = React.memo(() => {
   const [searchParams] = useSearchParams();
   const clinicId = searchParams.get('clinic_id') || '';
   const [input, setInput] = useState('');
@@ -23,13 +24,31 @@ export default function BookingPage() {
   const navigate = useNavigate();
   const { trigger: hapticTrigger } = useHapticFeedback();
 
+  // Memoize computed values
+  const isFormValid = useMemo(() => {
+    return input.trim() && clinicId;
+  }, [input, clinicId]);
+
+  const currentClinicId = useMemo(() => {
+    const savedClinicId = localStorage.getItem('clinic_id');
+    return clinicId || savedClinicId;
+  }, [clinicId]);
+
+  // Memoize event handlers
+  const handleInputChange = useCallback((e) => {
+    setInput(e.target.value);
+    // Clear error when user starts typing
+    if (error) setError('');
+  }, [error]);
+
+  const handleBackHome = useCallback(() => {
+    hapticTrigger('light');
+    navigate('/');
+  }, [hapticTrigger, navigate]);
+
   // Check for saved login info
   useEffect(() => {
-    const savedClinicId = localStorage.getItem('clinic_id');
     const savedUserRowId = localStorage.getItem('user_row_id');
-    
-    // Use URL clinic_id if available, otherwise use saved
-    const currentClinicId = clinicId || savedClinicId;
     
     if (currentClinicId && savedUserRowId) {
       // Validate if user is still valid
@@ -47,18 +66,19 @@ export default function BookingPage() {
             localStorage.removeItem('user_id');
           }
         } catch (err) {
+          console.error('User validation failed:', err);
           // Validation failed, clear saved info
           localStorage.removeItem('clinic_id');
-          localStorage.removeItem('user_row_id');
+          localStorage.removeItem('user_rowId');
           localStorage.removeItem('user_id');
         }
       };
       
       validateAndRedirect();
     }
-  }, [clinicId, navigate]);
+  }, [currentClinicId, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     
     // Prevent duplicate submissions
@@ -68,12 +88,8 @@ export default function BookingPage() {
     }
     
     setError('');
-    if (!input.trim()) {
+    if (!isFormValid) {
       setError('Please enter your email or phone number.');
-      return;
-    }
-    if (!clinicId) {
-      setError('Clinic ID is missing.');
       return;
     }
     
@@ -81,17 +97,25 @@ export default function BookingPage() {
       setIsSubmitting(true);
       setLoading(true);
       
-      let query;
+      const startTime = performance.now();
+      console.log('🚀 API call started:', startTime);
+      
       let hashValue;
       let data;
       try {
         if (isPhone(input)) {
           hashValue = quickHash(input);
+          const apiStart = performance.now();
           const result = await apiClient.queryUser(clinicId, hashValue, null);
+          const apiEnd = performance.now();
+          console.log('📡 API response time:', apiEnd - apiStart, 'ms');
           data = result.data;
         } else if (isEmail(input)) {
           hashValue = quickHash(input);
+          const apiStart = performance.now();
           const result = await apiClient.queryUser(clinicId, null, hashValue);
+          const apiEnd = performance.now();
+          console.log('📡 API response time:', apiEnd - apiStart, 'ms');
           data = result.data;
         } else {
           setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
@@ -108,18 +132,22 @@ export default function BookingPage() {
         return;
       }
       
+      const totalTime = performance.now() - startTime;
+      console.log('✅ Total operation time:', totalTime, 'ms');
+      
       // Save user_id and clinic_id to localStorage for free login
       if (data.user_id) localStorage.setItem('user_id', data.user_id);
       if (data.row_id) localStorage.setItem('user_row_id', data.row_id);
       if (clinicId) localStorage.setItem('clinic_id', clinicId);
       navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}&user_row_id=${data.row_id}`);
     } catch (err) {
+      console.error('Unexpected error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
       setIsSubmitting(false);
     }
-  };
+  }, [isSubmitting, isFormValid, input, clinicId, navigate]);
 
   // UI: show error if clinic_id is missing
   if (!clinicId) {
@@ -150,7 +178,7 @@ export default function BookingPage() {
             <input
               type="text"
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Enter your email or phone number"
               autoFocus
               aria-label="Email or Phone Number"
@@ -180,10 +208,7 @@ export default function BookingPage() {
             <button
               className="text-gray-400 text-xs underline hover:text-blue-600 transition"
               type="button"
-              onClick={() => {
-                hapticTrigger('light');
-                navigate('/');
-              }}
+              onClick={handleBackHome}
             >
               Back Home
             </button>
@@ -192,4 +217,8 @@ export default function BookingPage() {
       </div>
     </div>
   );
-} 
+});
+
+BookingPage.displayName = 'BookingPage';
+
+export default BookingPage; 

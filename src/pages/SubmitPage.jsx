@@ -233,7 +233,8 @@ export default function SubmitPage() {
         await logSubmitBook({
           clinic_id: registrationData.clinic_id,
           user_id: user_id,
-          appointment_id: result.data?.id || result.id
+          appointment_id: result.data?.id || result.id,
+          appointment_date: visitPayload.book_time
         });
         
       } catch (error) {
