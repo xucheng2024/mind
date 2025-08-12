@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import cacheManager from '../lib/cache';
@@ -28,6 +26,10 @@ export default function CalendarPage() {
   
   // Modal states
   const [modal, setModal] = useState({ type: null, data: null });
+  
+  // Date picker states
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Mobile debugging
   useEffect(() => {
@@ -42,19 +44,6 @@ export default function CalendarPage() {
       
       // Show mobile info toast
       toast.success(`📱 Mobile mode: ${window.innerWidth}x${window.innerHeight}`);
-      
-      // Add global touch event listener
-      const handleGlobalTouch = (e) => {
-        if (e.target.closest('.fc-daygrid-day')) {
-          console.log('📱 Global touch on calendar day:', e.target);
-        }
-      };
-      
-      document.addEventListener('touchstart', handleGlobalTouch, { passive: true });
-      
-      return () => {
-        document.removeEventListener('touchstart', handleGlobalTouch);
-      };
     }
   }, []);
 
@@ -220,26 +209,26 @@ export default function CalendarPage() {
   };
 
   // Handle date selection
-  const handleDateSelect = useCallback(async (selectInfo) => {
-    console.log('🔍 handleDateSelect called with:', selectInfo);
+  const handleDateSelect = useCallback(async (date) => {
+    console.log('🔍 handleDateSelect called with:', date);
     
     // Show visible debug info on mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobile) {
-      toast.success(`📱 Mobile click detected! Date: ${selectInfo.start.toDateString()}`);
+      toast.success(`📱 Mobile click detected! Date: ${date.toDateString()}`);
     }
     
     trigger('light');
-    const date = selectInfo.start;
-    const now = new Date();
+    setSelectedDate(date);
+    setIsDatePickerOpen(false);
     
     // Validate date constraints
-    if (date < now.setHours(0, 0, 0, 0)) {
+    if (date < new Date()) {
       toast.error('Cannot book appointments in the past');
       return;
     }
     
-    const maxDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const maxDate = new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000);
     if (date > maxDate) {
       toast.error('Can only book up to 14 days in advance');
       return;
@@ -690,6 +679,79 @@ export default function CalendarPage() {
             to { transform: scale(1); opacity: 1; }
           }
           .animate-scale-in { animation: scale-in 0.15s ease-out; }
+
+          /* Mobile-optimized date picker styles */
+          .react-datepicker {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          
+          .react-datepicker__header {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 8px 8px 0 0;
+          }
+          
+          .react-datepicker__day {
+            border-radius: 6px;
+            margin: 2px;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            font-size: 14px;
+            font-weight: 500;
+          }
+          
+          .react-datepicker__day:hover {
+            background-color: #3b82f6;
+            color: white;
+          }
+          
+          .react-datepicker__day--selected {
+            background-color: #3b82f6;
+            color: white;
+          }
+          
+          .react-datepicker__day--keyboard-selected {
+            background-color: #3b82f6;
+            color: white;
+          }
+          
+          .react-datepicker__time-container {
+            border-left: 1px solid #e5e7eb;
+          }
+          
+          .react-datepicker__time-list-item {
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+          }
+          
+          .react-datepicker__time-list-item:hover {
+            background-color: #f3f4f6;
+          }
+          
+          .react-datepicker__time-list-item--selected {
+            background-color: #3b82f6;
+            color: white;
+          }
+          
+          /* Mobile touch optimization */
+          @media (max-width: 768px) {
+            .react-datepicker__day {
+              width: 36px;
+              height: 36px;
+              line-height: 36px;
+              margin: 3px;
+            }
+            
+            .react-datepicker__time-list-item {
+              padding: 12px 16px;
+              font-size: 16px;
+            }
+          }
         `}
       </style>
 
@@ -718,127 +780,90 @@ export default function CalendarPage() {
                 <span className="ml-3 text-gray-600">Loading calendar...</span>
               </div>
             ) : (
-              <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                headerToolbar={{
-                  left: 'prev',
-                  center: 'title',
-                  right: 'next'
-                }}
-                initialView="dayGridMonth"
-                selectable={true}
-                events={events}
-                select={handleDateSelect}
-                eventClick={handleEventClick}
-                height="auto"
-                displayEventTime={false}
-                eventDisplay="block"
-                selectConstraint={{
-                  start: new Date(),
-                  end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-                }}
-                // Mobile-specific configuration
-                selectMirror={true}
-                unselectAuto={true}
-                selectMinDistance={0}
-                // Touch event handling
-                eventStartEditable={false}
-                eventDurationEditable={false}
-                eventResizableFromStart={false}
-                // Mobile viewport optimization
-                aspectRatio={1.35}
-                expandRows={false}
-                // Add mobile-specific event handlers
-                selectAllow={(selectInfo) => {
-                  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                  if (isMobile) {
-                    console.log('📱 Mobile select allow check:', selectInfo);
-                    toast.info(`Selecting date: ${selectInfo.start.toDateString()}`);
-                  }
-                  return true;
-                }}
-                dayCellDidMount={(arg) => {
-                  const now = new Date();
-                  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                  const maxDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-                  const cellDate = new Date(arg.date.getFullYear(), arg.date.getMonth(), arg.date.getDate());
+              <div className="space-y-4">
+                  {/* Date Picker */}
+                  <div className="bg-white rounded-lg border border-gray-100 p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-semibold text-gray-900">Select Date & Time</h3>
+                      <button
+                        onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        {isDatePickerOpen ? 'Close' : 'Open Calendar'}
+                      </button>
+                    </div>
+                    
+                    {isDatePickerOpen && (
+                      <div className="border-t border-gray-100 pt-6">
+                        <DatePicker
+                          selected={selectedDate}
+                          onChange={handleDateSelect}
+                          inline
+                          showTimeSelect
+                          timeFormat="HH:mm"
+                          timeIntervals={30}
+                          timeCaption="Time"
+                          dateFormat="MMM dd, yyyy h:mm aa"
+                          minDate={new Date()}
+                          maxDate={new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000)}
+                          popperPlacement="bottom-start"
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                    
+                    {selectedDate && (
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <p className="text-blue-900">
+                          <span className="font-medium">Selected:</span> {selectedDate.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })} at {selectedDate.toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   
-                  // Only allow today and next 14 days
-                  if (cellDate < today || cellDate > maxDate) {
-                    arg.el.style.opacity = '0.3';
-                    arg.el.style.pointerEvents = 'none';
-                    arg.el.style.cursor = 'not-allowed';
-                  } else {
-                    // Check if within business hours (basic check)
-                    if (businessHours) {
-                      const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                      const dayConfig = businessHours[weekdays[cellDate.getDay()]];
-                      
-                      if (!dayConfig || dayConfig.closed) {
-                        arg.el.style.opacity = '0.5';
-                        arg.el.style.backgroundColor = '#f3f4f6';
-                        arg.el.style.pointerEvents = 'none';
-                        arg.el.title = 'Clinic closed';
-                      } else {
-                        // Always allow clicking for valid business days
-                        arg.el.style.cursor = 'pointer';
-                        arg.el.style.pointerEvents = 'auto';
-                        arg.el.title = 'Click to book or manage appointment';
-                        
-                        // Add touch event debugging for mobile
-                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                        if (isMobile) {
-                          // Add touch event listeners for debugging
-                          arg.el.addEventListener('touchstart', (e) => {
-                            console.log('📱 Touch start on date:', cellDate.toDateString());
-                            toast.info(`Touch detected on ${cellDate.toDateString()}`);
-                          }, { passive: true });
-                          
-                          arg.el.addEventListener('click', (e) => {
-                            console.log('📱 Click event on date:', cellDate.toDateString());
-                            toast.info(`Click detected on ${cellDate.toDateString()}`);
-                          });
-                        }
-                      }
-                    } else {
-                      arg.el.style.cursor = 'pointer';
-                      arg.el.style.pointerEvents = 'auto';
-                      arg.el.title = 'Click to book or manage appointment';
-                    }
-                  }
-                }}
-                datesSet={() => {
-                  // Force re-render when dates change to ensure click handlers work
-                  setTimeout(() => {
-                    const cells = document.querySelectorAll('.fc-daygrid-day');
-                    cells.forEach(cell => {
-                      const dateStr = cell.getAttribute('data-date');
-                      if (dateStr) {
-                        const cellDate = new Date(dateStr);
-                        const now = new Date();
-                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        const maxDate = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-                        
-                        if (cellDate >= today && cellDate <= maxDate) {
-                          if (businessHours) {
-                            const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-                            const dayConfig = businessHours[weekdays[cellDate.getDay()]];
-                            
-                            if (dayConfig && !dayConfig.closed) {
-                              cell.style.cursor = 'pointer';
-                              cell.style.pointerEvents = 'auto';
-                            }
-                          } else {
-                            cell.style.cursor = 'pointer';
-                            cell.style.pointerEvents = 'auto';
-                          }
-                        }
-                      }
-                    });
-                  }, 100);
-                }}
-              />
-            )}
+                  {/* Existing Appointments */}
+                  {events.length > 0 && (
+                    <div className="bg-white rounded-lg border border-gray-100 p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Appointments</h3>
+                      <div className="space-y-3">
+                        {events.map(event => (
+                          <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <Clock className="w-4 h-4 text-blue-600" />
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {event.start.toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                  })}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {event.start.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleEventClick({ event })}
+                              className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         </div>
       </div>
