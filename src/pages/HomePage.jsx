@@ -135,12 +135,16 @@ export default function HomePage() {
         <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">San TCM Clinic</div>
         <div className="text-base text-gray-400 font-medium">Traditional Chinese Medicine & Wellness</div>
         <div className="mt-4 w-full max-w-md px-4">
-          <div className="relative w-full h-40 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-50 to-white">
+          <div className="relative w-full h-48 rounded-xl overflow-hidden shadow-lg">
             <LazyImage 
-              src="/clinic-illustration.svg" 
-              alt="Clinic" 
-              className="w-full h-full object-contain object-center"
+              src="/iClinic.jpg" 
+              alt="iClinic" 
+              className="w-full h-full object-cover object-center"
               placeholder="/logo.png"
+              style={{
+                objectFit: 'cover',
+                borderRadius: '0.75rem'
+              }}
             />
           </div>
         </div>
