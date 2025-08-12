@@ -27,12 +27,9 @@ export default function SubmitPage() {
   const submittedRef = useRef(false);
   const { trigger: hapticTrigger } = useHapticFeedback();
 
-  console.log('[SubmitPage] Page loaded, registrationData:', registrationData);
 
   useEffect(() => {
-    console.log('[SubmitPage] useEffect executed');
     const saveToSupabase = async () => {
-      console.log('[SubmitPage] saveToSupabase executed');
       if (submittedRef.current || submitted) return;
       submittedRef.current = true;
       setLoading(true);
@@ -40,7 +37,6 @@ export default function SubmitPage() {
       setCurrentStep('Initializing...');
 
       if (!registrationData || !registrationData.fullName) {
-        console.log('[SubmitPage][Error] registrationData missing:', registrationData);
         setErrorMessage('Registration data missing. Please fill in the form again.');
         setLoading(false);
         setProgress(0);
@@ -55,7 +51,6 @@ export default function SubmitPage() {
 
       // Check if clinic_id is valid
       if (!registrationData.clinic_id) {
-        console.log('[SubmitPage][Error] clinic_id missing:', registrationData);
         setErrorMessage('Clinic ID missing.');
         setLoading(false);
         setProgress(0);
@@ -65,7 +60,6 @@ export default function SubmitPage() {
       setProgress(20);
       setCurrentStep('Checking existing registration...');
 
-      console.log('[SubmitPage] Query user:', { user_id, clinic_id: registrationData.clinic_id });
       // Query using API to bypass RLS
       let existingUser = null;
       try {
@@ -73,15 +67,13 @@ export default function SubmitPage() {
         setCurrentStep('Querying database...');
         const result = await apiClient.getUser(registrationData.clinic_id, user_id);
         existingUser = result.data;
-        console.log('[SubmitPage] User query result:', { existingUser });
       } catch (error) {
         // User not found is expected for new registrations
-        console.log('[SubmitPage] User not found (expected for new registration):', error.message);
+        console.error('[SubmitPage] User not found (expected for new registration):', error.message);
       }
 
       // Check if already registered
       if (existingUser) {
-        console.log('[SubmitPage][Error] Already registered:', existingUser);
         setErrorMessage('This patient is already registered.');
         setLoading(false);
         setProgress(0);
@@ -165,7 +157,6 @@ export default function SubmitPage() {
       try {
         const result = await apiClient.createUser(userPayload);
         insertedUser = result.data;
-        console.log('[SubmitPage] User created successfully:', insertedUser);
         
         setProgress(70);
         setCurrentStep('Logging registration...');
@@ -192,13 +183,11 @@ export default function SubmitPage() {
       try {
         const result = await apiClient.checkUserVisit(registrationData.clinic_id, user_row_id);
         if (result.data.hasVisit) {
-          console.log('[SubmitPage][Error] Already visited:', result.data);
           setErrorMessage('This patient already has a visit record.');
           setLoading(false);
           setProgress(0);
           return;
         }
-        console.log('[SubmitPage] Visit check result:', result.data);
       } catch (error) {
         console.error('[SubmitPage] Visit check failed:', error);
         setErrorMessage('Failed to verify visit status. Please try again later.');
@@ -224,7 +213,6 @@ export default function SubmitPage() {
       // Insert visit using API to bypass RLS
       try {
         const result = await apiClient.createVisit(visitPayload);
-        console.log('[SubmitPage] Visit created successfully:', result.data);
         
         setProgress(85);
         setCurrentStep('Logging visit booking...');
@@ -253,17 +241,13 @@ export default function SubmitPage() {
       setProgress(90);
       setCurrentStep('Cleaning up data...');
       
-      // Clean up all registration-related cache and data
-      console.log('[SubmitPage] Cleaning up registration data...');
       
       // Clear all registration cache using cache manager
       await cacheManager.clearRegistrationCache();
       
       // Clear registration context data
       updateRegistrationData({});
-      
-      console.log('[SubmitPage] Cache cleanup completed');
-      
+            
       setProgress(100);
       setCurrentStep('Registration completed!');
       
@@ -273,7 +257,6 @@ export default function SubmitPage() {
       hapticTrigger('success');
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
-      console.log('[SubmitPage] Registration successful');
     };
 
     saveToSupabase();

@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite --config vite.config.js",
     "build": "vite build --config vite.config.js",
-    "build:fast": "vite build --config vite.config.fast.cjs",
+
     "preview": "vite preview",
     "clean": "rm -rf node_modules dist .vite package-lock.json",
     "server": "node server.js",

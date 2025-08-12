@@ -41,16 +41,4 @@ export { default as ShareButton } from './ShareButton';
 export { default as ToastProvider } from './ToastProvider';
 export { default as VersionUpdate } from './VersionUpdate';
 
-// Removed unused heavy components to reduce bundle size
-// export { 
-//   LineChartComponent, 
-//   AreaChartComponent, 
-//   BarChartComponent, 
-//   PieChartComponent, 
-//   RadarChartComponent, 
-//   StatsCard, 
-//   DashboardGrid, 
-//   ChartContainer 
-// } from './DataVisualization';
-// export { default as InfiniteScroll } from './InfiniteScroll';
-// export { default as VirtualList } from './VirtualList'; 
+ 

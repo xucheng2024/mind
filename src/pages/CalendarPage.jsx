@@ -48,11 +48,7 @@ export default function CalendarPage() {
           apiClient.getUserVisits(clinicId, userRowId)
         ]);
         
-        setClinicInfo(clinicRes.data);
-        console.log('Clinic data:', clinicRes.data);
-        console.log('Business hours from server:', clinicRes.data.business_hours);
-        console.log('Business hours type:', typeof clinicRes.data.business_hours);
-        
+        setClinicInfo(clinicRes.data);        
         // If business_hours is null or undefined, set default hours
         const businessHoursData = clinicRes.data.business_hours || {
           monday: { open: '09:00', close: '17:00', closed: false },
@@ -64,7 +60,6 @@ export default function CalendarPage() {
           sunday: { open: '09:00', close: '12:00', closed: true }
         };
         
-        console.log('Using business hours:', businessHoursData);
         setBusinessHours(businessHoursData);
         
         const appointments = (visitsRes.data || [])
@@ -99,7 +94,7 @@ export default function CalendarPage() {
 
   // Get available slots for date
   const getAvailableSlots = async (date) => {
-    console.log('getAvailableSlots called with date:', date);
+    ('getAvailableSlots called with date:', date);
     console.log('businessHours:', businessHours);
     
     if (!businessHours) {
