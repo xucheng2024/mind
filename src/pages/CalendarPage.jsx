@@ -664,35 +664,75 @@ export default function CalendarPage() {
           /* Mobile-optimized date picker styles */
           .react-datepicker {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            background: transparent;
+            width: 100% !important;
+            max-width: none !important;
           }
           
           .react-datepicker__header {
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            border-radius: 8px 8px 0 0;
+            background: transparent;
+            border: none;
+            padding: 0;
+          }
+          
+          .react-datepicker__month-container {
+            width: 100% !important;
+            background: transparent;
+          }
+          
+          .react-datepicker__month {
+            margin: 0;
+            padding: 0;
+          }
+          
+          .react-datepicker__day-names {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+          }
+          
+          .react-datepicker__day-name {
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 16px 8px;
+            margin: 0;
+            width: 14.28%;
+            text-align: center;
+          }
+          
+          .react-datepicker__days {
+            margin: 0;
+            padding: 0;
+            background: transparent;
           }
           
           .react-datepicker__day {
-            border-radius: 6px;
-            margin: 2px;
-            width: 32px;
-            height: 32px;
-            line-height: 32px;
-            font-size: 14px;
+            border-radius: 12px;
+            margin: 4px;
+            width: calc(14.28% - 8px);
+            height: 48px;
+            line-height: 48px;
+            font-size: 16px;
             font-weight: 500;
+            background: transparent;
+            border: none;
+            color: #111827;
           }
           
           .react-datepicker__day:hover {
             background-color: #3b82f6;
             color: white;
+            transform: scale(1.05);
           }
           
           .react-datepicker__day--selected {
             background-color: #3b82f6;
             color: white;
+            font-weight: 600;
           }
           
           .react-datepicker__day--keyboard-selected {
@@ -700,37 +740,28 @@ export default function CalendarPage() {
             color: white;
           }
           
-          .react-datepicker__time-container {
-            border-left: 1px solid #e5e7eb;
+          .react-datepicker__day--outside-month {
+            color: #d1d5db;
           }
           
-          .react-datepicker__time-list-item {
-            padding: 8px 12px;
-            font-size: 14px;
-            font-weight: 500;
-          }
-          
-          .react-datepicker__time-list-item:hover {
-            background-color: #f3f4f6;
-          }
-          
-          .react-datepicker__time-list-item--selected {
-            background-color: #3b82f6;
-            color: white;
+          .react-datepicker__day--disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
           }
           
           /* Mobile touch optimization */
           @media (max-width: 768px) {
             .react-datepicker__day {
-              width: 36px;
-              height: 36px;
-              line-height: 36px;
-              margin: 3px;
+              height: 56px;
+              line-height: 56px;
+              font-size: 18px;
+              margin: 6px;
+              width: calc(14.28% - 12px);
             }
             
-            .react-datepicker__time-list-item {
-              padding: 12px 16px;
-              font-size: 16px;
+            .react-datepicker__day-name {
+              font-size: 18px;
+              padding: 20px 8px;
             }
           }
         `}
@@ -761,9 +792,9 @@ export default function CalendarPage() {
                 <span className="ml-3 text-gray-600">Loading calendar...</span>
               </div>
             ) : (
-              <div className="flex items-center justify-center min-h-[70vh]">
+              <div className="flex items-center justify-center min-h-[80vh] px-4">
                   {/* Date Picker - Full Screen Calendar */}
-                  <div className="w-full max-w-4xl">
+                  <div className="w-full max-w-5xl">
                     <DatePicker
                       selected={selectedDate}
                       onChange={handleDateSelect}
@@ -780,27 +811,37 @@ export default function CalendarPage() {
                         prevMonthButtonDisabled,
                         nextMonthButtonDisabled,
                       }) => (
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-6">
                           <button
-                            onClick={decreaseMonth}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              decreaseMonth();
+                            }}
                             disabled={prevMonthButtonDisabled}
-                            className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                           </button>
                           
-                          <h2 className="text-2xl font-bold text-gray-900">
+                          <h2 className="text-3xl font-bold text-gray-900">
                             {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                           </h2>
                           
                           <button
-                            onClick={increaseMonth}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              increaseMonth();
+                            }}
                             disabled={nextMonthButtonDisabled}
-                            className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>
