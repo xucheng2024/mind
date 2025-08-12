@@ -66,9 +66,9 @@ export const logSubmitBook = async ({
     clinic_id,
     staff_id,
     detail: {
-      id: appointment_id,
-      created_time: now,
-      book_time: now
+      user_id,
+      book_time: now,
+      appointment_number: appointment_id
     }
   });
 };
@@ -84,15 +84,14 @@ export const logCancelAppointment = async ({
   original_date,
   staff_id = null
 }) => {
-  const now = new Date().toISOString();
   return await logUserAction({
     action: 'cancel_appointment',
     clinic_id,
     staff_id,
     detail: {
-      id: appointment_id,
-      created_time: now,
-      book_time: original_date
+      user_id,
+      book_time: original_date,
+      appointment_number: appointment_id
     }
   });
 };
@@ -104,6 +103,11 @@ export const logCancelAppointment = async ({
 export const logUserRegistration = async ({
   clinic_id,
   user_id,
+  email,
+  phone,
+  registration_method = 'web_form',
+  user_type = 'patient',
+  registration_source = 'web_app',
   staff_id = null
 }) => {
   return await logUserAction({
@@ -111,7 +115,13 @@ export const logUserRegistration = async ({
     clinic_id,
     staff_id,
     detail: {
-      user_id
+      user_id,
+      email,
+      phone,
+      registration_method,
+      user_type,
+      registration_source,
+      timestamp: new Date().toISOString()
     }
   });
 };
