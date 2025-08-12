@@ -41,9 +41,6 @@ export default function CalendarPage() {
         touchSupport: 'ontouchstart' in window,
         maxTouchPoints: navigator.maxTouchPoints
       });
-      
-      // Show mobile info toast
-      toast.success(`📱 Mobile mode: ${window.innerWidth}x${window.innerHeight}`);
     }
   }, []);
 
@@ -212,15 +209,8 @@ export default function CalendarPage() {
   const handleDateSelect = useCallback(async (date) => {
     console.log('🔍 handleDateSelect called with:', date);
     
-    // Show visible debug info on mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      toast.success(`📱 Mobile click detected! Date: ${date.toDateString()}`);
-    }
-    
     trigger('light');
     setSelectedDate(date);
-    setIsDatePickerOpen(false);
     
     // Validate date constraints
     if (date < new Date()) {
@@ -259,13 +249,7 @@ export default function CalendarPage() {
       return;
     }
     
-    // Show loading state
-    toast.loading('Loading available time slots...');
-    
     const slots = await getAvailableSlots(date);
-    
-    // Dismiss loading toast
-    toast.dismiss();
     
     if (slots === 'closed') {
       toast.error('Clinic is closed on this day');
@@ -283,9 +267,6 @@ export default function CalendarPage() {
       toast.error('No available time slots');
       return;
     }
-    
-    // Show success message with slot count
-    toast.success(`Found ${availableSlots.length} available time slots!`);
     
     setModal({ 
       type: 'book', 
@@ -781,36 +762,20 @@ export default function CalendarPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                  {/* Date Picker */}
+                  {/* Date Picker - Direct Calendar Display */}
                   <div className="bg-white rounded-lg border border-gray-100 p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-semibold text-gray-900">Select Date & Time</h3>
-                      <button
-                        onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                      >
-                        {isDatePickerOpen ? 'Close' : 'Open Calendar'}
-                      </button>
-                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Select Date</h3>
                     
-                    {isDatePickerOpen && (
-                      <div className="border-t border-gray-100 pt-6">
-                        <DatePicker
-                          selected={selectedDate}
-                          onChange={handleDateSelect}
-                          inline
-                          showTimeSelect
-                          timeFormat="HH:mm"
-                          timeIntervals={30}
-                          timeCaption="Time"
-                          dateFormat="MMM dd, yyyy h:mm aa"
-                          minDate={new Date()}
-                          maxDate={new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000)}
-                          popperPlacement="bottom-start"
-                          className="w-full"
-                        />
-                      </div>
-                    )}
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={handleDateSelect}
+                      inline
+                      minDate={new Date()}
+                      maxDate={new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000)}
+                      className="w-full"
+                      showTimeSelect={false}
+                      dateFormat="MMM dd, yyyy"
+                    />
                     
                     {selectedDate && (
                       <div className="mt-4 p-4 bg-blue-50 rounded-lg">
@@ -818,9 +783,6 @@ export default function CalendarPage() {
                           <span className="font-medium">Selected:</span> {selectedDate.toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric' 
-                          })} at {selectedDate.toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
                           })}
                         </p>
                       </div>
