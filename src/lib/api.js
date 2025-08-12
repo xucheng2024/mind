@@ -183,8 +183,6 @@ export const apiClient = {
     return response.json();
   },
 
-
-
   // Get signed URL for encrypted file (returns signed URL through server)
   async getSignedUrl(bucket, filename, expiresIn = 94608000) { // 默认3年过期 (3*365*24*3600)
     const response = await fetch(`${API_BASE_URL}/api/storage?action=signed-url&bucket=${bucket}&filename=${filename}&expiresIn=${expiresIn}`);
@@ -202,7 +200,7 @@ export const apiClient = {
     return `${API_BASE_URL}/api/storage?action=download&bucket=${bucket}&filename=${filename}`;
   },
 
-    async listFiles(bucket, limit = 100, search = null) {
+  async listFiles(bucket, limit = 100, search = null) {
     const queryParams = new URLSearchParams({ action: 'list', bucket, limit: limit.toString() });
     if (search) queryParams.append('search', search);
     
@@ -215,6 +213,5 @@ export const apiClient = {
 
     return response.json();
   },
-
 
 };
