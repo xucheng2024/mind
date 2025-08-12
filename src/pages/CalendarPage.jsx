@@ -765,25 +765,14 @@ export default function CalendarPage() {
             border-radius: 12px;
             margin: 4px;
             width: calc(14.28% - 8px);
-            height: 0;
-            padding-bottom: calc(14.28% - 8px);
-            position: relative;
+            height: 48px;
+            line-height: 48px;
             font-size: 16px;
             font-weight: 500;
             background: transparent;
             border: none;
             color: #111827;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          
-          .react-datepicker__day > span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            line-height: 1;
+            text-align: center;
           }
           
           .react-datepicker__day:hover {
@@ -815,8 +804,10 @@ export default function CalendarPage() {
           /* Mobile touch optimization */
           @media (max-width: 768px) {
             .react-datepicker__day {
+              height: 56px;
+              line-height: 56px;
+              font-size: 18px;
               margin: 6px;
-              padding-bottom: calc(14.28% - 12px);
               width: calc(14.28% - 12px);
             }
             
@@ -866,6 +857,9 @@ export default function CalendarPage() {
                       className="w-full"
                       showTimeSelect={false}
                       dateFormat="MMM dd, yyyy"
+                      showMonthDropdown={false}
+                      showYearDropdown={false}
+                      dropdownMode="select"
                       renderCustomHeader={({
                         date,
                         decreaseMonth,
@@ -876,11 +870,7 @@ export default function CalendarPage() {
                         <div className="flex items-center justify-between mb-6">
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              decreaseMonth();
-                            }}
+                            onClick={decreaseMonth}
                             disabled={prevMonthButtonDisabled}
                             className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -895,11 +885,7 @@ export default function CalendarPage() {
                           
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              increaseMonth();
-                            }}
+                            onClick={increaseMonth}
                             disabled={nextMonthButtonDisabled}
                             className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
