@@ -29,6 +29,35 @@ export default function CalendarPage() {
   // Modal states
   const [modal, setModal] = useState({ type: null, data: null });
 
+  // Mobile debugging
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('📱 Mobile device detected:', {
+        userAgent: navigator.userAgent,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        touchSupport: 'ontouchstart' in window,
+        maxTouchPoints: navigator.maxTouchPoints
+      });
+      
+      // Show mobile info toast
+      toast.success(`📱 Mobile mode: ${window.innerWidth}x${window.innerHeight}`);
+      
+      // Add global touch event listener
+      const handleGlobalTouch = (e) => {
+        if (e.target.closest('.fc-daygrid-day')) {
+          console.log('📱 Global touch on calendar day:', e.target);
+        }
+      };
+      
+      document.addEventListener('touchstart', handleGlobalTouch, { passive: true });
+      
+      return () => {
+        document.removeEventListener('touchstart', handleGlobalTouch);
+      };
+    }
+  }, []);
+
   // Redirect if missing params
   useEffect(() => {
     if (!clinicId || !userRowId) {
@@ -95,19 +124,15 @@ export default function CalendarPage() {
   // Get available slots for date
   const getAvailableSlots = async (date) => {
     ('getAvailableSlots called with date:', date);
-    console.log('businessHours:', businessHours);
     
     if (!businessHours) {
-      console.log('No business hours available');
       return [];
     }
     
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const dayConfig = businessHours[weekdays[date.getDay()]];
-    console.log('Day config for', weekdays[date.getDay()], ':', dayConfig);
     
     if (!dayConfig || dayConfig.closed) {
-      console.log('Clinic closed on this day');
       return 'closed';
     }
     
@@ -120,11 +145,8 @@ export default function CalendarPage() {
     
     try {
       const dateStr = date.toISOString().split('T')[0];
-      console.log('Fetching slots for date:', dateStr, 'clinic:', clinicId);
       const result = await apiClient.getSlotAvailability(clinicId, dateStr);
-      console.log('Slot availability result:', result);
       const slotAvailability = result.data || [];
-      console.log('Slot availability data:', slotAvailability);
       
       const slots = [];
       
@@ -199,6 +221,14 @@ export default function CalendarPage() {
 
   // Handle date selection
   const handleDateSelect = useCallback(async (selectInfo) => {
+    console.log('🔍 handleDateSelect called with:', selectInfo);
+    
+    // Show visible debug info on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      toast.success(`📱 Mobile click detected! Date: ${selectInfo.start.toDateString()}`);
+    }
+    
     trigger('light');
     const date = selectInfo.start;
     const now = new Date();
@@ -240,7 +270,13 @@ export default function CalendarPage() {
       return;
     }
     
+    // Show loading state
+    toast.loading('Loading available time slots...');
+    
     const slots = await getAvailableSlots(date);
+    
+    // Dismiss loading toast
+    toast.dismiss();
     
     if (slots === 'closed') {
       toast.error('Clinic is closed on this day');
@@ -258,6 +294,9 @@ export default function CalendarPage() {
       toast.error('No available time slots');
       return;
     }
+    
+    // Show success message with slot count
+    toast.success(`Found ${availableSlots.length} available time slots!`);
     
     setModal({ 
       type: 'book', 
@@ -698,6 +737,26 @@ export default function CalendarPage() {
                   start: new Date(),
                   end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
                 }}
+                // Mobile-specific configuration
+                selectMirror={true}
+                unselectAuto={true}
+                selectMinDistance={0}
+                // Touch event handling
+                eventStartEditable={false}
+                eventDurationEditable={false}
+                eventResizableFromStart={false}
+                // Mobile viewport optimization
+                aspectRatio={1.35}
+                expandRows={false}
+                // Add mobile-specific event handlers
+                selectAllow={(selectInfo) => {
+                  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                  if (isMobile) {
+                    console.log('📱 Mobile select allow check:', selectInfo);
+                    toast.info(`Selecting date: ${selectInfo.start.toDateString()}`);
+                  }
+                  return true;
+                }}
                 dayCellDidMount={(arg) => {
                   const now = new Date();
                   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -725,6 +784,21 @@ export default function CalendarPage() {
                         arg.el.style.cursor = 'pointer';
                         arg.el.style.pointerEvents = 'auto';
                         arg.el.title = 'Click to book or manage appointment';
+                        
+                        // Add touch event debugging for mobile
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        if (isMobile) {
+                          // Add touch event listeners for debugging
+                          arg.el.addEventListener('touchstart', (e) => {
+                            console.log('📱 Touch start on date:', cellDate.toDateString());
+                            toast.info(`Touch detected on ${cellDate.toDateString()}`);
+                          }, { passive: true });
+                          
+                          arg.el.addEventListener('click', (e) => {
+                            console.log('📱 Click event on date:', cellDate.toDateString());
+                            toast.info(`Click detected on ${cellDate.toDateString()}`);
+                          });
+                        }
                       }
                     } else {
                       arg.el.style.cursor = 'pointer';
