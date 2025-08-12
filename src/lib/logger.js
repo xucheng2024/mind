@@ -58,16 +58,16 @@ export const logSubmitBook = async ({
   clinic_id,
   user_id,
   appointment_id,
+  appointment_date,
   staff_id = null
 }) => {
-  const now = new Date().toISOString();
   return await logUserAction({
     action: 'submit_book',
     clinic_id,
     staff_id,
     detail: {
       user_id,
-      book_time: now,
+      book_time: appointment_date,
       appointment_number: appointment_id
     }
   });

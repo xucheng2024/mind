@@ -406,16 +406,12 @@ export default function CalendarPage() {
       // Get event details for logging
       const event = events.find(e => e.id === modal.data.eventId);
       if (event) {
-        // Log the cancellation action
+        // Log the cancellation action with original book_time
         await logCancelAppointment({
           clinic_id: clinicId,
           user_id: userRowId,
           appointment_id: modal.data.eventId,
-          original_date: event.start.toISOString(),
-          cancellation_reason: 'user_requested',
-          cancellation_method: 'web_app',
-          refund_amount: null,
-          refund_status: 'not_applicable'
+          original_date: event.start.toISOString()
         });
       }
       
@@ -427,59 +423,6 @@ export default function CalendarPage() {
       trigger('error');
       console.error('Cancel failed:', error);
       toast.error('Failed to cancel appointment');
-    }
-  };
-
-  // Change appointment
-  const changeAppointment = async (hour, minute) => {
-    try {
-      trigger('success');
-      const date = new Date(modal.data.date);
-      date.setHours(hour, minute, 0, 0);
-      
-      // Get today's visits and cancel existing ones
-      const { data: allVisits } = await apiClient.getUserVisits(clinicId, userRowId);
-      const existingVisits = (allVisits || []).filter(visit => visit.status === 'booked');
-      
-      for (const visit of existingVisits) {
-        await apiClient.updateVisit(visit.id, { status: 'canceled' });
-      }
-      
-      // Create new appointment
-      const createResponse = await apiClient.createVisit({
-        user_row_id: userRowId,
-        clinic_id: clinicId,
-        book_time: date.toISOString(),
-        visit_time: date.toISOString(),
-        status: 'booked',
-        is_first: false,
-      });
-      
-      // Update UI with the actual ID from server
-      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      const newEvent = {
-        id: createResponse.data?.id || createResponse.id,
-        title: timeString,
-        start: date,
-        end: new Date(date.getTime() + 30 * 60 * 1000),
-        backgroundColor: '#3B82F6',
-        borderColor: '#3B82F6',
-        textColor: 'white',
-        userRowId
-      };
-      
-      setEvents(prev => [
-        ...prev.filter(e => e.userRowId !== userRowId),
-        newEvent
-      ]);
-      
-      setModal({ type: null, data: null });
-      toast.success(`Appointment changed to: ${formatTime(hour, minute)}`);
-      
-    } catch (error) {
-      trigger('error');
-      console.error('Change failed:', error);
-      toast.error('Failed to change appointment');
     }
   };
 
