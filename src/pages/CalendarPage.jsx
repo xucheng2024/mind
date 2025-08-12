@@ -112,7 +112,7 @@ export default function CalendarPage() {
 
   // Get available slots for date
   const getAvailableSlots = async (date) => {
-    ('getAvailableSlots called with date:', date);
+    console.log('getAvailableSlots called with date:', date);
     
     if (!businessHours) {
       return [];
