@@ -143,16 +143,22 @@ export default function CalendarPage() {
 
   // Get available slots for date
   const getAvailableSlots = async (date) => {
-    console.log('getAvailableSlots called with date:', date);
+    console.log('🔍 getAvailableSlots called with date:', date);
+    console.log('🔍 clinicId:', clinicId);
+    console.log('🔍 businessHours:', businessHours);
     
     if (!businessHours) {
+      console.warn('⚠️ No business hours available');
       return [];
     }
     
     const weekdays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
     const dayConfig = businessHours[weekdays[date.getDay()]];
     
+    console.log('🔍 Day config for', weekdays[date.getDay()], ':', dayConfig);
+    
     if (!dayConfig || dayConfig.closed) {
+      console.log('🔍 Clinic is closed on this day');
       return 'closed';
     }
     
@@ -161,12 +167,28 @@ export default function CalendarPage() {
     const now = new Date();
     const maxDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
     
-    if (date > maxDate) return [];
+    console.log('🔍 Time range:', { startH, startM, endH, endM });
+    console.log('🔍 Date constraints:', { 
+      selectedDate: date, 
+      now, 
+      maxDate, 
+      isPastMax: date > maxDate 
+    });
+    
+    if (date > maxDate) {
+      console.log('🔍 Date is beyond 14 days limit');
+      return [];
+    }
     
     try {
       const dateStr = date.toISOString().split('T')[0];
+      console.log('🔍 Calling API with dateStr:', dateStr);
+      
       const result = await apiClient.getSlotAvailability(clinicId, dateStr);
+      console.log('🔍 API response:', result);
+      
       const slotAvailability = result.data || [];
+      console.log('🔍 Slot availability data:', slotAvailability);
       
       const slots = [];
       
@@ -194,6 +216,7 @@ export default function CalendarPage() {
           // Count existing bookings for this time slot
           bookingCount = slotData.booking_count || 0;
         }
+        // If no slotData found, bookingCount remains 0 (available)
         
         // Slot is available if less than 2 people booked
         const isAvailable = bookingCount < 2;
@@ -209,10 +232,19 @@ export default function CalendarPage() {
         });
       }
       
+      console.log('🔍 Generated slots:', slots);
       return slots;
     } catch (error) {
-      console.warn('Slot availability query failed:', error);
+      console.error('❌ Slot availability query failed:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        clinicId,
+        date: date.toISOString()
+      });
+      
       // If API fails, generate default slots based on business hours only
+      console.log('🔍 Falling back to default slot generation');
       const slots = [];
       for (let minutes = startH * 60 + startM; minutes < endH * 60 + endM; minutes += 30) {
         const hour = Math.floor(minutes / 60);
@@ -235,6 +267,7 @@ export default function CalendarPage() {
           timeStr: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`
         });
       }
+      console.log('🔍 Fallback slots generated:', slots);
       return slots;
     }
   };
@@ -242,6 +275,7 @@ export default function CalendarPage() {
   // Handle date selection
   const handleDateSelect = useCallback(async (date) => {
     console.log('🔍 handleDateSelect called with:', date);
+    console.log('🔍 Current state:', { clinicId, userRowId, events: events.length });
     
     trigger('light');
     setSelectedDate(date);
@@ -250,6 +284,13 @@ export default function CalendarPage() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const selectedDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    console.log('🔍 Date validation:', { 
+      selectedDay, 
+      today, 
+      isPast: selectedDay < today,
+      now: now.toISOString()
+    });
     
     if (selectedDay < today) {
       toast.error('Cannot book appointments for past dates');
@@ -267,15 +308,11 @@ export default function CalendarPage() {
       e.start.toDateString() === date.toDateString() && e.userRowId === userRowId
     );
     
+    console.log('🔍 Existing events for this date:', dateEvents);
+    
     // If user already has appointment on this date, show cancel dialog
     if (dateEvents.length > 0) {
-      setModal({
-        type: 'cancel',
-        data: {
-          eventId: dateEvents[0].id,
-          date: dateEvents[0].start
-        }
-      });
+      console.log('🔍 User already has appointment, showing cancel dialog');
       const existingEvent = dateEvents[0];
       const appointmentTime = formatTime(existingEvent.start.getHours(), existingEvent.start.getMinutes());
       const appointmentDate = date.toLocaleDateString('en-US', { 
@@ -295,6 +332,7 @@ export default function CalendarPage() {
     }
     
     // Immediately show modal with loading state
+    console.log('🔍 Showing booking modal with loading state');
     setModal({ 
       type: 'book', 
       data: { 
@@ -305,39 +343,67 @@ export default function CalendarPage() {
       } 
     });
     
-    // Fetch slots in background
-    const slots = await getAvailableSlots(date);
-    
-    if (slots === 'closed') {
+    try {
+      // Fetch slots in background
+      console.log('🔍 Fetching available slots...');
+      const slots = await getAvailableSlots(date);
+      console.log('🔍 Slots received:', slots);
+      
+      if (slots === 'closed') {
+        console.log('🔍 Clinic is closed on this day');
+        setModal({ type: null, data: null });
+        toast.error('Clinic is closed on this day');
+        return;
+      }
+      
+      if (!Array.isArray(slots)) {
+        console.error('❌ Invalid slots format:', slots);
+        setModal({ type: null, data: null });
+        toast.error('Unable to load available time slots');
+        return;
+      }
+      
+      // Check if we have any slots at all
+      if (slots.length === 0) {
+        console.log('🔍 No slots generated for this date');
+        setModal({ type: null, data: null });
+        toast.error('No time slots available for this date');
+        return;
+      }
+      
+      // Include all slots but mark availability
+      const availableSlots = slots.filter(s => s.isAvailable);
+      console.log('🔍 Total slots:', slots.length, 'Available slots:', availableSlots.length);
+      
+      if (availableSlots.length === 0) {
+        console.log('🔍 All slots are full for this date');
+        setModal({ type: null, data: null });
+        toast.error('All time slots are full for this date');
+        return;
+      }
+      
+      // Update modal with actual data
+      console.log('🔍 Updating modal with slots data');
+      setModal({ 
+        type: 'book', 
+        data: { 
+          date, 
+          slots, 
+          userHasOtherBooking: false,
+          isLoading: false 
+        } 
+      });
+    } catch (error) {
+      console.error('❌ Error in handleDateSelect:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        date: date.toISOString()
+      });
+      
       setModal({ type: null, data: null });
-      toast.error('Clinic is closed on this day');
-      return;
+      toast.error('Something went wrong while loading time slots. Please try again.');
     }
-    
-    if (!Array.isArray(slots)) {
-      setModal({ type: null, data: null });
-      toast.error('Unable to load available time slots');
-      return;
-    }
-    
-    // Include all slots but mark availability
-    const availableSlots = slots.filter(s => s.isAvailable);
-    if (availableSlots.length === 0) {
-      setModal({ type: null, data: null });
-      toast.error('No available time slots');
-      return;
-    }
-    
-    // Update modal with actual data
-    setModal({ 
-      type: 'book', 
-      data: { 
-        date, 
-        slots, 
-        userHasOtherBooking: false,
-        isLoading: false 
-      } 
-    });
   }, [events, userRowId, trigger]);
 
   // Handle event click - show cancel dialog for user's own appointments
