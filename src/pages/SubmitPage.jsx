@@ -173,12 +173,7 @@ export default function SubmitPage() {
         // Log user registration
         await logUserRegistration({
           clinic_id: registrationData.clinic_id,
-          user_id: user_id,
-          email: registrationData.email || '',
-          phone: registrationData.phone || '',
-          registration_method: 'web_form',
-          user_type: 'patient',
-          registration_source: 'web_app'
+          user_id: user_id
         });
         
       } catch (error) {
@@ -238,14 +233,7 @@ export default function SubmitPage() {
         await logSubmitBook({
           clinic_id: registrationData.clinic_id,
           user_id: user_id,
-          appointment_id: result.data?.id || result.id,
-          service_type: 'first_consultation',
-          doctor_id: null,
-          appointment_date: new Date().toISOString(),
-          duration_minutes: 30,
-          booking_method: 'web_form',
-          payment_status: 'pending',
-          total_amount: null
+          appointment_id: result.data?.id || result.id
         });
         
       } catch (error) {

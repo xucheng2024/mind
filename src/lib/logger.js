@@ -58,30 +58,17 @@ export const logSubmitBook = async ({
   clinic_id,
   user_id,
   appointment_id,
-  service_type,
-  doctor_id,
-  appointment_date,
-  duration_minutes,
-  booking_method = 'web_app',
-  payment_status = 'pending',
-  total_amount,
   staff_id = null
 }) => {
+  const now = new Date().toISOString();
   return await logUserAction({
     action: 'submit_book',
     clinic_id,
     staff_id,
     detail: {
-      user_id,
-      appointment_id,
-      service_type,
-      doctor_id,
-      appointment_date,
-      duration_minutes,
-      booking_method,
-      payment_status,
-      total_amount,
-      timestamp: new Date().toISOString()
+      id: appointment_id,
+      created_time: now,
+      book_time: now
     }
   });
 };
@@ -95,25 +82,17 @@ export const logCancelAppointment = async ({
   user_id,
   appointment_id,
   original_date,
-  cancellation_reason,
-  cancellation_method = 'web_app',
-  refund_amount,
-  refund_status = 'pending',
   staff_id = null
 }) => {
+  const now = new Date().toISOString();
   return await logUserAction({
     action: 'cancel_appointment',
     clinic_id,
     staff_id,
     detail: {
-      user_id,
-      appointment_id,
-      original_date,
-      cancellation_reason,
-      cancellation_method,
-      refund_amount,
-      refund_status,
-      timestamp: new Date().toISOString()
+      id: appointment_id,
+      created_time: now,
+      book_time: original_date
     }
   });
 };
@@ -125,11 +104,6 @@ export const logCancelAppointment = async ({
 export const logUserRegistration = async ({
   clinic_id,
   user_id,
-  email,
-  phone,
-  registration_method = 'web_form',
-  user_type = 'patient',
-  registration_source = 'web_app',
   staff_id = null
 }) => {
   return await logUserAction({
@@ -137,13 +111,7 @@ export const logUserRegistration = async ({
     clinic_id,
     staff_id,
     detail: {
-      user_id,
-      email,
-      phone,
-      registration_method,
-      user_type,
-      registration_source,
-      timestamp: new Date().toISOString()
+      user_id
     }
   });
 };
