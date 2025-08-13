@@ -33,7 +33,8 @@ if (AES_SECRET_KEY.length < 32) {
 console.log('🔐 服务端API已启用AES加密');
 
 function quickHash(text) {
-  return Buffer.from(text.toLowerCase().trim()).toString('base64');
+  if (!text) return '';
+  return CryptoJS.SHA256(text.replace(/\s+/g, '').toLowerCase()).toString();
 }
 
 function encrypt(text) {

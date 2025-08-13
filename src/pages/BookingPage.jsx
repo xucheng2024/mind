@@ -3,10 +3,12 @@ import RegistrationHeader from '../components/RegistrationHeader';
 import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isPhone, isEmail } from '../lib/utils';
+import CryptoJS from 'crypto-js';
 
-// Hash function that matches backend quickHash
+// Hash function that matches backend quickHash - 改为不可逆
 function quickHash(text) {
-  return btoa(text.toLowerCase().trim());
+  if (!text) return '';
+  return CryptoJS.SHA256(text.replace(/\s+/g, '').toLowerCase()).toString();
 }
 
 import { 
