@@ -150,6 +150,7 @@ export default function CalendarPage() {
     
     if (!businessHours) {
       console.warn('⚠️ No business hours available');
+      console.warn('⚠️ businessHours value:', businessHours);
       return [];
     }
     
@@ -277,6 +278,7 @@ export default function CalendarPage() {
   const handleDateSelect = useCallback(async (date) => {
     console.log('🔍 handleDateSelect called with:', date);
     console.log('🔍 Current state:', { clinicId, userRowId, events: events.length });
+    console.log('🔍 Business hours:', businessHours);
     
     trigger('light');
     setSelectedDate(date);
