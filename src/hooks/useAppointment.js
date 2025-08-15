@@ -137,8 +137,11 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       trigger('warning');
       
       // Get the appointment to cancel
+      console.log('🔍 Modal data for cancellation:', modal);
+      console.log('🔍 Modal data.event:', modal?.data?.event);
       const appointment = modal?.data?.event;
       if (!appointment) {
+        console.error('❌ No appointment found in modal data:', modal);
         toast.error('No appointment to cancel');
         return;
       }
