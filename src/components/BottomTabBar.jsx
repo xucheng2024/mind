@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Stethoscope, 
   PenTool, 
-  Brain, 
-  Apple
+  Brain
 } from 'lucide-react';
 import { useHapticFeedback } from './index';
 
@@ -40,15 +39,6 @@ const BottomTabBar = () => {
       color: 'text-violet-600',
       bgColor: 'bg-violet-50',
       borderColor: 'border-violet-300'
-    },
-    {
-      id: 'diet',
-      label: 'Diet',
-      icon: Apple,
-      path: '/diet',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-300'
     }
   ];
 

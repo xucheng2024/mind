@@ -29,7 +29,6 @@ const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const RecordPage = lazy(() => import('./pages/RecordPage'));
 const MindPage = lazy(() => import('./pages/MindPage'));
-const DietPage = lazy(() => import('./pages/DietPage'));
 
 
 // Loading component
@@ -66,7 +65,6 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/record" element={<RecordPage />} />
             <Route path="/mind" element={<MindPage />} />
-            <Route path="/diet" element={<DietPage />} />
     
             <Route path="/" element={<HomePage />} />
           </Routes>
