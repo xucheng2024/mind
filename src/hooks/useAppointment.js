@@ -138,25 +138,39 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       
       // Get the appointment to cancel
       console.log('🔍 Modal data for cancellation:', modal);
-      console.log('🔍 Modal data.event:', modal?.data?.event);
-      const appointment = modal?.data?.event;
-      if (!appointment) {
+      
+      // Handle different modal types and data structures
+      let appointment;
+      if (modal?.type === 'cancel' && modal?.data?.eventId) {
+        // For cancel modal type, we need to find the event by ID
+        appointment = { id: modal.data.eventId };
+      } else if (modal?.data?.event) {
+        // For confirmCancel modal type
+        appointment = modal.data.event;
+      } else {
         console.error('❌ No appointment found in modal data:', modal);
         toast.error('No appointment to cancel');
         return;
+      }
+      
+      // For cancel modal type, we need to find the full event data
+      let fullEvent = appointment;
+      if (modal?.type === 'cancel' && modal?.data?.eventId) {
+        // We'll use the eventId directly for cancellation
+        fullEvent = { id: modal.data.eventId };
       }
       
       // Log the cancellation
       await logCancelAppointment({
         clinic_id: clinicId,
         user_id: userRowId,
-        appointment_id: appointment.id,
-        appointment_date: appointment.start,
+        appointment_id: fullEvent.id,
+        appointment_date: fullEvent.start || new Date().toISOString(),
         cancellation_reason: 'user_requested'
       });
       
       // Remove the event from UI
-      setEvents(prev => prev.filter(event => event.id !== appointment.id));
+      setEvents(prev => prev.filter(event => event.id !== fullEvent.id));
       setModal({ type: null, data: null });
       toast.success('Appointment cancelled successfully');
       
