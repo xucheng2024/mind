@@ -1,6 +1,5 @@
 // Vercel API route for all user operations
 import { createClient } from '@supabase/supabase-js';
-import { nanoid } from 'nanoid';
 import CryptoJS from 'crypto-js';
 import dotenv from 'dotenv';
 
@@ -79,6 +78,8 @@ function decrypt(encryptedText) {
 }
 
 export default async function handler(req, res) {
+  console.log('🚀 Users API called:', { method: req.method, url: req.url, query: req.query });
+  
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -86,34 +87,43 @@ export default async function handler(req, res) {
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight request handled');
     res.status(200).end();
     return;
   }
   
   const { action } = req.query;
+  console.log('🔍 Action requested:', action);
   
   try {
     switch (action) {
       case 'create':
+        console.log('📝 Creating user...');
         await handleCreateUser(req, res);
         break;
       case 'get':
+        console.log('🔍 Getting user...');
         await handleGetUser(req, res);
         break;
       case 'check-duplicate':
+        console.log('🔍 Checking for duplicates...');
         await handleCheckDuplicate(req, res);
         break;
       case 'query':
+        console.log('🔍 Querying user...');
         await handleQueryUser(req, res);
         break;
       case 'validate':
+        console.log('✅ Validating user...');
         await handleValidateUser(req, res);
         break;
       default:
+        console.log('❌ Invalid action:', action);
         res.status(400).json({ error: 'Invalid action. Valid actions: create, get, check-duplicate, query, validate' });
     }
   } catch (error) {
-    console.error('API error:', error);
+    console.error('❌ API error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
