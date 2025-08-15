@@ -55,11 +55,6 @@ export default function CalendarPage() {
   // Modal states
   const [modal, setModal] = useState({ type: null, data: null });
   
-  // Debug logging for modal state changes
-  useEffect(() => {
-    console.log('🔍 Modal state changed:', modal);
-  }, [modal]);
-  
   // Date picker states
   const [selectedDate, setSelectedDate] = useState(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -541,6 +536,251 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <style>
+        {`
+          .fc-day-today { background: #f8fafc !important; }
+          .fc-day-past { opacity: 0.4; }
+          .fc-day-future:hover { background: #f1f5f9; }
+          .fc-event { 
+            border-radius: 6px !important; 
+            font-weight: 500; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 20px !important;
+          }
+          .fc-event-main {
+            padding: 2px 4px !important;
+            height: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .fc-event-title {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .fc-event-time {
+            display: none !important;
+          }
+          .fc-event-title-container {
+            padding: 0 !important;
+          }
+          .fc-daygrid-event .fc-event-main {
+            padding: 1px 2px !important;
+          }
+          .fc-daygrid-event {
+            margin: 1px !important;
+            border-radius: 4px !important;
+          }
+          .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 600 !important; color: #111827; }
+          .fc-button { border-radius: 6px !important; font-size: 0.875rem !important; }
+          .fc-button-primary { background: #4f46e5 !important; border: none !important; }
+          .fc-button-primary:hover { background: #4338ca !important; }
+          .fc-toolbar { margin-bottom: 1rem !important; }
+          .fc-daygrid-day { 
+            border: 1px solid #f3f4f6 !important; 
+            aspect-ratio: 1 !important;
+            height: 0 !important;
+            padding-bottom: 14.28% !important;
+            position: relative !important;
+          }
+          .fc-daygrid-day-frame {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            height: 100% !important;
+          }
+          .fc-daygrid-day-top {
+            position: absolute !important;
+            top: 2px !important;
+            left: 2px !important;
+            right: 2px !important;
+            z-index: 2 !important;
+          }
+          .fc-daygrid-day-events {
+            position: absolute !important;
+            top: 20px !important;
+            left: 2px !important;
+            right: 2px !important;
+            bottom: 2px !important;
+          }
+          .fc-daygrid-day-number {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+          }
+          
+          /* Mobile specific adjustments */
+          @media (max-width: 768px) {
+            .fc-daygrid-day {
+              min-height: 60px !important;
+              height: 60px !important;
+              padding-bottom: 0 !important;
+            }
+            .fc-daygrid-day-number {
+              font-size: 11px !important;
+            }
+            .fc-event {
+              font-size: 9px !important;
+              min-height: 16px !important;
+            }
+            .fc-event-title {
+              font-size: 9px !important;
+            }
+          }
+          
+          @keyframes scale-in {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+          .animate-scale-in { animation: scale-in 0.15s ease-out; }
+
+          /* Mobile-optimized date picker styles */
+          .react-datepicker {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            background: transparent;
+            width: 100% !important;
+            max-width: none !important;
+          }
+          
+          .react-datepicker__navigation {
+            display: none !important;
+          }
+          
+          .react-datepicker__current-month {
+            display: none !important;
+          }
+          
+          .react-datepicker__header {
+            background: transparent;
+            border: none;
+            padding: 0;
+          }
+          
+          .react-datepicker__month-container {
+            width: 100% !important;
+            background: transparent;
+          }
+          
+          .react-datepicker__month {
+            margin: 0;
+            padding: 0;
+          }
+          
+          .react-datepicker__day-names {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+          }
+          
+          .react-datepicker__day-name {
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 16px 8px;
+            margin: 0;
+            width: 14.28%;
+            text-align: center;
+          }
+          
+          .react-datepicker__days {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+          }
+          
+          .react-datepicker__day {
+            border-radius: 8px;
+            margin: 4px;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            color: #111827;
+            text-align: center;
+          }
+          
+          .react-datepicker__day:hover {
+            background-color: #3b82f6;
+            color: white;
+            transform: scale(1.05);
+          }
+          
+          .react-datepicker__day--selected {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+          }
+          
+          .react-datepicker__day--keyboard-selected {
+            background-color: #3b82f6;
+            color: white;
+          }
+
+          /* Booked date styles */
+          .react-datepicker__day--highlighted {
+            position: relative;
+          }
+
+          .react-datepicker__day--highlighted::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 6px;
+            height: 6px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+          }
+          
+          .react-datepicker__day--outside-month {
+            color: #d1d5db;
+          }
+          
+          .react-datepicker__day--disabled {
+            color: #d1d5db !important;
+            cursor: not-allowed !important;
+            background-color: #f3f4f6 !important;
+            opacity: 0.5;
+          }
+
+          .react-datepicker__day--disabled:hover {
+            background-color: #f3f4f6 !important;
+            color: #d1d5db !important;
+            transform: none !important;
+          }
+
+          /* Mobile touch optimization */
+          @media (max-width: 768px) {
+            .react-datepicker__day {
+              width: 45px;
+              height: 45px;
+              line-height: 45px;
+              font-size: 18px;
+              margin: 4px;
+            }
+            
+                      .react-datepicker__day-name {
+            font-size: 18px;
+            padding: 20px 8px;
+          }
+          
+
+          }
+        `}
+      </style>
 
       {/* Calendar */}
       
