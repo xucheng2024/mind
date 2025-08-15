@@ -16,26 +16,26 @@ const supabase = createClient(
   }
 );
 
-// AES加密密钥 - 必须从环境变量获取
+// AES encryption key - must be obtained from environment variables
 const AES_SECRET_KEY = process.env.AES_KEY;
 
 if (!AES_SECRET_KEY) {
-  console.error('❌ 错误: 未设置 AES_KEY 环境变量');
+  console.error('❌ Error: AES_KEY environment variable not set');
   throw new Error('AES_KEY environment variable is required');
 }
 
 if (AES_SECRET_KEY.length < 32) {
-  console.error('❌ 错误: AES_KEY 长度必须至少32个字符');
+  console.error('❌ Error: AES_KEY must be at least 32 characters long');
   throw new Error('AES_KEY must be at least 32 characters long');
 }
 
-console.log('🔐 Storage API已启用AES加密');
+console.log('🔐 Storage API AES encryption enabled');
 
 function encrypt(text) {
   if (!text) return '';
   try {
     const encrypted = CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
-    console.log(`🔐 Storage AES加密: ${text.substring(0, 20)}... → ${encrypted.substring(0, 20)}...`);
+    console.log(`🔐 Storage AES encryption: ${text.substring(0, 20)}... → ${encrypted.substring(0, 20)}...`);
     return encrypted;
   } catch (error) {
     console.error('AES encryption error:', error);
@@ -210,7 +210,7 @@ async function handleSignedUrl(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { bucket, filename, expiresIn = 94608000 } = req.query; // 默认3年过期 (3*365*24*3600)
+  const { bucket, filename, expiresIn = 94608000 } = req.query; // Default 3 years expiration (3*365*24*3600)
   
   if (!bucket || !filename) {
     return res.status(400).json({ 
@@ -219,7 +219,7 @@ async function handleSignedUrl(req, res) {
   }
   
   try {
-    // 生成有时效性的signed URL
+    // Generate time-limited signed URL
     const { data, error } = await supabase.storage
       .from(bucket)
       .createSignedUrl(filename, parseInt(expiresIn));

@@ -12,7 +12,7 @@ export const requestInterceptor = {
   onRequest: () => {
     loadingCount++;
     
-    // 清除之前的计时器
+    // Clear previous timer
     if (loadingTimer) {
       clearTimeout(loadingTimer);
     }
@@ -30,7 +30,7 @@ export const requestInterceptor = {
   onResponse: () => {
     loadingCount = Math.max(0, loadingCount - 1);
     
-    // 如果没有待处理的请求，清除加载状态
+    // If no pending requests, clear loading state
     if (loadingCount === 0) {
       if (loadingTimer) {
         clearTimeout(loadingTimer);
@@ -46,7 +46,7 @@ export const requestInterceptor = {
   onError: (error) => {
     loadingCount = Math.max(0, loadingCount - 1);
     
-    // 清除加载状态
+    // Clear loading state
     if (loadingTimer) {
       clearTimeout(loadingTimer);
       loadingTimer = null;

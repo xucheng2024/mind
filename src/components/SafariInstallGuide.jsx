@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiShare, FiX, FiArrowDown, FiSmartphone, FiHome } from 'react-icons/fi';
+import { FiShare, FiX, FiSmartphone, FiHome } from 'react-icons/fi';
 
 export default function SafariInstallGuide() {
   const [showGuide, setShowGuide] = useState(false);
@@ -8,7 +8,7 @@ export default function SafariInstallGuide() {
   const [hasDismissed, setHasDismissed] = useState(false);
 
   useEffect(() => {
-    // 检查是否已经安装或已经关闭过
+    // Check if already installed or dismissed
     const checkInstallation = () => {
       const isStandalone = window.navigator.standalone === true;
       const dismissed = sessionStorage.getItem('safari_install_dismissed');
@@ -17,7 +17,7 @@ export default function SafariInstallGuide() {
       setIsPWA(isStandalone);
       setHasDismissed(!!dismissed);
       
-      // 只在 Safari 且未安装且未关闭过的情况下显示
+      // Only show if Safari, not installed, and not dismissed
       const shouldShow = isSafari && !isStandalone && !dismissed;
       setShowGuide(shouldShow);
     };
@@ -52,10 +52,10 @@ export default function SafariInstallGuide() {
               </div>
               <div>
                 <h3 className="text-lg font-bold">
-                  📱 安装到主屏幕
+                  📱 Install to Home Screen
                 </h3>
                 <p className="text-blue-100 text-sm mt-1">
-                  像下载APP一样简单
+                  Quick access like a native app
                 </p>
               </div>
             </div>
@@ -73,19 +73,19 @@ export default function SafariInstallGuide() {
               <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                 <FiHome className="w-4 h-4" />
               </div>
-              <span className="text-sm">一键访问，无需搜索</span>
+              <span className="text-sm">Easy appointment booking</span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                 <FiSmartphone className="w-4 h-4" />
               </div>
-              <span className="text-sm">离线也能使用</span>
+              <span className="text-sm">Track daily health</span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                 <span className="text-xs">⚡</span>
               </div>
-              <span className="text-sm">加载更快更流畅</span>
+              <span className="text-sm">Works offline</span>
             </div>
           </div>
 
@@ -93,11 +93,10 @@ export default function SafariInstallGuide() {
           <div className="bg-white bg-opacity-10 rounded-xl p-4 mb-4">
             <div className="flex items-center justify-center space-x-2 text-sm mb-2">
               <FiShare className="w-4 h-4" />
-              <span>点击分享按钮</span>
+              <span>Tap Share button</span>
             </div>
             <div className="flex items-center justify-center space-x-2 text-sm">
-              <FiArrowDown className="w-4 h-4" />
-              <span>选择"添加到主屏幕"</span>
+              <span>Choose "Add to Home Screen"</span>
             </div>
           </div>
 
@@ -107,13 +106,13 @@ export default function SafariInstallGuide() {
               onClick={handleDismiss}
               className="flex-1 bg-white bg-opacity-20 text-white text-sm font-medium py-3 px-4 rounded-xl hover:bg-opacity-30 transition-colors"
             >
-              稍后再说
+              Maybe Later
             </button>
             <button
               onClick={handleDismiss}
               className="flex-1 bg-white text-blue-600 text-sm font-medium py-3 px-4 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              知道了
+              Got it
             </button>
           </div>
         </div>

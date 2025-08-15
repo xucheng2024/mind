@@ -9,7 +9,7 @@ async function fetchWithRetry(url, options, retries = 3, timeout = 10000) {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
-    requestInterceptor.onRequest();  // 请求开始时显示加载状态
+    requestInterceptor.onRequest();  // Show loading state when request starts
     
     const response = await fetch(url, {
       ...options,
@@ -17,7 +17,7 @@ async function fetchWithRetry(url, options, retries = 3, timeout = 10000) {
     });
     
     clearTimeout(timeoutId);
-    requestInterceptor.onResponse();  // 请求完成时清除加载状态
+    requestInterceptor.onResponse();  // Clear loading state when request completes
     
     return response;
   } catch (error) {
@@ -25,7 +25,7 @@ async function fetchWithRetry(url, options, retries = 3, timeout = 10000) {
     if (retries > 0 && error.name === 'AbortError') {
       return fetchWithRetry(url, options, retries - 1, timeout);
     }
-    requestInterceptor.onError(error);  // 处理错误情况
+    requestInterceptor.onError(error);  // Handle error cases
     throw error;
   }
 }
@@ -213,7 +213,7 @@ export const apiClient = {
   },
 
   // Get signed URL for encrypted file (returns signed URL through server)
-  async getSignedUrl(bucket, filename, expiresIn = 94608000) { // 默认3年过期 (3*365*24*3600)
+  async getSignedUrl(bucket, filename, expiresIn = 94608000) { // Default 3 years expiration (3*365*24*3600)
     const response = await fetch(`${API_BASE_URL}/api/storage?action=signed-url&bucket=${bucket}&filename=${filename}&expiresIn=${expiresIn}`);
     
     if (!response.ok) {
@@ -224,7 +224,7 @@ export const apiClient = {
     return response.json();
   },
 
-  // Download and decrypt file (returns decrypted file URL through server) - 保留向后兼容
+  // Download and decrypt file (returns decrypted file URL through server) - Keep backward compatibility
   getDecryptedFileUrl(bucket, filename) {
     return `${API_BASE_URL}/api/storage?action=download&bucket=${bucket}&filename=${filename}`;
   },

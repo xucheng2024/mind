@@ -970,7 +970,7 @@ export default function CalendarPage() {
             color: white;
           }
 
-          /* 已预约日期的样式 */
+          /* Booked date styles */
           .react-datepicker__day--highlighted {
             position: relative;
           }

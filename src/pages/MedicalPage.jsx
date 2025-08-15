@@ -15,7 +15,7 @@ export default function MedicalPage() {
   const [form, setForm] = useState(() => {
     const initial = {};
     healthItems.forEach(item => {
-      initial[item] = registrationData[item] || ''; // 初始不选
+      initial[item] = registrationData[item] || ''; // Initial not selected
     });
     initial.otherHealthNotes = '';
     return initial;
@@ -26,13 +26,13 @@ export default function MedicalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // 从registrationData恢复表单数据，而不是清空
-    const restored = {};
+    // Restore form data from registrationData instead of clearing
+    const restoredForm = {};
     healthItems.forEach(item => { 
-      restored[item] = registrationData[item] || ''; 
+      restoredForm[item] = registrationData[item] || ''; 
     });
-    restored.otherHealthNotes = registrationData.otherHealthNotes || '';
-    setForm(restored);
+    restoredForm.otherHealthNotes = registrationData.otherHealthNotes || '';
+    setForm(restoredForm);
   }, [registrationData]);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function MedicalPage() {
 
   const formatSGTime = () => {
     const now = new Date();
-    // 新加坡时间
+    // Singapore time
     const sgTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
     const yyyy = sgTime.getFullYear();
     const MM = String(sgTime.getMonth() + 1).padStart(2, '0');
@@ -91,7 +91,7 @@ export default function MedicalPage() {
     try {
       setIsSubmitting(true);
       
-      // 只在点击 Next 时处理备注内容
+      // Only process notes content when clicking Next
       const prefix = formatSGTime();
       let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : '';
       if (!notes) {

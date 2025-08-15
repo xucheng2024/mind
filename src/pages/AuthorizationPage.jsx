@@ -20,6 +20,7 @@ export default function AuthorizationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const signatureRef = useRef();
+  const submittedRef = useRef(false); // Add debounce ref
 
   const validate = () => {
     const errs = {};
@@ -38,12 +39,20 @@ export default function AuthorizationPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading || uploading || isSubmitting) return;
+    
+    // Debounce check - prevent multiple submissions
+    if (submittedRef.current || loading || uploading || isSubmitting) {
+      console.log('[AuthorizationPage] Submit blocked - already processing or submitted');
+      return;
+    }
+    
+    submittedRef.current = true; // Set debounce flag
     
     setLoading(true);
     setSubmitted(true);
     if (!validate()) {
       setLoading(false);
+      submittedRef.current = false; // Reset debounce flag on validation failure
       return;
     }
 
@@ -59,12 +68,13 @@ export default function AuthorizationPage() {
       console.error('❌ Error getting signature data:', error);
     }
     
-    // 检查签名是否为空
+    // Check if signature is empty
     const hasSignature = signatureDataUrl && signatureDataUrl.length > 22;
     
     if (!hasSignature) {
       setErrors(prev => ({ ...prev, signature: 'Signature is required. Please sign in the box above.' }));
       setLoading(false);
+      submittedRef.current = false; // Reset debounce flag on validation failure
       return;
     }
 
@@ -136,9 +146,12 @@ export default function AuthorizationPage() {
       console.error('❌ Error during signature upload:', error);
       setErrors(prev => ({ ...prev, signature: 'Failed to upload signature. Please try again.' }));
       hapticTrigger('error');
+      submittedRef.current = false; // Reset debounce flag on error
     } finally {
       setUploading(false);
       setIsSubmitting(false);
+      // Note: Don't reset submittedRef.current here as we want to prevent resubmission
+      // It will be reset when the component unmounts or when navigating away
     }
   };
 

@@ -1,4 +1,4 @@
-// 防抖函数
+// Debounce function
 export function debounce(func, wait = 300) {
   let timeoutId;
   

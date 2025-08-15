@@ -7,7 +7,7 @@ const PWAStatus = () => {
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    // 检查是否在PWA环境中
+    // Check if in PWA environment
     const checkPWA = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                           window.navigator.standalone === true;
@@ -22,7 +22,7 @@ const PWAStatus = () => {
 
   if (!isPWA && !showGuide) return null;
   
-  // 如果已经安装，不显示任何内容
+  // If already installed, don't show anything
   if (isInstalled) return null;
 
   return (
@@ -33,7 +33,7 @@ const PWAStatus = () => {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 hover:bg-blue-700 transition"
         >
           <FiDownload className="w-4 h-4" />
-          <span className="text-sm">Install PWA</span>
+          <span className="text-sm">Install App</span>
         </button>
       ) : (
         <div className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
@@ -47,7 +47,7 @@ const PWAStatus = () => {
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
             <div className="flex items-center gap-2 mb-4">
               <FiInfo className="w-5 h-5 text-blue-600" />
-              <h3 className="font-semibold text-gray-900">Install PWA</h3>
+              <h3 className="font-semibold text-gray-900">Install App</h3>
             </div>
             <div className="text-sm text-gray-600 mb-6 space-y-3">
               <p><strong>iPhone/iPad:</strong></p>

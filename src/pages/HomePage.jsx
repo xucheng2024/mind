@@ -33,13 +33,14 @@ export default function HomePage() {
 
   // 检查登录状态
   useEffect(() => {
-    const checkLoginStatus = () => {
-      // 使用缓存管理器检查登录状态
-      if (cacheManager.isLoggedIn()) {
-        const loginInfo = cacheManager.getLoginInfo();
+    // Check login status
+    const checkLoginStatus = async () => {
+      try {
+        // Use cache manager to check login status
+        const cachedUser = await cacheManager.getUser();
         setIsLoggedIn(true);
-        setUserName(loginInfo.fullName || 'User');
-      } else {
+        setUserName(cachedUser.fullName || 'User');
+      } catch (error) {
         setIsLoggedIn(false);
         setUserName('');
       }
@@ -59,6 +60,10 @@ export default function HomePage() {
 
   // 防抖的注册按钮点击
   const handleRegisterClick = debounce(() => {
+    hapticTrigger('light');
+    // Clear all form data immediately
+    localStorage.removeItem('registrationFormDraft');
+    
     // 保存当前的clinic_id
     const currentClinicId = registrationData.clinic_id || clinicId || CLINIC_CONFIG.DEFAULT_CLINIC_ID;
     
@@ -80,7 +85,7 @@ export default function HomePage() {
       unit: '',
       selfie: '',
       signature: '',
-      // 清除健康声明
+      // Clear health declaration
       HeartDisease: '',
       Diabetes: '',
       Hypertension: '',
@@ -92,7 +97,7 @@ export default function HomePage() {
       KidneyDisease: '',
       LiverDisease: '',
       otherHealthNotes: '',
-      // 清除同意书
+      // Clear consent form
       consentAgreed: false,
       releaseAgreed: false,
       indemnityAgreed: false
@@ -103,6 +108,7 @@ export default function HomePage() {
 
   // 防抖的预约按钮点击
   const handleBookingClick = debounce(() => {
+    hapticTrigger('light');
     const storedUserRowId = localStorage.getItem('user_row_id');
     const storedClinicId = localStorage.getItem('clinic_id') || clinicId;
     
@@ -117,10 +123,10 @@ export default function HomePage() {
 
   // 防抖的登出按钮点击
   const handleLogoutClick = debounce(() => {
-    hapticTrigger('medium');
+    hapticTrigger('light');
     setLogoutLoading(true);
-    // 清除登录信息（下次会重新验证登录）
-    cacheManager.clearLoginInfo();
+    // Clear login info (will re-verify login next time)
+    localStorage.removeItem('user_id');
     // Update state immediately instead of reloading
     setIsLoggedIn(false);
     setUserName('');

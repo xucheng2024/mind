@@ -97,7 +97,7 @@ export default function PWAInstallButton() {
                   Install App
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  Add to home screen for quick access
+                  Easy booking & health tracking
                 </p>
               </div>
             </div>

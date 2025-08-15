@@ -55,17 +55,18 @@ export default function SelfiePage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { trigger: hapticTrigger } = useHapticFeedback();
+  const submittedRef = useRef(false); // Add debounce ref
 
-  // 检查相机权限 - 简化版本
+  // Check camera permissions - simplified version
   const checkCamera = async () => {
     try {
-      // 检查是否支持getUserMedia
+      // Check if getUserMedia is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         console.error('Camera API not supported');
         throw new Error('Camera API not supported');
       }
 
-      // 标准相机配置
+      // Standard camera configuration
       const constraints = {
         video: {
           facingMode: 'user',
@@ -77,10 +78,10 @@ export default function SelfiePage() {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       setHasCamera(true);
-      setCameraReady(true); // 直接设置相机为ready状态
+      setCameraReady(true); // Set camera to ready state directly
       setError('');
       
-      // 立即关闭流，避免占用相机
+      // Close stream immediately to avoid occupying camera
       if (stream && stream.getTracks) {
         stream.getTracks().forEach(track => {
           track.stop();
@@ -111,11 +112,11 @@ export default function SelfiePage() {
   };
 
   useEffect(() => {
-    // 直接检查相机，不需要延迟
+    // Check camera directly, no delay needed
     checkCamera();
   }, []);
 
-  // 拍照逻辑改为用 react-camera-pro
+  // Take photo logic changed to use react-camera-pro
   const capture = () => {
     hapticTrigger('medium');
     setCapturing(true);
@@ -176,7 +177,7 @@ export default function SelfiePage() {
     setCameraLoading(true);
     setCameraReady(false);
     
-    // 直接检查相机，不需要延迟
+    // Check camera directly, no delay needed
     checkCamera();
   };
 
@@ -185,14 +186,17 @@ export default function SelfiePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Prevent duplicate submissions
-    if (isSubmitting) {
-      console.log('Form submission already in progress, ignoring duplicate request');
+    // Debounce check - prevent multiple submissions
+    if (submittedRef.current || isSubmitting) {
+      console.log('[SelfiePage] Submit blocked - already processing or submitted');
       return;
     }
     
+    submittedRef.current = true; // Set debounce flag
+    
     if (!imageSrc) {
       setError('Please take a selfie first.');
+      submittedRef.current = false; // Reset debounce flag on validation failure
       return;
     }
     
@@ -257,11 +261,11 @@ export default function SelfiePage() {
       setTimeout(() => setShowConfetti(false), 3000);
 
       updateRegistrationData({ 
-        selfie: imageSrc, // 本地预览用
-        selfieUrl: signedUrl, // Signed URL，submit时统一加密
-        selfieFilename: filename, // 文件名
+        selfie: imageSrc, // Local preview
+        selfieUrl: signedUrl, // Signed URL, unified encryption for submission
+        selfieFilename: filename, // File name
         selfieSignedUrl: true,
-        selfieExpiresAt: signedUrlResult.data.expiresAt // 过期时间
+        selfieExpiresAt: signedUrlResult.data.expiresAt // Expiration time
       });
       
       navigate('/register/authorize');
@@ -270,9 +274,12 @@ export default function SelfiePage() {
       console.error('Error uploading selfie:', err);
       setError(`Failed to upload selfie: ${err.message}`);
       hapticTrigger('error');
+      submittedRef.current = false; // Reset debounce flag on error
     } finally {
       setUploading(false);
       setIsSubmitting(false);
+      // Note: Don't reset submittedRef.current here as we want to prevent resubmission
+      // It will be reset when the component unmounts or when navigating away
     }
   };
 

@@ -1,4 +1,4 @@
-// 工具函数集合
+// Utility function collection
 import CryptoJS from 'crypto-js';
 
 export function hash(val) {
@@ -16,7 +16,7 @@ export function decrypt(val, key) {
     return bytes.toString(CryptoJS.enc.Utf8);
   } catch (error) {
     console.error('Decryption error:', error);
-    return val; // 如果解密失败，返回原值
+    return val; // If decryption fails, return original value
   }
 }
 

@@ -51,7 +51,7 @@ export default function RegistrationForm() {
   const unitRef = useRef();
   const buildingRef = useRef();
 
-  // 只在首次挂载时同步 registrationData 到 form
+  // Only sync registrationData to form on first mount
   useEffect(() => {
     let timeoutId;
     if (!clinicId) {
@@ -60,7 +60,7 @@ export default function RegistrationForm() {
     } else {
       updateRegistrationData({ clinic_id: clinicId });
     }
-    // 只在首次挂载时同步 registrationData
+    // Only sync registrationData on first mount
     const restoredForm = {
       fullName: registrationData.fullName || '',
       idLast4: registrationData.idLast4 || '',
@@ -84,7 +84,7 @@ export default function RegistrationForm() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicId, navigate]);
 
-  // 防抖地址查询
+  // Debounced address lookup
   useEffect(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 
@@ -106,7 +106,7 @@ export default function RegistrationForm() {
               setForm(prev => ({ ...prev, ...address }));
               updateRegistrationData(address);
               setAddressError('');
-              // 清除 blockNo 和 street 的错误
+              // Clear blockNo and street errors
               setErrors(prev => ({
                 ...prev,
                 blockNo: '',
@@ -119,7 +119,7 @@ export default function RegistrationForm() {
           })
           .catch(() => setAddressError('Address lookup failed, please check your network connection'))
           .finally(() => setAddressLoading(false));
-      }, 500); // 500ms 防抖延迟
+      }, 500); // 500ms debounce delay
 
       setDebounceTimer(timer);
     }
@@ -129,16 +129,16 @@ export default function RegistrationForm() {
     };
   }, [form.postalCode]);
 
-  // 自动保存表单数据到 localStorage
+  // Auto-save form data to localStorage
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       localStorage.setItem('registrationFormDraft', JSON.stringify(form));
-    }, 1000); // 1秒后保存
+    }, 1000); // Save after 1 second
 
     return () => clearTimeout(timeoutId);
   }, [form]);
 
-  // 页面加载时恢复表单数据
+  // Restore form data on page load
   useEffect(() => {
     const savedForm = localStorage.getItem('registrationFormDraft');
     if (savedForm) {
@@ -158,14 +158,14 @@ export default function RegistrationForm() {
     
     if (!dd || !mm || !yyyy) return false;
     
-    // 基本范围检查
+    // Basic range check
     if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return false;
     
-    // 年份范围检查 (诊所适用: 1900-当前年份+1)
+    // Year range check (clinic applicable: 1900-current year+1)
     const currentYear = new Date().getFullYear();
     if (yyyy < 1900 || yyyy > currentYear + 1) return false;
     
-    // 具体日期验证
+    // Specific date validation
     const date = new Date(yyyy, mm - 1, dd);
     if (
       date.getFullYear() !== yyyy ||
@@ -173,10 +173,10 @@ export default function RegistrationForm() {
       date.getDate() !== dd
     ) return false;
     
-    // 未来日期检查 (诊所登记通常不允许未来日期)
+    // Future date check (clinic registration usually doesn't allow future dates)
     if (date > new Date()) return false;
     
-    // 年龄合理性检查 (诊所适用: 0-120岁)
+    // Age reasonableness check (clinic applicable: 0-120 years)
     const age = currentYear - yyyy;
     if (age > 120) return false;
     
@@ -202,10 +202,10 @@ export default function RegistrationForm() {
     return isValid;
   };
 
-  // 使用防抖的提交函数，但不在这里处理 preventDefault
+  // Use debounced submit function, but don't handle preventDefault here
   const handleSubmit = debounce(async (e) => {
     if (!validate()) {
-      // 跳到第一个有错的输入框
+      // Jump to first input field with error
       const errorOrder = [
         'fullName', 'idLast4', 'dob', 'gender', 'phone', 'email', 'postalCode',
         'blockNo', 'street', 'floor', 'unit'
@@ -260,7 +260,7 @@ export default function RegistrationForm() {
         gender: form.gender
       });
 
-      // 清除草稿数据，因为已经成功提交
+      // Clear draft data since submission was successful
       localStorage.removeItem('registrationFormDraft');
 
       toast.dismiss(loadingToast);
@@ -280,7 +280,7 @@ export default function RegistrationForm() {
     mm = mm || '';
     yyyy = yyyy || '';
     
-    // 实时格式验证
+    // Real-time format validation
     let isValid = true;
     let errorMsg = '';
     
@@ -289,17 +289,17 @@ export default function RegistrationForm() {
       const month = parseInt(mm, 10);
       const year = parseInt(yyyy, 10);
       
-      // 基本范围检查
+      // Basic range check
       if (day < 1 || day > 31 || month < 1 || month > 12) {
         isValid = false;
         errorMsg = 'Invalid date format';
       }
-      // 年份范围检查 (诊所适用: 1900-当前年份+1)
+      // Year range check (clinic applicable: 1900-current year+1)
       else if (year < 1900 || year > new Date().getFullYear() + 1) {
         isValid = false;
         errorMsg = `Year must be between 1900-${new Date().getFullYear() + 1}`;
       }
-      // 具体日期验证
+      // Specific date validation
       else {
         const date = new Date(year, month - 1, day);
         if (
@@ -310,12 +310,12 @@ export default function RegistrationForm() {
           isValid = false;
           errorMsg = 'Invalid date (e.g., 30/02/2023)';
         }
-        // 未来日期检查 (诊所登记通常不允许未来日期)
+        // Future date check (clinic registration usually doesn't allow future dates)
         else if (date > new Date()) {
           isValid = false;
           errorMsg = 'Date cannot be in the future';
         }
-        // 年龄合理性检查 (诊所适用: 0-120岁)
+        // Age reasonableness check (clinic applicable: 0-120 years)
         else {
           const age = new Date().getFullYear() - year;
           if (age > 120) {
@@ -329,7 +329,7 @@ export default function RegistrationForm() {
     setForm({ ...form, dobDay: dd, dobMonth: mm, dobYear: yyyy });
     updateRegistrationData({ dobDay: dd, dobMonth: mm, dobYear: yyyy });
     
-    // 实时错误更新
+    // Real-time error update
     if (dd && mm && yyyy) {
       setErrors(prev => ({ ...prev, dob: isValid ? '' : errorMsg }));
     } else {
@@ -385,7 +385,7 @@ export default function RegistrationForm() {
         </div>
       )}
 
-      {/* 基本信息区块 */}
+      {/* Basic Information Section */}
       <div className="mb-8">
         <div className="text-base font-semibold text-gray-500 mb-3 pl-1">Basic Information</div>
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
@@ -583,7 +583,7 @@ export default function RegistrationForm() {
         </div>
       </div>
 
-      {/* 住址信息区块 */}
+      {/* Address Information Section */}
       <div className="mb-8">
         <div className="text-base font-semibold text-gray-500 mb-3 pl-1">Address Information</div>
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">

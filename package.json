@@ -1,14 +1,11 @@
 {
   "name": "clinic-template",
   "version": "1.0.0",
-
-
   "scripts": {
     "dev": "vite --config vite.config.js",
     "build": "vite build --config vite.config.js",
     "preview": "vite preview",
     "clean": "rm -rf node_modules dist .vite package-lock.json",
-
     "build:pwa": "vite build && npm run generate-sw",
     "generate-sw": "vite build && npx workbox generateSW workbox-config.js",
     "deploy": "vercel --prod",
@@ -36,8 +33,10 @@
     "autoprefixer": "^10.4.21",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
+    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
+    "dotenv": "^17.2.1",
     "framer-motion": "^12.23.12",
     "idb-keyval": "^6.2.2",
     "jose": "^6.0.12",
@@ -69,8 +68,5 @@
     "vite-plugin-pwa": "^1.0.2",
     "workbox-window": "^7.3.0",
     "zod": "^4.0.17"
-  },
-  "devDependencies": {
-
   }
 }

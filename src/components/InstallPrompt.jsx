@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiDownload, FiX, FiSmartphone, FiWifi, FiZap } from 'react-icons/fi';
+import { FiDownload, FiX, FiSmartphone, FiCalendar, FiHeart } from 'react-icons/fi';
 
 const InstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -71,8 +71,8 @@ const InstallPrompt = () => {
               <FiSmartphone className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-gray-900">Install Clinic App</h2>
-              <p className="text-sm text-gray-500">Like downloading an H5 app</p>
+              <h2 className="font-bold text-lg text-gray-900">Install App</h2>
+              <p className="text-sm text-gray-500">Quick access from home screen</p>
             </div>
           </div>
           <button
@@ -83,25 +83,25 @@ const InstallPrompt = () => {
           </button>
         </div>
 
-        {/* Features */}
+        {/* Benefits */}
         <div className="space-y-3 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <FiWifi className="w-4 h-4 text-green-600" />
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <FiCalendar className="w-4 h-4 text-blue-600" />
             </div>
-            <span className="text-sm text-gray-700">Works offline</span>
+            <span className="text-sm text-gray-700">Easy appointment booking</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FiZap className="w-4 h-4 text-blue-600" />
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <FiHeart className="w-4 h-4 text-green-600" />
             </div>
-            <span className="text-sm text-gray-700">Fast loading</span>
+            <span className="text-sm text-gray-700">Track daily health</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
               <FiSmartphone className="w-4 h-4 text-purple-600" />
             </div>
-            <span className="text-sm text-gray-700">Home screen access</span>
+            <span className="text-sm text-gray-700">Works offline</span>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ const InstallPrompt = () => {
 
         {/* Footer */}
         <p className="text-xs text-gray-500 text-center mt-4">
-          Free to install • No app store required
+          Free • No app store required
         </p>
       </div>
     </div>

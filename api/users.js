@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import CryptoJS from 'crypto-js';
 import dotenv from 'dotenv';
 
+// 加载环境变量
 dotenv.config();
 
 const supabase = createClient(
