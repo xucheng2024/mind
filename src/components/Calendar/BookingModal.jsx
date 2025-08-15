@@ -68,31 +68,27 @@ export default function BookingModal({
     );
   }
 
-  const timeSlots = [
-    { hour: 9, minute: 0, label: 'Morning' },
-    { hour: 10, minute: 0, label: 'Morning' },
-    { hour: 11, minute: 0, label: 'Morning' },
-    { hour: 14, minute: 0, label: 'Afternoon' },
-    { hour: 15, minute: 0, label: 'Afternoon' },
-    { hour: 16, minute: 0, label: 'Afternoon' },
-    { hour: 17, minute: 0, label: 'Afternoon' },
-  ];
+  // Use the actual slots data from modal instead of hardcoded slots
+  const slots = modal.data.slots || [];
 
-  const groupedSlots = timeSlots.reduce((acc, slot) => {
-    const label = slot.label;
+  // Group slots by time period (Morning/Afternoon)
+  const groupedSlots = slots.reduce((acc, slot) => {
+    let label = 'Morning';
+    if (slot.hour >= 12) {
+      label = 'Afternoon';
+    }
+    
     if (!acc[label]) {
       acc[label] = [];
     }
     
-    // Check if slot is available (not in existing events)
-    const slotTime = new Date(date);
-    slotTime.setHours(slot.hour, slot.minute, 0, 0);
-    
-    const isAvailable = true; // This should be calculated based on existing bookings
-    
     acc[label].push({
-      ...slot,
-      isAvailable
+      hour: slot.hour,
+      minute: slot.minute,
+      isAvailable: slot.isAvailable,
+      isFull: slot.isFull,
+      bookingCount: slot.bookingCount,
+      timeStr: slot.timeStr
     });
     
     return acc;
