@@ -611,14 +611,14 @@ export default function RecordPage() {
                     sexualActivity: prev.sexualActivity ? '' : 'protected'
                   }))}
                   className={`
-                    px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                    px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out
                     ${formData.sexualActivity
-                      ? 'bg-pink-500 text-white shadow-md border-2 border-white'
-                      : 'bg-white text-pink-500 border-2 border-pink-500 hover:bg-pink-50'
+                      ? 'bg-pink-500 text-white shadow-lg border-0'
+                      : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-600'
                     }
                   `}
                 >
-                  ❤️
+                  {formData.sexualActivity ? 'ON' : 'OFF'}
                 </button>
               </div>
               
@@ -668,14 +668,14 @@ export default function RecordPage() {
                     menstrual: { ...prev.menstrual, isMenstruating: !prev.menstrual.isMenstruating }
                   }))}
                   className={`
-                    px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                    px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out
                     ${formData.menstrual.isMenstruating
-                      ? 'bg-rose-500 text-white shadow-md border-2 border-white'
-                      : 'bg-white text-rose-500 border-2 border-rose-500 hover:bg-rose-50'
+                      ? 'bg-pink-500 text-white shadow-lg border-0'
+                      : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-600'
                     }
                   `}
                 >
-                  🩸
+                  {formData.menstrual.isMenstruating ? 'ON' : 'OFF'}
                 </button>
               </div>
               

@@ -1,184 +1,361 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Pause, Clock, TrendingUp } from 'lucide-react';
+import { Heart, Play, Pause, Clock, TrendingUp, ArrowLeft, Sparkles } from 'lucide-react';
 import { EnhancedButton, useHapticFeedback } from '../components';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import audioManager from '../utils/audioManager';
 
 export default function MindPage() {
   const navigate = useNavigate();
   const { trigger: hapticTrigger } = useHapticFeedback();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayingSecond, setIsPlayingSecond] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [breathExerciseCount, setBreathExerciseCount] = useLocalStorage('breathExerciseCount', 0);
+  const [secondMeditationCount, setSecondMeditationCount] = useLocalStorage('secondMeditationCount', 0);
+  const [dailyQuote, setDailyQuote] = useState({
+    content: "Peace comes from within. Do not seek it without.",
+    author: "Buddha"
+  });
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
-  const handleMeditationStart = () => {
-    hapticTrigger('light');
-    setIsPlaying(true);
-    console.log('Meditation started');
+
+
+  const AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Patrick-Kozakiewicz-Short-Body-Scan.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL1BhdHJpY2stS296YWtpZXdpY3otU2hvcnQtQm9keS1TY2FuLm1wMyIsImlhdCI6MTc1NTI0NTg0MCwiZXhwIjoxOTEyOTI1ODQwfQ.ZEvMe4AuhEcENDxSv2iNjDfK_ypwPjvS9I8nrzl8Wyc';
+  const SECOND_AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Meditation-1-Mindfulness-of-Body-and-Breath.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL01lZGl0YXRpb24tMS1NaW5kZnVsbmVzcy1vZi1Cb2R5LWFuZC1CcmVhdGgubXAzIiwiaWF0IjoxNzU1MjQ2NTI3LCJleHAiOjE5MTI5MjY1Mjd9.pu5qcQfCyGBka3JRArNqUQXFp13GGh5RiJzcNdR5CyY';
+  const MOVEMENT_AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Movement-with-Rebecca-Crane-10-min.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL01vdmVtZW50LXdpdGgtUmViZWNjYS1DcmFuZS0xMC1taW4ubXAzIiwiaWF0IjoxNzU1MjQ3NjA2LCJleHAiOjE5MTI5Mjc2MDZ9.uVntCBeQbaA0JpW1Tu717Ekb95pXVkg4RqDzK4wThs8';
+
+  const handleBreathExerciseStart = async () => {
+    try {
+      hapticTrigger('light');
+      setIsPlaying(true);
+      
+      // Stop other meditations if playing
+      if (isPlayingSecond) {
+        audioManager.stopAudio();
+        setIsPlayingSecond(false);
+      }
+      
+      await audioManager.playAudio(AUDIO_URL, { 
+        volume: 0.8,
+        onEnd: handleAudioComplete
+      });
+      
+      console.log('Breath exercise started');
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
+    }
   };
 
-  const handleMeditationPause = () => {
+  const handleBreathExercisePause = () => {
     hapticTrigger('light');
     setIsPlaying(false);
-    console.log('Meditation paused');
+    audioManager.pauseAudio();
+    console.log('Breath exercise paused');
   };
 
-  const handleBackToHome = () => {
+  const handleBreathExerciseStop = () => {
     hapticTrigger('light');
-    navigate('/');
+    setIsPlaying(false);
+    audioManager.stopAudio();
+    console.log('Breath exercise stopped');
   };
 
-  // Mock mindfulness activities
-  const mindfulnessActivities = [
-    {
-      id: 1,
-      title: 'Breathing Exercise',
-      duration: '5 min',
-      description: 'Simple breathing technique for stress relief',
-      icon: '🫁',
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      id: 2,
-      title: 'Body Scan',
-      duration: '10 min',
-      description: 'Progressive muscle relaxation',
-      icon: '🧘',
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      id: 3,
-      title: 'Mindful Walking',
-      duration: '15 min',
-      description: 'Walking meditation in nature',
-      icon: '🚶',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      id: 4,
-      title: 'Loving Kindness',
-      duration: '8 min',
-      description: 'Compassion meditation practice',
-      icon: '💝',
-      color: 'bg-pink-100 text-pink-600'
+  const handleAudioComplete = () => {
+    setIsPlaying(false);
+    setBreathExerciseCount(prev => prev + 1);
+    console.log('Breath exercise completed, total sessions:', breathExerciseCount + 1);
+  };
+
+  const handleSecondMeditationStart = async () => {
+    try {
+      hapticTrigger('light');
+      setIsPlayingSecond(true);
+      
+      if (isPlaying) {
+        audioManager.stopAudio();
+        setIsPlaying(false);
+      }
+      
+      await audioManager.playAudio(SECOND_AUDIO_URL, { 
+        volume: 0.8,
+        onEnd: handleSecondMeditationComplete
+      });
+      
+      console.log('Second meditation started');
+    } catch (error) {
+      console.error('Error playing second audio:', error);
+      setIsPlayingSecond(false);
     }
-  ];
+  };
+
+  const handleSecondMeditationPause = () => {
+    hapticTrigger('light');
+    setIsPlayingSecond(false);
+    audioManager.pauseAudio();
+    console.log('Second meditation paused');
+  };
+
+  const handleSecondMeditationStop = () => {
+    hapticTrigger('light');
+    setIsPlayingSecond(false);
+    audioManager.stopAudio();
+    console.log('Second meditation stopped');
+  };
+
+  const handleSecondMeditationComplete = () => {
+    setIsPlayingSecond(false);
+    setSecondMeditationCount(prev => prev + 1);
+    console.log('Second meditation completed, total sessions:', secondMeditationCount + 1);
+  };
+
+  // Fetch daily inspiration quote from local file
+  const fetchDailyQuote = async () => {
+    try {
+      setIsLoadingQuote(true);
+      // Load quotes from local JSON file
+      const response = await fetch('/meditation-quotes.json');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const quotes = await response.json();
+      
+      if (quotes && quotes.length > 0) {
+        // Randomly select a quote
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        const selectedQuote = quotes[randomIndex];
+        
+        setDailyQuote({
+          content: selectedQuote.content,
+          author: selectedQuote.author || "Unknown"
+        });
+      }
+    } catch (error) {
+      console.log('Error loading quotes, using default');
+      // Keep the default quote if loading fails
+    } finally {
+      setIsLoadingQuote(false);
+    }
+  };
+
+  // Fetch quote on component mount
+  React.useEffect(() => {
+    fetchDailyQuote();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 pb-24">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mind Wellness</h1>
-          <p className="text-gray-600">Nurture your mental health and inner peace</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <div className="text-center">
+              <h1 className="text-xl font-semibold text-slate-800">Mind & Meditation</h1>
+              <p className="text-sm text-slate-500">Find your inner peace</p>
+            </div>
+            <div className="w-10" />
+          </div>
         </div>
+      </div>
 
-        {/* Current Session */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6">
-          <div className="text-center">
-            <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-12 h-12 text-purple-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Daily Meditation</h2>
-            <p className="text-gray-600 mb-4">Take a moment to center yourself</p>
-            
-            <div className="flex items-center justify-center space-x-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">15</div>
-                <div className="text-sm text-gray-500">Minutes</div>
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Daily Inspiration */}
+        <div className="text-center mb-8">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <Heart className="w-6 h-6 text-rose-500" />
+                <h3 className="text-xl font-bold text-slate-800">Daily Quote</h3>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">7</div>
-                <div className="text-sm text-gray-500">Day Streak</div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center space-x-3">
-              {!isPlaying ? (
-                <EnhancedButton
-                  variant="primary"
-                  onClick={handleMeditationStart}
-                  size="lg"
-                  className="flex items-center space-x-2"
-                >
-                  <Play className="w-4 h-4" />
-                  <span>Start</span>
-                </EnhancedButton>
-              ) : (
-                <EnhancedButton
-                  variant="outline"
-                  onClick={handleMeditationPause}
-                  size="lg"
-                  className="flex items-center space-x-2"
-                >
-                  <Pause className="w-4 h-4" />
-                  <span>Pause</span>
-                </EnhancedButton>
+              {!isLoadingQuote && dailyQuote.author && (
+                <span className="text-sm text-slate-500">- {dailyQuote.author}</span>
               )}
             </div>
+            {isLoadingQuote ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
+                <div className="h-3 bg-slate-200 rounded animate-pulse w-3/4 mx-auto"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-slate-600 italic text-base text-left">
+                  {dailyQuote.content}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Mindfulness Activities */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Mindfulness Activities</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mindfulnessActivities.map((activity) => (
-              <div key={activity.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                <div className="flex items-start space-x-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${activity.color}`}>
-                    {activity.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{activity.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      <span>{activity.duration}</span>
-                    </div>
-                  </div>
+        {/* Meditation Sessions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Body Scan Session */}
+          <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                <img 
+                  src="/body_scan.jpg" 
+                  alt="Body Scan" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Body Scan</h3>
+              <p className="text-sm text-slate-600 mb-1">Patrick Kozakiewicz</p>
+              <p className="text-xs text-slate-500 mb-4">Gentle body awareness practice</p>
+              
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <Clock className="w-3 h-3" />
+                  <span>10 min</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>{breathExerciseCount}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Progress Stats */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-purple-600">85%</div>
-              <div className="text-sm text-gray-600">Weekly Goal</div>
-            </div>
-            <div className="text-center p-4 bg-pink-50 rounded-lg">
-              <Heart className="w-8 h-8 text-pink-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-pink-600">12</div>
-              <div className="text-sm text-gray-600">Sessions</div>
+              <div className="space-y-2">
+                {!isPlaying ? (
+                  <EnhancedButton
+                    variant="primary"
+                    onClick={handleBreathExerciseStart}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 text-white shadow-md"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Session
+                  </EnhancedButton>
+                ) : (
+                  <div className="space-y-2">
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleBreathExercisePause}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleBreathExerciseStop}
+                      size="sm"
+                      className="w-full"
+                    >
+                      Stop
+                    </EnhancedButton>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <EnhancedButton
-              variant="primary"
-              onClick={() => console.log('Schedule session')}
-              fullWidth
-              size="lg"
-            >
-              Schedule Session
-            </EnhancedButton>
-            
-            <EnhancedButton
-              variant="outline"
-              onClick={handleBackToHome}
-              fullWidth
-              size="lg"
-            >
-              Back to Home
-            </EnhancedButton>
+          {/* Body and Breath Session */}
+          <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                <img 
+                  src="/breathe_outdoor.jpg" 
+                  alt="Body and Breath" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Body and Breath</h3>
+              <p className="text-sm text-slate-600 mb-1">Mark Williams</p>
+              <p className="text-xs text-slate-500 mb-4">Present moment awareness</p>
+              
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <Clock className="w-3 h-3" />
+                  <span>10 min</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>{secondMeditationCount}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {!isPlayingSecond ? (
+                  <EnhancedButton
+                    variant="primary"
+                    onClick={handleSecondMeditationStart}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-0 text-white shadow-md"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Session
+                  </EnhancedButton>
+                ) : (
+                  <div className="space-y-2">
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleSecondMeditationPause}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleSecondMeditationStop}
+                      size="sm"
+                      className="w-full"
+                    >
+                      Stop
+                    </EnhancedButton>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mindful Movement Session */}
+          <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                <img 
+                  src="/movement.png" 
+                  alt="Mindful Movement" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Mindful Movement</h3>
+              <p className="text-sm text-slate-600 mb-1">Rebecca Crane</p>
+              <p className="text-xs text-slate-500 mb-4">Gentle body reconnection</p>
+              
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <Clock className="w-3 h-3" />
+                  <span>10 min</span>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>0</span>
+                </div>
+              </div>
+
+              <EnhancedButton
+                variant="primary"
+                size="sm"
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 border-0 text-white shadow-md"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Session
+              </EnhancedButton>
+            </div>
           </div>
         </div>
       </div>
