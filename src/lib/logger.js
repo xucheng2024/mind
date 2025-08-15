@@ -2,6 +2,18 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://appclinic.vercel.app';
 
+// Timeout protection for logging operations
+const LOG_TIMEOUT_MS = 10000; // 10 seconds timeout for logging
+
+function withTimeout(promise, timeoutMs = LOG_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Logging request timed out')), timeoutMs)
+    )
+  ]);
+}
+
 /**
  * Log user action to the server
  * @param {string} action - Action name (e.g., 'submit_book', 'cancel_appointment')
@@ -19,21 +31,27 @@ export const logUserAction = async ({
   source = 'frontend',
   log_level = 'info'
 }) => {
+  // Use a more lightweight approach - don't block the main flow
   try {
-    const response = await fetch(`${API_BASE_URL}/api/log-action`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action,
-        clinic_id,
-        detail,
-        staff_id,
-        source,
-        log_level
-      })
-    });
+    // Log locally first for immediate feedback    
+    // Use a shorter timeout for logging operations
+    const response = await withTimeout(
+      fetch(`${API_BASE_URL}/api/log-action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          clinic_id,
+          detail,
+          staff_id,
+          source,
+          log_level
+        })
+      }),
+      LOG_TIMEOUT_MS
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -43,8 +61,15 @@ export const logUserAction = async ({
     return result;
 
   } catch (error) {
-    console.error('❌ Failed to log action:', error);
-    // Don't interrupt main business flow due to logging failures
+    // Log error locally but don't throw - logging should never break main flow
+    console.warn('⚠️ [Logger] Logging failed (non-critical):', {
+      action,
+      clinic_id,
+      error: error.message,
+      type: error.name
+    });
+    
+    // Return null to indicate logging failed, but don't throw
     return null;
   }
 };

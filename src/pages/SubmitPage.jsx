@@ -31,6 +31,10 @@ export default function SubmitPage() {
   useEffect(() => {
     const saveToSupabase = async () => {
       if (submittedRef.current || submitted) return;
+      
+      // Start timing the entire process
+      const processStartTime = Date.now();
+      
       submittedRef.current = true;
       setLoading(true);
       setProgress(0);
@@ -129,40 +133,67 @@ export default function SubmitPage() {
 
       setProgress(40);
       setCurrentStep('Creating user account...');
+
       
       // Insert users using API to bypass RLS
       let insertedUser;
       let user_row_id; // Declare user_row_id at function scope level
       try {
+        const userApiStartTime = Date.now();
+        
         const result = await apiClient.createUser(userPayload);
+        
+        const userApiEndTime = Date.now();
+        const userApiDuration = userApiEndTime - userApiStartTime;
+                
         insertedUser = result.data;
+        
+        if (!insertedUser) {
+          console.error('[SubmitPage] ❌ User creation API returned no data:', result);
+          throw new Error('User creation API returned no data');
+        }
         
         setProgress(60);
         setCurrentStep('Logging registration...');
         
         // Log user registration (don't let logging failure block registration)
-        try {
-          await logUserRegistration({
-            clinic_id: registrationData.clinic_id,
-            user_id: user_id,
-            email: registrationData.email,
-            phone: registrationData.phone
-          });
-        } catch (logError) {
-          console.warn('[SubmitPage] User registration logging failed (non-critical):', logError);
-          // Continue with registration even if logging fails
-        }
+        // Use fire-and-forget approach - don't await
+        const logPayload = {
+          clinic_id: registrationData.clinic_id,
+          user_id: user_id,
+          email: registrationData.email,
+          phone: registrationData.phone
+        };
         
+        // Fire and forget - don't wait for logging to complete
+        logUserRegistration(logPayload).catch(logError => {
+          console.warn('[SubmitPage] ⚠️ User registration logging failed (non-critical):', logError);
+          console.warn('[SubmitPage] 📝 Log error details:', {
+            message: logError.message,
+            stack: logError.stack
+          });
+        });
+                
         // Verify user was created successfully
         if (!insertedUser || !insertedUser.row_id) {
-          console.error('[SubmitPage] User creation result missing row_id:', insertedUser);
+          console.error('[SubmitPage] ❌ User creation result missing row_id:', insertedUser);
           throw new Error('User creation failed - missing row_id');
         }
         
         user_row_id = insertedUser.row_id; // Assign value to the outer scope variable
 
       } catch (error) {
-        console.error('[SubmitPage] User creation failed:', error);
+        console.error('[SubmitPage] ❌ User creation failed:', error);
+        console.error('[SubmitPage] 🚨 User creation error details:', {
+          message: error.message,
+          stack: error.stack,
+          response: error.response,
+          data: error.data,
+          status: error.status,
+          statusText: error.statusText
+        });
+
+        
         setErrorMessage(error.message || 'Failed to save user information. Please try again later.');
         submittedRef.current = false;
         setLoading(false);
@@ -188,50 +219,71 @@ export default function SubmitPage() {
         clinic_id: registrationData.clinic_id,
       };
       
+
       setProgress(80);
       setCurrentStep('Creating visit record...');
-      
+
       // Insert visit using API to bypass RLS
       try {
+        const apiStartTime = Date.now();
+        
         const result = await apiClient.createVisit(visitPayload);
         
+        const apiEndTime = Date.now();
+        const apiDuration = apiEndTime - apiStartTime;
+        
+        
         if (!result.success) {
+          console.error('[SubmitPage] ❌ Visit creation API returned failure:', result);
           throw new Error(`Visit creation failed: ${result.message || 'Unknown error'}`);
         }
-                
+        
         setProgress(85);
         setCurrentStep('Logging visit booking...');
         
-        // Log first visit booking
-        try {
-          await logSubmitBook({
-            clinic_id: registrationData.clinic_id,
-            user_id: user_id,
-            appointment_id: result.data?.id || result.id,
-            appointment_date: visitPayload.book_time
+        // Log first visit booking (non-blocking)
+        const logPayload = {
+          clinic_id: registrationData.clinic_id,
+          user_id: user_id,
+          appointment_id: result.data?.id || result.id,
+          appointment_date: visitPayload.book_time
+        };
+        
+        // Fire and forget - don't wait for logging to complete
+        logSubmitBook(logPayload).catch(logError => {
+          console.warn('[SubmitPage] ⚠️ Visit booking logging failed (non-critical):', logError);
+          console.warn('[SubmitPage] 📝 Log error details:', {
+            message: logError.message,
+            stack: logError.stack
           });
-        } catch (logError) {
-          console.warn('[SubmitPage] Visit booking logging failed (non-critical):', logError);
-          // Continue with registration even if logging fails
-        }
+        });
+        
         
       } catch (error) {
-        console.error('[SubmitPage] Visit creation failed:', error);
-        console.error('[SubmitPage] Error details:', {
+        console.error('[SubmitPage] ❌ Visit creation failed:', error);
+        console.error('[SubmitPage] 🚨 Error details:', {
           message: error.message,
           stack: error.stack,
           response: error.response,
-          data: error.data
+          data: error.data,
+          status: error.status,
+          statusText: error.statusText
         });
+        
         setErrorMessage(error.message || 'Failed to save visit information. Please try again later.');
         submittedRef.current = false;
         setLoading(false);
         return;
       }
 
+
       // After successful registration, save login info for auto-login
       if (user_id && user_row_id && registrationData.clinic_id) {
-        cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id, registrationData.fullName || '');
+        try {
+          cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id, registrationData.fullName || '');
+        } catch (cacheError) {
+          console.warn('[SubmitPage] ⚠️ Failed to save login info (non-critical):', cacheError);
+        }
       }
       
       setProgress(90);
@@ -239,14 +291,18 @@ export default function SubmitPage() {
       
       
       // Clear all registration cache using cache manager
-      await cacheManager.clearRegistrationCache();
+      try {
+        await cacheManager.clearRegistrationCache();
+      } catch (cacheError) {
+        console.warn('[SubmitPage] ⚠️ Failed to clear registration cache (non-critical):', cacheError);
+      }
       
       // Clear registration context data
       updateRegistrationData({});
             
       setProgress(100);
       setCurrentStep('Registration completed!');
-      
+            
       // Only show successful registration if all are successful
       setSubmitted(true);
       setLoading(false);
@@ -389,4 +445,3 @@ export default function SubmitPage() {
   );
 }
 
-// Debug line removed - using server API instead
