@@ -34,6 +34,11 @@ export default function BookingModal({
     return true;
   };
 
+  if (!modal.data || !modal.data.date) {
+    console.warn('Modal data or date is missing in BookingModal:', modal);
+    return null;
+  }
+  
   const date = new Date(modal.data.date);
   const isBusinessDay = isWithinBusinessHours(date);
 

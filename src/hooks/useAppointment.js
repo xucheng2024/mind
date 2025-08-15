@@ -4,7 +4,7 @@ import cacheManager from '../lib/cache';
 import { logSubmitBook, logCancelAppointment } from '../lib/logger';
 import toast from 'react-hot-toast';
 
-export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal) {
+export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal, modal) {
   const [actionLoading, setActionLoading] = useState(false);
 
   const bookAppointment = useCallback(async (hour, minute, date) => {
@@ -137,7 +137,7 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       trigger('warning');
       
       // Get the appointment to cancel
-      const appointment = setModal?.data?.appointment;
+      const appointment = modal?.data?.appointment;
       if (!appointment) {
         toast.error('No appointment to cancel');
         return;
