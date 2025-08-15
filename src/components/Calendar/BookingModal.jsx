@@ -126,19 +126,33 @@ export default function BookingModal({
           </div>
 
           <div className="space-y-6">
-            {Object.entries(groupedSlots).map(([label, slots]) => (
-              <div key={label}>
-                <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
-                  {label}
-                </h4>
+            {modal.data.isLoading ? (
+              // Show skeleton loading when slots are being fetched
+              <div>
+                <div className="w-16 h-3 bg-gray-200 rounded animate-pulse mb-3"></div>
                 <TimeSlotGrid
-                  slots={slots}
+                  slots={[]}
                   onTimeSelect={onTimeSelect}
-                  loading={loading}
+                  loading={true}
                   formatTime={formatTime}
                 />
               </div>
-            ))}
+            ) : (
+              // Show actual time slots when loaded
+              Object.entries(groupedSlots).map(([label, slots]) => (
+                <div key={label}>
+                  <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
+                    {label}
+                  </h4>
+                  <TimeSlotGrid
+                    slots={slots}
+                    onTimeSelect={onTimeSelect}
+                    loading={loading}
+                    formatTime={formatTime}
+                  />
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

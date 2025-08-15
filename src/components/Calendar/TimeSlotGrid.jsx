@@ -6,6 +6,22 @@ export default function TimeSlotGrid({
   loading, 
   formatTime 
 }) {
+  // Show skeleton loading when loading is true
+  if (loading) {
+    return (
+      <div className="grid grid-cols-4 gap-2">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={index}
+            className="px-3 py-2 rounded-full bg-gray-200 animate-pulse"
+          >
+            <div className="h-4 bg-gray-300 rounded animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-4 gap-2">
       {slots.map(slot => {
