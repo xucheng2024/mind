@@ -15,6 +15,9 @@ const supabase = createClient(
       autoRefreshToken: false,
       persistSession: false,
     },
+    db: {
+      schema: 'public',
+    },
   }
 );
 
@@ -220,59 +223,85 @@ async function handleCheckDuplicate(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { clinicId, phone, email } = req.body;
-  
-  if (!clinicId || (!phone && !email)) {
-    return res.status(400).json({ 
-      error: 'Missing required fields: clinicId and either phone or email' 
+  try {
+    const { clinicId, phone, email } = req.body;
+    
+    console.log('🔍 CheckDuplicate Debug:', {
+      method: req.method,
+      clinicId: clinicId || 'null',
+      phone: phone || 'null',
+      email: email || 'null',
+      body: req.body
+    });
+    
+    if (!clinicId || (!phone && !email)) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: clinicId and either phone or email' 
+      });
+    }
+    
+    let phoneExists = false;
+    let emailExists = false;
+    
+    if (phone) {
+      const phoneHash = quickHash(phone);
+      console.log('📱 Phone hash generated:', phoneHash);
+      
+      const { data: phoneData, error: phoneError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('clinic_id', clinicId)
+        .eq('phone_hash', phoneHash)
+        .limit(1);
+      
+      if (phoneError) {
+        console.error('Phone check error:', phoneError);
+        return res.status(500).json({ error: 'Failed to check phone duplicate' });
+      }
+      
+      phoneExists = phoneData && phoneData.length > 0;
+      console.log('📱 Phone check result:', { phoneExists, count: phoneData?.length });
+    }
+    
+    if (email) {
+      const emailHash = quickHash(email);
+      console.log('📧 Email hash generated:', emailHash);
+      
+      const { data: emailData, error: emailError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('clinic_id', clinicId)
+        .eq('email_hash', emailHash)
+        .limit(1);
+      
+      if (emailError) {
+        console.error('Email check error:', emailError);
+        return res.status(500).json({ error: 'Failed to check email duplicate' });
+      }
+      
+      emailExists = emailData && emailData.length > 0;
+      console.log('📧 Email check result:', { emailExists, count: emailData?.length });
+    }
+    
+    const result = { 
+      success: true, 
+      data: { 
+        phoneExists, 
+        emailExists,
+        isDuplicate: phoneExists || emailExists
+      } 
+    };
+    
+    console.log('✅ CheckDuplicate result:', result);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ CheckDuplicate unexpected error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error in check-duplicate',
+      details: error.message 
     });
   }
-  
-  let phoneExists = false;
-  let emailExists = false;
-  
-  if (phone) {
-    const phoneHash = quickHash(phone);
-    const { data: phoneData, error: phoneError } = await supabase
-      .from('users')
-      .select('user_id')
-      .eq('clinic_id', clinicId)
-      .eq('phone_hash', phoneHash)
-      .limit(1);
-    
-    if (phoneError) {
-      console.error('Phone check error:', phoneError);
-      return res.status(500).json({ error: 'Failed to check phone duplicate' });
-    }
-    
-    phoneExists = phoneData && phoneData.length > 0;
-  }
-  
-  if (email) {
-    const emailHash = quickHash(email);
-    const { data: emailData, error: emailError } = await supabase
-      .from('users')
-      .select('user_id')
-      .eq('clinic_id', clinicId)
-      .eq('email_hash', emailHash)
-      .limit(1);
-    
-    if (emailError) {
-      console.error('Email check error:', emailError);
-      return res.status(500).json({ error: 'Failed to check email duplicate' });
-    }
-    
-    emailExists = emailData && emailData.length > 0;
-  }
-  
-  res.json({ 
-    success: true, 
-    data: { 
-      phoneExists, 
-      emailExists,
-      isDuplicate: phoneExists || emailExists
-    } 
-  });
 }
 
 async function handleQueryUser(req, res) {
