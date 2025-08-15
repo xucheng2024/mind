@@ -167,9 +167,7 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       // Actually cancel the appointment in the database
       try {
         await apiClient.updateVisit(fullEvent.id, {
-          status: 'cancelled',
-          cancellation_reason: 'user_requested',
-          cancelled_at: new Date().toISOString()
+          status: 'cancelled'
         });
         console.log('✅ Appointment cancelled in database:', fullEvent.id);
       } catch (apiError) {
