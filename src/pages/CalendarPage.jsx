@@ -792,7 +792,6 @@ export default function CalendarPage() {
               currentMonth={currentMonth}
               onPrevMonth={prevMonth}
               onNextMonth={nextMonth}
-              clinicInfo={clinicInfo}
             />
 
             {loading ? (

@@ -33,16 +33,7 @@ export default function CalendarHeader({
           </button>
         </div>
         
-        {clinicInfo && (
-          <div className="text-right">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {clinicInfo.name}
-            </h2>
-            <p className="text-sm text-gray-600">
-              {clinicInfo.address}
-            </p>
-          </div>
-        )}
+
       </div>
     </div>
   );
