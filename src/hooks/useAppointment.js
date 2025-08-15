@@ -136,10 +136,6 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       setActionLoading(true);
       trigger('warning');
       
-      // Get the appointment to cancel - prioritize direct event data if provided
-      console.log('🔍 Direct event data:', directEventData);
-      console.log('🔍 Modal data for cancellation:', modal);
-      
       // Handle different modal types and data structures
       let appointment;
       if (directEventData) {
@@ -169,7 +165,6 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
         await apiClient.updateVisit(fullEvent.id, {
           status: 'cancelled'
         });
-        console.log('✅ Appointment cancelled in database:', fullEvent.id);
       } catch (apiError) {
         console.error('❌ Failed to cancel appointment in database:', apiError);
         // Still log the cancellation attempt

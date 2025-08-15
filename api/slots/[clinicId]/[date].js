@@ -33,12 +33,7 @@ export default async function handler(req, res) {
   
   try {
     const { clinicId, date } = req.query;
-    
-    console.log('🔍 API called with clinicId:', clinicId, 'date:', date);
-    console.log('🔍 Environment variables check:', {
-      hasSupabaseUrl: !!process.env.SUPABASE_URL,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
-    });
+
     
     if (!clinicId || !date) {
       console.error('🔍 Missing required parameters:', { clinicId, date });
@@ -46,7 +41,6 @@ export default async function handler(req, res) {
     }
     
     // Use the database function to get slot availability
-    console.log('🔍 Calling database function get_slot_availability_admin');
     const { data, error } = await supabase
       .rpc('get_slot_availability_admin', {
         p_clinic_id: clinicId,
@@ -64,7 +58,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: error.message });
     }
     
-    console.log('🔍 Database function returned data:', data);
     
     // Filter data for the specific date requested
     const requestedDate = new Date(date).toISOString().split('T')[0];
@@ -73,7 +66,6 @@ export default async function handler(req, res) {
       return slotDate === requestedDate;
     });
     
-    console.log('🔍 Filtered data for requested date:', filteredData);
     
     // Transform the data to match the expected format
     const transformedData = filteredData.map(slot => ({
@@ -82,7 +74,6 @@ export default async function handler(req, res) {
       is_available: slot.is_available
     }));
     
-    console.log('🔍 Transformed data:', transformedData);
     
     res.json({ success: true, data: transformedData });
   } catch (error) {

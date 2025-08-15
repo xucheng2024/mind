@@ -188,7 +188,6 @@ export default function SelfiePage() {
     
     // Debounce check - prevent multiple submissions
     if (submittedRef.current || isSubmitting) {
-      console.log('[SelfiePage] Submit blocked - already processing or submitted');
       return;
     }
     
@@ -232,8 +231,6 @@ export default function SelfiePage() {
         reader.readAsDataURL(uploadBlob);
       });
       
-      console.log(`🖼️ Using native compression: ${(uploadBlob.size/1024).toFixed(2)}KB`);
-
       // Upload compressed image through server API (server handles encryption)
       const uploadResult = await apiClient.uploadFile('selfies', filename, base64, 'image/jpeg');
       
@@ -251,11 +248,6 @@ export default function SelfiePage() {
       const signedUrlResult = await apiClient.getSignedUrl('selfies', filename, 94608000); // 3年过期 (3*365*24*3600)
       const signedUrl = signedUrlResult.data.signedUrl;
       
-      console.log('✅ 获取到selfie的signed URL:', {
-        expires: signedUrlResult.data.expiresAt,
-        filename: filename
-      });
-
       hapticTrigger('success');
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);

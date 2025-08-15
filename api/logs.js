@@ -27,13 +27,10 @@ if (AES_SECRET_KEY.length < 32) {
   throw new Error('AES_KEY must be at least 32 characters long');
 }
 
-console.log('🔐 Logs API enabled with AES encryption');
-
 function encrypt(text) {
   if (!text) return '';
   try {
     const encrypted = CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
-    console.log(`🔐 AES encryption: ${text.substring(0, 20)}... → ${encrypted.substring(0, 20)}...`);
     return encrypted;
   } catch (error) {
     console.error('AES encryption error:', error);
@@ -94,13 +91,6 @@ export default async function handler(req, res) {
         logData.staff_id = staff_id;
       }
 
-      console.log('📝 Logging action:', {
-        action,
-        clinic_id,
-        staff_id: staff_id || 'none',
-        source,
-        timestamp: logData.timestamp
-      });
 
       // Insert log into database
       const { data, error } = await supabase
@@ -114,7 +104,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to log action' });
       }
 
-      console.log('✅ Action logged successfully:', data.id);
       return res.status(200).json({ 
         success: true, 
         log_id: data.id,

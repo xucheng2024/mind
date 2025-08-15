@@ -68,13 +68,6 @@ export default async function handler(req, res) {
       logData.staff_id = staff_id;
     }
 
-    console.log('📝 Logging action:', {
-      action,
-      clinic_id,
-      staff_id: staff_id || 'none',
-      source,
-      timestamp: logData.timestamp
-    });
 
     // Insert log into database
     const { data, error } = await supabase
@@ -88,12 +81,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to log action' });
     }
 
-    console.log('✅ Action logged successfully:', data.id);
-    return res.status(200).json({ 
-      success: true, 
-      log_id: data.id,
-      message: 'Action logged successfully' 
-    });
 
   } catch (error) {
     console.error('Log action API error:', error);

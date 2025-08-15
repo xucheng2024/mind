@@ -61,13 +61,6 @@ export const usePerformance = () => {
 
   const logMetrics = useCallback(() => {
     const currentMetrics = getMetrics();
-    console.log('Performance Metrics:', {
-      FCP: `${currentMetrics.fcp.toFixed(2)}ms`,
-      LCP: `${currentMetrics.lcp.toFixed(2)}ms`,
-      FID: `${currentMetrics.fid.toFixed(2)}ms`,
-      CLS: currentMetrics.cls.toFixed(3),
-      TTFB: `${currentMetrics.ttfb.toFixed(2)}ms`,
-    });
   }, [getMetrics]);
 
   useEffect(() => {

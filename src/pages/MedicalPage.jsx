@@ -68,7 +68,6 @@ export default function MedicalPage() {
     
     // Prevent duplicate submissions
     if (isSubmitting) {
-      console.log('Form submission already in progress, ignoring duplicate request');
       return;
     }
     

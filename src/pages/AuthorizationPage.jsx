@@ -42,7 +42,6 @@ export default function AuthorizationPage() {
     
     // Debounce check - prevent multiple submissions
     if (submittedRef.current || loading || uploading || isSubmitting) {
-      console.log('[AuthorizationPage] Submit blocked - already processing or submitted');
       return;
     }
     
@@ -104,8 +103,6 @@ export default function AuthorizationPage() {
         }
       );
       
-      console.log(`🖊️ Signature compression completed: ${compressionRatio} reduction (${(originalSize/1024).toFixed(2)}KB → ${(compressedSize/1024).toFixed(2)}KB)`);
-
       // Upload compressed signature through server API (server handles encryption)
       const uploadResult = await apiClient.uploadFile('signatures', filename, base64, 'image/jpeg');
       
@@ -122,11 +119,7 @@ export default function AuthorizationPage() {
       // Get signed URL from server (有时效性的安全URL)
       const signedUrlResult = await apiClient.getSignedUrl('signatures', filename, 94608000); // 3年过期 (3*365*24*3600)
       const signedUrl = signedUrlResult.data.signedUrl;
-      
-      console.log('✅ 获取到signature的signed URL:', {
-        expires: signedUrlResult.data.expiresAt,
-        filename: filename
-      });
+
 
       hapticTrigger('success');
       setShowConfetti(true);

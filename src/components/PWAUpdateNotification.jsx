@@ -8,7 +8,6 @@ export default function PWAUpdateNotification() {
 
   useEffect(() => {
     const handleUpdateAvailable = (event) => {
-      console.log('🔄 PWA Update detected:', event.detail);
       setNewWorker(event.detail.newWorker);
       setShowUpdate(true);
     };
@@ -21,7 +20,6 @@ export default function PWAUpdateNotification() {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then((registration) => {
           if (registration && registration.waiting) {
-            console.log('🔄 Found waiting service worker');
             setNewWorker(registration.waiting);
             setShowUpdate(true);
           }
@@ -41,7 +39,6 @@ export default function PWAUpdateNotification() {
 
   const handleUpdate = () => {
     if (newWorker) {
-      console.log('🔄 Applying PWA update...');
       newWorker.postMessage({ type: 'SKIP_WAITING' });
       window.location.reload();
     }

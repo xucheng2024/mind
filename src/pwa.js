@@ -1,19 +1,7 @@
 // PWA Service Worker Registration
 export function registerPWA() {
-  console.log('🔧 PWA Registration:', {
-    isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
-    hasServiceWorker: 'serviceWorker' in navigator,
-    env: import.meta.env.MODE,
-    location: window.location.href,
-    userAgent: navigator.userAgent,
-    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-    hasTouch: 'ontouchstart' in window,
-    maxTouchPoints: navigator.maxTouchPoints
-  });
-
   // Skip Service Worker registration in development
   if (import.meta.env.DEV) {
-    console.log('🚫 Skipping Service Worker registration in development');
     return;
   }
 
@@ -22,7 +10,6 @@ export function registerPWA() {
     const registerSW = () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('✅ SW registered: ', registration);
           
           // Handle updates
           registration.addEventListener('updatefound', () => {
@@ -30,7 +17,6 @@ export function registerPWA() {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content is available
-                console.log('🔄 New service worker installed, notifying app...');
                 window.dispatchEvent(new CustomEvent('pwa-update-available', {
                   detail: { newWorker }
                 }));
@@ -40,14 +26,13 @@ export function registerPWA() {
 
           // Check for waiting worker on registration
           if (registration.waiting) {
-            console.log('🔄 Found waiting service worker on registration');
             window.dispatchEvent(new CustomEvent('pwa-update-available', {
               detail: { newWorker: registration.waiting }
             }));
           }
         })
         .catch((registrationError) => {
-          console.log('❌ SW registration failed: ', registrationError);
+          console.error('❌ SW registration failed: ', registrationError);
         });
     };
 
@@ -74,10 +59,7 @@ export function setupInstallPrompt() {
     e.preventDefault();
     // Stash the event so it can be triggered later
     deferredPrompt = e;
-    
-    // Don't show prompt automatically - wait for user gesture
-    console.log('PWA install prompt ready - waiting for user gesture');
-    
+
     // Dispatch custom event to notify components
     window.dispatchEvent(new CustomEvent('pwa-install-ready'));
   });
@@ -90,11 +72,6 @@ export function showInstallPrompt() {
     
     // Wait for the user to respond to the prompt
     deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
       deferredPrompt = null;
     });
   }
@@ -115,17 +92,6 @@ export function logPWAMode() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   const isIOSStandalone = window.navigator.standalone === true;
   const isPWA = isStandalone || isIOSStandalone;
-  
-  console.log('📱 PWA Mode Detection:', {
-    isPWA,
-    isStandalone,
-    isIOSStandalone,
-    displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
-    userAgent: navigator.userAgent,
-    hasTouch: 'ontouchstart' in window,
-    maxTouchPoints: navigator.maxTouchPoints,
-    platform: navigator.platform
-  });
   
   return isPWA;
 } 

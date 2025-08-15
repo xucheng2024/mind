@@ -40,7 +40,6 @@ export const logUserAction = async ({
     }
 
     const result = await response.json();
-    console.log('✅ Action logged successfully:', result);
     return result;
 
   } catch (error) {

@@ -29,7 +29,6 @@ export class PerformanceOptimizer {
       try {
         const result = await fn(...args);
         const end = performance.now();
-        console.log(`⚡ ${name} completed in ${(end - start).toFixed(2)}ms`);
         return result;
       } catch (error) {
         const end = performance.now();
@@ -128,7 +127,6 @@ export const usePerformanceOptimizedMemo = (factory, deps) => {
     const start = performance.now();
     const result = factory();
     const end = performance.now();
-    console.log(`⚡ Memo computation completed in ${(end - start).toFixed(2)}ms`);
     return result;
   }, deps);
 };
@@ -144,7 +142,6 @@ export const initializePerformanceOptimizations = () => {
   // Clean up event listeners
   PerformanceOptimizer.cleanupEventListeners();
   
-  console.log('🚀 Performance optimizations initialized');
 };
 
 export default PerformanceOptimizer; 

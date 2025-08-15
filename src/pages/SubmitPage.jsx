@@ -127,10 +127,6 @@ export default function SubmitPage() {
         created_at: new Date().toISOString(),
       };
 
-      console.log('[SubmitPage] User payload prepared:', userPayload);
-      console.log('[SubmitPage] user_id type:', typeof user_id, 'value:', user_id);
-      console.log('[SubmitPage] clinic_id type:', typeof registrationData.clinic_id, 'value:', registrationData.clinic_id);
-      
       setProgress(40);
       setCurrentStep('Creating user account...');
       
@@ -139,9 +135,7 @@ export default function SubmitPage() {
       let user_row_id; // Declare user_row_id at function scope level
       try {
         const result = await apiClient.createUser(userPayload);
-        console.log('[SubmitPage] Raw user creation result:', result);
         insertedUser = result.data;
-        console.log('[SubmitPage] Extracted insertedUser:', insertedUser);
         
         setProgress(60);
         setCurrentStep('Logging registration...');
@@ -154,7 +148,6 @@ export default function SubmitPage() {
             email: registrationData.email,
             phone: registrationData.phone
           });
-          console.log('[SubmitPage] User registration logged successfully');
         } catch (logError) {
           console.warn('[SubmitPage] User registration logging failed (non-critical):', logError);
           // Continue with registration even if logging fails
@@ -167,26 +160,7 @@ export default function SubmitPage() {
         }
         
         user_row_id = insertedUser.row_id; // Assign value to the outer scope variable
-        console.log('[SubmitPage] User created successfully with row_id:', user_row_id);
-        console.log('[SubmitPage] user_row_id details:', {
-          value: user_row_id,
-          type: typeof user_row_id,
-          length: user_row_id ? user_row_id.length : 'undefined',
-          isUUID: user_row_id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user_row_id) : false
-        });
-        
-        // Simple verification: check if user has the expected fields
-        console.log('[SubmitPage] User creation result details:', {
-          success: insertedUser.success,
-          hasRowId: !!insertedUser.row_id,
-          rowId: insertedUser.row_id,
-          hasClinicId: !!insertedUser.clinic_id,
-          clinicId: insertedUser.clinic_id
-        });
-        
-        // User verification not needed - user was just created successfully
-        console.log('[SubmitPage] Proceeding directly to visit creation');
-        
+
       } catch (error) {
         console.error('[SubmitPage] User creation failed:', error);
         setErrorMessage(error.message || 'Failed to save user information. Please try again later.');
@@ -214,33 +188,17 @@ export default function SubmitPage() {
         clinic_id: registrationData.clinic_id,
       };
       
-      console.log('[SubmitPage] Visit payload prepared:', visitPayload);
-      console.log('[SubmitPage] user_row_id type:', typeof user_row_id, 'value:', user_row_id);
-      console.log('[SubmitPage] user_row_id before visit creation:', {
-        value: user_row_id,
-        type: typeof user_row_id,
-        isDefined: user_row_id !== undefined && user_row_id !== null,
-        isString: typeof user_row_id === 'string',
-        isEmpty: user_row_id === '',
-        length: user_row_id ? user_row_id.length : 'undefined'
-      });
-      console.log('[SubmitPage] clinic_id type:', typeof registrationData.clinic_id, 'value:', registrationData.clinic_id);
-      
       setProgress(80);
       setCurrentStep('Creating visit record...');
       
       // Insert visit using API to bypass RLS
       try {
-        console.log('[SubmitPage] Making API call to createVisit with payload:', visitPayload);
         const result = await apiClient.createVisit(visitPayload);
-        console.log('[SubmitPage] Visit creation API response:', result);
         
         if (!result.success) {
           throw new Error(`Visit creation failed: ${result.message || 'Unknown error'}`);
         }
-        
-        console.log('[SubmitPage] Visit created successfully with ID:', result.data?.id || result.id);
-        
+                
         setProgress(85);
         setCurrentStep('Logging visit booking...');
         
@@ -252,7 +210,6 @@ export default function SubmitPage() {
             appointment_id: result.data?.id || result.id,
             appointment_date: visitPayload.book_time
           });
-          console.log('[SubmitPage] Visit booking logged successfully');
         } catch (logError) {
           console.warn('[SubmitPage] Visit booking logging failed (non-critical):', logError);
           // Continue with registration even if logging fails

@@ -41,8 +41,6 @@ if (AES_SECRET_KEY.length < 32) {
   throw new Error('AES_KEY must be at least 32 characters long');
 }
 
-console.log('🔐 服务端API已启用AES加密');
-
 function quickHash(text) {
   if (!text) return '';
   return CryptoJS.SHA256(text.replace(/\s+/g, '').toLowerCase()).toString();
@@ -52,7 +50,6 @@ function encrypt(text) {
   if (!text) return '';
   try {
     const encrypted = CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
-    console.log(`🔐 AES加密: ${text.substring(0, 10)}... → ${encrypted.substring(0, 20)}...`);
     return encrypted;
   } catch (error) {
     console.error('AES encryption error:', error);
@@ -78,7 +75,6 @@ function decrypt(encryptedText) {
 }
 
 export default async function handler(req, res) {
-  console.log('🚀 Users API called:', { method: req.method, url: req.url, query: req.query });
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -87,38 +83,30 @@ export default async function handler(req, res) {
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('✅ CORS preflight request handled');
     res.status(200).end();
     return;
   }
   
   const { action } = req.query;
-  console.log('🔍 Action requested:', action);
   
   try {
     switch (action) {
       case 'create':
-        console.log('📝 Creating user...');
         await handleCreateUser(req, res);
         break;
       case 'get':
-        console.log('🔍 Getting user...');
         await handleGetUser(req, res);
         break;
       case 'check-duplicate':
-        console.log('🔍 Checking for duplicates...');
         await handleCheckDuplicate(req, res);
         break;
       case 'query':
-        console.log('🔍 Querying user...');
         await handleQueryUser(req, res);
         break;
       case 'validate':
-        console.log('✅ Validating user...');
         await handleValidateUser(req, res);
         break;
       default:
-        console.log('❌ Invalid action:', action);
         res.status(400).json({ error: 'Invalid action. Valid actions: create, get, check-duplicate, query, validate' });
     }
   } catch (error) {
@@ -244,14 +232,6 @@ async function handleCheckDuplicate(req, res) {
   try {
     const { clinicId, phone, email } = req.body;
     
-    console.log('🔍 CheckDuplicate Debug:', {
-      method: req.method,
-      clinicId: clinicId || 'null',
-      phone: phone || 'null',
-      email: email || 'null',
-      body: req.body
-    });
-    
     if (!clinicId || (!phone && !email)) {
       return res.status(400).json({ 
         error: 'Missing required fields: clinicId and either phone or email' 
@@ -263,7 +243,6 @@ async function handleCheckDuplicate(req, res) {
     
     if (phone) {
       const phoneHash = quickHash(phone);
-      console.log('📱 Phone hash generated:', phoneHash);
       
       const { data: phoneData, error: phoneError } = await supabase
         .from('users')
@@ -278,12 +257,10 @@ async function handleCheckDuplicate(req, res) {
       }
       
       phoneExists = phoneData && phoneData.length > 0;
-      console.log('📱 Phone check result:', { phoneExists, count: phoneData?.length });
     }
     
     if (email) {
       const emailHash = quickHash(email);
-      console.log('📧 Email hash generated:', emailHash);
       
       const { data: emailData, error: emailError } = await supabase
         .from('users')
@@ -298,7 +275,6 @@ async function handleCheckDuplicate(req, res) {
       }
       
       emailExists = emailData && emailData.length > 0;
-      console.log('📧 Email check result:', { emailExists, count: emailData?.length });
     }
     
     const result = { 
@@ -310,7 +286,6 @@ async function handleCheckDuplicate(req, res) {
       } 
     };
     
-    console.log('✅ CheckDuplicate result:', result);
     res.json(result);
     
   } catch (error) {
@@ -328,13 +303,6 @@ async function handleQueryUser(req, res) {
   }
   
   const { clinicId, phoneHash, emailHash } = req.body;
-  
-  // Debug logging
-  console.log('🔍 QueryUser Debug:', {
-    clinicId,
-    phoneHash: phoneHash || 'null',
-    emailHash: emailHash || 'null'
-  });
   
   let query = supabase.from('users').select('user_id, row_id');
   

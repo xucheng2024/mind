@@ -25,6 +25,3 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   }
 });
 
-console.log('📡 Supabase client configured for STORAGE operations only');
-console.log('⚠️ For database operations, use apiClient from src/lib/api.js');
-

@@ -85,7 +85,6 @@ const BookingPage = React.memo(() => {
     
     // Prevent duplicate submissions
     if (isSubmitting) {
-      console.log('Form submission already in progress, ignoring duplicate request');
       return;
     }
     
@@ -100,7 +99,6 @@ const BookingPage = React.memo(() => {
       setLoading(true);
       
       const startTime = performance.now();
-      console.log('🚀 API call started:', startTime);
       
       let hashValue;
       let data;
@@ -110,14 +108,12 @@ const BookingPage = React.memo(() => {
           const apiStart = performance.now();
           const result = await apiClient.queryUser(clinicId, hashValue, null);
           const apiEnd = performance.now();
-          console.log('📡 API response time:', apiEnd - apiStart, 'ms');
           data = result.data;
         } else if (isEmail(input)) {
           hashValue = quickHash(input);
           const apiStart = performance.now();
           const result = await apiClient.queryUser(clinicId, null, hashValue);
           const apiEnd = performance.now();
-          console.log('📡 API response time:', apiEnd - apiStart, 'ms');
           data = result.data;
         } else {
           setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
@@ -135,7 +131,6 @@ const BookingPage = React.memo(() => {
       }
       
       const totalTime = performance.now() - startTime;
-      console.log('✅ Total operation time:', totalTime, 'ms');
       
       // Save user_id and clinic_id to localStorage for free login
       if (data.user_id) localStorage.setItem('user_id', data.user_id);

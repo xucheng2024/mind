@@ -29,13 +29,10 @@ if (AES_SECRET_KEY.length < 32) {
   throw new Error('AES_KEY must be at least 32 characters long');
 }
 
-console.log('🔐 Storage API AES encryption enabled');
-
 function encrypt(text) {
   if (!text) return '';
   try {
     const encrypted = CryptoJS.AES.encrypt(text, AES_SECRET_KEY).toString();
-    console.log(`🔐 Storage AES encryption: ${text.substring(0, 20)}... → ${encrypted.substring(0, 20)}...`);
     return encrypted;
   } catch (error) {
     console.error('AES encryption error:', error);
@@ -232,9 +229,7 @@ async function handleSignedUrl(req, res) {
     if (!data?.signedUrl) {
       return res.status(404).json({ error: 'File not found' });
     }
-    
-    console.log(`✅ Created signed URL for ${bucket}/${filename}, expires in ${expiresIn}s`);
-    
+        
     res.json({ 
       success: true, 
       data: {

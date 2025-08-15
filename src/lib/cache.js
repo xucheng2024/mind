@@ -13,7 +13,6 @@ class CacheManager {
 
   // Clear all registration related data
   async clearRegistrationCache() {
-    console.log('🧹 Clearing registration cache...');
     
     try {
       // Clear localStorage
@@ -38,13 +37,6 @@ class CacheManager {
         );
       }
       
-      // Clear any blob URLs
-      if (window.URL && window.URL.revokeObjectURL) {
-        // Note: We can't track all blob URLs, but we can clear known ones
-        console.log('🧹 Cleared blob URLs');
-      }
-      
-      console.log('✅ Registration cache cleared successfully');
       return true;
     } catch (error) {
       console.error('❌ Error clearing registration cache:', error);
@@ -56,7 +48,6 @@ class CacheManager {
   async saveRegistrationData(data) {
     try {
       await set('registrationData', data);
-      console.log('💾 Registration data saved to IndexedDB');
       return true;
     } catch (error) {
       console.error('❌ Error saving registration data:', error);
@@ -68,7 +59,6 @@ class CacheManager {
   async loadRegistrationData() {
     try {
       const data = await get('registrationData');
-      console.log('📂 Registration data loaded from IndexedDB');
       return data || {};
     } catch (error) {
       console.error('❌ Error loading registration data:', error);
@@ -78,7 +68,6 @@ class CacheManager {
 
   // Clear all app cache
   async clearAllCache() {
-    console.log('🧹 Clearing all app cache...');
     
     try {
       // Clear localStorage (except login info)
@@ -102,7 +91,6 @@ class CacheManager {
         );
       }
       
-      console.log('✅ All cache cleared successfully');
       return true;
     } catch (error) {
       console.error('❌ Error clearing all cache:', error);
@@ -118,7 +106,6 @@ class CacheManager {
       localStorage.setItem('clinic_id', clinicId);
       localStorage.setItem('user_full_name', fullName);
       localStorage.setItem('login_timestamp', Date.now().toString());
-      console.log('🔐 Login info saved for auto-login');
       return true;
     } catch (error) {
       console.error('❌ Error saving login info:', error);
@@ -132,25 +119,20 @@ class CacheManager {
     const userRowId = localStorage.getItem('user_row_id');
     const clinicId = localStorage.getItem('clinic_id');
     const loginTimestamp = localStorage.getItem('login_timestamp');
-    
-    console.log('🔍 CacheManager - Checking login status:', { userId, userRowId, clinicId, loginTimestamp });
-    
+        
     // Check if login info exists and is not too old (30 days)
     if (userId && userRowId && clinicId && loginTimestamp) {
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
       const isRecent = parseInt(loginTimestamp) > thirtyDaysAgo;
       
       if (isRecent) {
-        console.log('✅ CacheManager - User is logged in (auto-login)');
         return true;
       } else {
-        console.log('⏰ CacheManager - Login expired, clearing old login info');
         this.clearLoginInfo();
         return false;
       }
     }
     
-    console.log('❌ CacheManager - User not logged in');
     return false;
   }
 
@@ -160,8 +142,6 @@ class CacheManager {
     localStorage.removeItem('user_row_id');
     localStorage.removeItem('user_full_name');
     localStorage.removeItem('login_timestamp');
-    // 保留clinic_id，因为用户可能还需要注册
-    console.log('🔓 Login info cleared (clinic_id preserved)');
   }
 
   // Get login info
@@ -172,7 +152,6 @@ class CacheManager {
       clinicId: localStorage.getItem('clinic_id'),
       fullName: localStorage.getItem('user_full_name') || ''
     };
-    console.log('📋 CacheManager - Getting login info:', loginInfo);
     return loginInfo;
   }
 }
