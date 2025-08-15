@@ -7,6 +7,9 @@ import dotenv from 'dotenv';
 // 加载环境变量
 dotenv.config();
 
+// 完全禁用realtime功能
+process.env.SUPABASE_DISABLE_REALTIME = 'true';
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -14,6 +17,11 @@ const supabase = createClient(
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
     },
     db: {
       schema: 'public',
