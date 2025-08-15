@@ -9,6 +9,9 @@ export default function RecordPage() {
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showMoodHistory, setShowMoodHistory] = useState(false);
+  const [showSleepHistory, setShowSleepHistory] = useState(false);
+  const [showVitalsHistory, setShowVitalsHistory] = useState(false);
   const [formData, setFormData] = useState({
     mood: '',
     sleepQuality: '',
@@ -98,50 +101,55 @@ export default function RecordPage() {
     // Add previous month's days
     for (let i = startingDay - 1; i >= 0; i--) {
       const prevDate = new Date(year, month, -i);
-      days.push({ date: prevDate, isCurrentMonth: false, hasRecord: false });
+      days.push({ 
+        date: prevDate, 
+        isCurrentMonth: false, 
+        hasRecord: false,
+        hasSymptom: false,
+        hasSex: false,
+        hasMenstrual: false
+      });
     }
     
     // Add current month's days
     for (let i = 1; i <= daysInMonth; i++) {
       const currentDate = new Date(year, month, i);
       const dateKey = currentDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
+      
+      // Initialize variables
       let hasRecord = false;
+      let hasSymptom = false;
+      let hasSex = false;
+      let hasMenstrual = false;
       
       try {
         const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
         if (savedData) {
           const parsedData = JSON.parse(savedData);
-          // Only show green dot if there's actual data, not just empty form
-          hasRecord = parsedData && (
-            parsedData.mood || 
-            parsedData.sleepQuality || 
-            parsedData.symptoms.length > 0 || 
-            parsedData.sexualActivity || 
-            parsedData.habits.length > 0 || 
-            parsedData.vitals.height || 
-            parsedData.vitals.weight || 
-            parsedData.vitals.bloodPressure.systolic || 
-            parsedData.vitals.bloodPressure.diastolic || 
-            parsedData.vitals.heartRate || 
-            parsedData.vitals.bloodOxygen || 
-            parsedData.vitals.bloodGlucose || 
-            parsedData.menstrual.isMenstruating || 
-            parsedData.menstrual.flow || 
-            parsedData.menstrual.pain || 
-            parsedData.notes
-          );
-        } else {
-          hasRecord = false;
+          // Check for specific data types and assign colors
+          hasSymptom = Boolean(parsedData.symptoms && parsedData.symptoms.length > 0);
+          hasSex = Boolean(parsedData.sexualActivity && parsedData.sexualActivity !== '');
+          hasMenstrual = Boolean(parsedData.menstrual && parsedData.menstrual.isMenstruating);
+          
+          // Show dots for symptom, and for sex/menstrual when they are ON
+          hasRecord = hasSymptom || hasSex || hasMenstrual;
         }
       } catch (error) {
         console.error('Error checking localStorage for date:', dateKey, error);
+        // Ensure variables are set to false on error
         hasRecord = false;
+        hasSymptom = false;
+        hasSex = false;
+        hasMenstrual = false;
       }
       
       days.push({ 
         date: currentDate, 
         isCurrentMonth: true, 
         hasRecord,
+        hasSymptom,
+        hasSex,
+        hasMenstrual,
         isToday: currentDate.toDateString() === new Date().toDateString()
       });
     }
@@ -150,7 +158,14 @@ export default function RecordPage() {
     const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       const nextDate = new Date(year, month + 1, i);
-      days.push({ date: nextDate, isCurrentMonth: false, hasRecord: false });
+      days.push({ 
+        date: nextDate, 
+        isCurrentMonth: false, 
+        hasRecord: false,
+        hasSymptom: false,
+        hasSex: false,
+        hasMenstrual: false
+      });
     }
     
     return days;
@@ -174,6 +189,286 @@ export default function RecordPage() {
         ? prev.symptoms.filter(s => s !== symptom)
         : [...prev.symptoms, symptom]
     }));
+  };
+
+  const getMoodScore = (mood) => {
+    const moodScores = {
+      'happy': 3,
+      'relaxed': 2,
+      'calm': 1,
+      'tired': 0,
+      'down': -1,
+      'anxious': -2,
+      'stressed': -3,
+      'angry': -4
+    };
+    return moodScores[mood] || 0;
+  };
+
+  const getSleepScore = (sleep) => {
+    const sleepScores = {
+      'good': 3,
+      'fair': 0,
+      'poor': -3
+    };
+    return sleepScores[sleep] || 0;
+  };
+
+  const getMoodHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.mood) {
+          history.push({ 
+            date: dateKey, 
+            mood: parsedData.mood,
+            score: getMoodScore(parsedData.mood)
+          });
+        } else {
+          // 如果没有mood数据，添加空记录
+          history.push({ 
+            date: dateKey, 
+            mood: null,
+            score: null
+          });
+        }
+      } else {
+        // 如果没有保存的数据，添加空记录
+        history.push({ 
+          date: dateKey, 
+          mood: null,
+          score: null
+        });
+      }
+    }
+    return history;
+  };
+
+    const getSleepHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.sleepQuality) {
+          history.push({ 
+            date: dateKey, 
+            sleepQuality: parsedData.sleepQuality,
+            score: getSleepScore(parsedData.sleepQuality)
+          });
+        } else {
+          // 如果没有sleep数据，添加空记录
+          history.push({ 
+            date: dateKey, 
+            sleepQuality: null,
+            score: null
+          });
+        }
+      } else {
+        // 如果没有保存的数据，添加空记录
+        history.push({ 
+          date: dateKey, 
+          sleepQuality: null,
+          score: null
+        });
+      }
+    }
+    return history;
+  };
+
+  // Vitals history functions
+  const getWeightHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.vitals?.weight) {
+          history.push({ 
+            date: dateKey, 
+            weight: parseFloat(parsedData.vitals.weight),
+            value: parseFloat(parsedData.vitals.weight)
+          });
+        } else {
+          history.push({ 
+            date: dateKey, 
+            weight: null,
+            value: null
+          });
+        }
+      } else {
+        history.push({ 
+          date: dateKey, 
+          weight: null,
+          value: null
+        });
+      }
+    }
+    return history;
+  };
+
+  const getBloodPressureHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.vitals?.bloodPressure?.systolic || parsedData.vitals?.bloodPressure?.diastolic) {
+          history.push({ 
+            date: dateKey, 
+            systolic: parsedData.vitals?.bloodPressure?.systolic ? parseFloat(parsedData.vitals.bloodPressure.systolic) : null,
+            diastolic: parsedData.vitals?.bloodPressure?.diastolic ? parseFloat(parsedData.vitals.bloodPressure.diastolic) : null
+          });
+        } else {
+          history.push({ 
+            date: dateKey, 
+            systolic: null,
+            diastolic: null
+          });
+        }
+      } else {
+        history.push({ 
+          date: dateKey, 
+          systolic: null,
+          diastolic: null
+        });
+      }
+    }
+    return history;
+  };
+
+  const getHeartRateHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.vitals?.heartRate) {
+          history.push({ 
+            date: dateKey, 
+            heartRate: parseFloat(parsedData.vitals.heartRate),
+            value: parseFloat(parsedData.vitals.heartRate)
+          });
+        } else {
+          history.push({ 
+            date: dateKey, 
+            heartRate: null,
+            value: null
+          });
+        }
+      } else {
+        history.push({ 
+          date: dateKey, 
+          heartRate: null,
+          value: null
+        });
+      }
+    }
+    return history;
+  };
+
+  const getBloodOxygenHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.vitals?.bloodOxygen) {
+          history.push({ 
+            date: dateKey, 
+            bloodOxygen: parseFloat(parsedData.vitals.bloodOxygen),
+            value: parseFloat(parsedData.vitals.bloodOxygen)
+          });
+        } else {
+          history.push({ 
+            date: dateKey, 
+            bloodOxygen: null,
+            value: null
+          });
+        }
+      } else {
+        history.push({ 
+          date: dateKey, 
+          bloodOxygen: null,
+          value: null
+        });
+      }
+    }
+    return history;
+  };
+
+  const getBloodGlucoseHistory = () => {
+    const history = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toLocaleDateString('en-CA');
+      const savedData = localStorage.getItem(`healthRecord_${dateKey}`);
+      
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.vitals?.bloodGlucose) {
+          history.push({ 
+            date: dateKey, 
+            bloodGlucose: parseFloat(parsedData.vitals.bloodGlucose),
+            value: parseFloat(parsedData.vitals.bloodGlucose)
+          });
+        } else {
+          history.push({ 
+            date: dateKey, 
+            bloodGlucose: null,
+            value: null
+          });
+        }
+      } else {
+        history.push({ 
+          date: dateKey, 
+          bloodGlucose: null,
+          value: null
+        });
+      }
+    }
+    return history;
   };
 
 
@@ -318,8 +613,15 @@ export default function RecordPage() {
                 <span className={day.isCurrentMonth ? 'text-gray-900' : 'text-gray-300'}>
                   {day.date.getDate()}
                 </span>
-                {day.hasRecord && (
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                {/* Show different colored dots based on data type */}
+                {day.hasSymptom && (
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></div>
+                )}
+                {day.hasSex && (
+                  <div className="absolute top-1 right-3 w-2 h-2 bg-pink-500 rounded-full"></div>
+                )}
+                {day.hasMenstrual && (
+                  <div className="absolute top-1 right-5 w-2 h-2 bg-red-500 rounded-full"></div>
                 )}
               </button>
             ))}
@@ -332,69 +634,251 @@ export default function RecordPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Mood Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 border-2 border-blue-400 rounded-full flex items-center justify-center">
-                  <span className="text-blue-400 text-lg">😊</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 border-2 border-blue-400 rounded-full flex items-center justify-center">
+                    <span className="text-blue-400 text-lg">😊</span>
+                  </div>
+                  <label className="text-base font-semibold text-gray-900">Mood</label>
                 </div>
-                <label className="text-base font-semibold text-gray-900">Mood</label>
+                                  <button
+                    onClick={() => setShowMoodHistory(!showMoodHistory)}
+                    className="text-blue-500 hover:text-blue-700 text-sm font-medium transition-colors"
+                  >
+                    {showMoodHistory ? 'Hide' : 'History'}
+                  </button>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {[
-                  'happy', 'relaxed', 'calm', 'tired', 'down', 'anxious', 'stressed', 'angry'
-                ].map(mood => (
-                  <button
-                    key={mood}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ 
-                      ...prev, 
-                      mood: prev.mood === mood ? '' : mood 
-                    }))}
-                    className={`
-                      px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
-                      ${formData.mood === mood
-                        ? 'bg-blue-400 text-white shadow-md'
-                        : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-100 hover:border-blue-200'
-                      }
-                    `}
-                  >
-                    {mood.charAt(0).toUpperCase() + mood.slice(1)}
-                  </button>
-                ))}
-              </div>
+              {/* Mood Selection Buttons - Only show when history is hidden */}
+              {!showMoodHistory && (
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'happy', 'relaxed', 'calm', 'tired', 'down', 'anxious', 'stressed', 'angry'
+                  ].map(mood => (
+                    <button
+                      key={mood}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ 
+                        ...prev, 
+                        mood: prev.mood === mood ? '' : mood 
+                      }))}
+                      className={`
+                        px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                        ${formData.mood === mood
+                          ? 'border-blue-500 bg-blue-100 shadow-md scale-105'
+                          : 'border-blue-200 hover:border-blue-300 bg-white hover:shadow-md hover:scale-102'
+                        }
+                      `}
+                    >
+                      {mood === 'happy' ? 'Happy' :
+                       mood === 'relaxed' ? 'Relaxed' :
+                       mood === 'calm' ? 'Calm' :
+                       mood === 'tired' ? 'Tired' :
+                       mood === 'down' ? 'Down' :
+                       mood === 'anxious' ? 'Anxious' :
+                       mood === 'stressed' ? 'Stressed' :
+                       mood === 'angry' ? 'Angry' : mood}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* History Table */}
+              {showMoodHistory && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Last 30 Days Mood Trend</h4>
+                  
+
+
+                  {/* Line Chart */}
+                  <div className="mb-4">
+                    <div className="h-32 relative">
+                      {/* Grid lines */}
+                      <div className="absolute inset-0 flex flex-col justify-between">
+                        <div className="border-t border-gray-200"></div>
+                        <div className="border-t border-gray-200"></div>
+                        <div className="border-t border-gray-200"></div>
+                      </div>
+                      
+                      {/* Y-axis labels */}
+                      <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                        <span>+5</span>
+                        <span>0</span>
+                        <span>-5</span>
+                      </div>
+
+                      {/* Line Chart */}
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <polyline
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="1"
+                          points={getMoodHistory()
+                            .map((item, index) => {
+                              if (item.score !== null) {
+                                const x = (index / 29) * 100;
+                                const y = 50 - (item.score / 5) * 50; // Scale to fit 100x100 viewBox with ±5 range
+                                return `${x},${y}`;
+                              }
+                              return null;
+                            })
+                            .filter(Boolean)
+                            .join(' ')
+                          }
+                        />
+                        
+                        {/* Data points */}
+                        {getMoodHistory().map((item, index) => {
+                          if (item.score !== null) {
+                            const x = (index / 29) * 100;
+                            const y = 50 - (item.score / 5) * 50;
+                            return (
+                              <circle
+                                key={index}
+                                cx={x}
+                                cy={y}
+                                r="2"
+                                fill={item.score >= 0 ? "#3b82f6" : "#ef4444"}
+                                stroke="white"
+                                strokeWidth="1"
+                              />
+                            );
+                          }
+                          return null;
+                        })}
+                      </svg>
+                    </div>
+                    
+                    {/* X-axis labels */}
+                    <div className="flex justify-between text-xs text-gray-500 mt-2">
+                      <span>{getMoodHistory()[0]?.date || ''}</span>
+                      <span>{getMoodHistory()[14]?.date || ''}</span>
+                      <span>{getMoodHistory()[29]?.date || ''}</span>
+                    </div>
+                  </div>
+
+
+                </div>
+              )}
             </div>
 
             {/* Sleep Quality Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 border-2 border-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-purple-500 text-lg">😴</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 border-2 border-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-purple-500 text-lg">😴</span>
+                  </div>
+                  <label className="text-base font-semibold text-gray-900">Sleep</label>
                 </div>
-                <label className="text-base font-semibold text-gray-900">Sleep</label>
+                <button
+                  onClick={() => setShowSleepHistory(!showSleepHistory)}
+                  className="text-purple-500 hover:text-purple-700 text-sm font-medium transition-colors"
+                >
+                  {showSleepHistory ? 'Hide' : 'History'}
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  'good', 'fair', 'poor'
-                ].map(quality => (
-                  <button
-                    key={quality}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ 
-                      ...prev, 
-                      sleepQuality: prev.sleepQuality === quality ? '' : quality 
-                    }))}
-                    className={`
-                      px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
-                      ${formData.sleepQuality === quality
-                        ? 'border-purple-500 bg-purple-100 shadow-md scale-105'
-                        : 'border-purple-200 hover:border-purple-300 bg-white hover:shadow-md hover:scale-102'
-                      }
-                    `}
-                  >
-                    {quality === 'good' ? 'Good (>7h)' : quality === 'fair' ? 'Fair (5-7h)' : 'Poor (<5h)'}
-                  </button>
-                ))}
-              </div>
+              
+              {/* Sleep Quality Selection Buttons - Only show when history is hidden */}
+              {!showSleepHistory && (
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'good', 'fair', 'poor'
+                  ].map(quality => (
+                    <button
+                      key={quality}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ 
+                        ...prev, 
+                        sleepQuality: prev.sleepQuality === quality ? '' : quality 
+                      }))}
+                      className={`
+                        px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                        ${formData.sleepQuality === quality
+                          ? 'border-purple-500 bg-purple-100 shadow-md scale-105'
+                          : 'border-purple-200 hover:border-purple-300 bg-white hover:shadow-md hover:scale-102'
+                        }
+                      `}
+                    >
+                      {quality === 'good' ? 'Good (>7h)' : quality === 'fair' ? 'Fair (5-7h)' : 'Poor (<5h)'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Sleep History */}
+              {showSleepHistory && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Last 30 Days Sleep Trend</h4>
+                  
+                  {/* Line Chart */}
+                  <div className="mb-4">
+                    <div className="h-32 relative">
+                      {/* Grid lines */}
+                      <div className="absolute inset-0 flex flex-col justify-between">
+                        <div className="border-t border-gray-200"></div>
+                        <div className="border-t border-gray-200"></div>
+                        <div className="border-t border-gray-200"></div>
+                      </div>
+                      
+                      {/* Y-axis labels */}
+                      <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                        <span>+5</span>
+                        <span>0</span>
+                        <span>-5</span>
+                      </div>
+
+                      {/* Line Chart */}
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <polyline
+                          fill="none"
+                          stroke="#a855f7"
+                          strokeWidth="1"
+                          points={getSleepHistory()
+                            .map((item, index) => {
+                              if (item.score !== null) {
+                                const x = (index / 29) * 100;
+                                const y = 50 - (item.score / 5) * 50; // Scale to fit 100x100 viewBox with ±5 range
+                                return `${x},${y}`;
+                              }
+                              return null;
+                            })
+                            .filter(Boolean)
+                            .join(' ')
+                          }
+                        />
+                        
+                        {/* Data points */}
+                        {getSleepHistory().map((item, index) => {
+                          if (item.score !== null) {
+                            const x = (index / 29) * 100;
+                            const y = 50 - (item.score / 5) * 50;
+                            return (
+                              <circle
+                                key={index}
+                                cx={x}
+                                cy={y}
+                                r="2"
+                                fill={item.score >= 0 ? "#a855f7" : "#ef4444"}
+                                stroke="white"
+                                strokeWidth="1"
+                              />
+                            );
+                          }
+                          return null;
+                        })}
+                      </svg>
+                    </div>
+                    
+                    {/* X-axis labels */}
+                    <div className="flex justify-between text-xs text-gray-500 mt-2">
+                      <span>{getSleepHistory()[0]?.date || ''}</span>
+                      <span>{getSleepHistory()[14]?.date || ''}</span>
+                      <span>{getSleepHistory()[29]?.date || ''}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
 
@@ -442,127 +926,548 @@ export default function RecordPage() {
 
             {/* Vitals Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 border-2 border-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-blue-500 text-lg">❤️</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 border-2 border-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-blue-500 text-lg">❤️</span>
+                  </div>
+                  <label className="text-base font-semibold text-gray-900">Vitals</label>
                 </div>
-                <label className="text-base font-semibold text-gray-900">Vitals</label>
+                <button
+                  onClick={() => setShowVitalsHistory(!showVitalsHistory)}
+                  className="text-blue-500 hover:text-blue-700 text-sm font-medium transition-colors"
+                >
+                  {showVitalsHistory ? 'Hide' : 'History'}
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Height (cm)</label>
-                  <input
-                    type="number"
-                    min="100"
-                    max="250"
-                    value={formData.vitals.height || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: { ...prev.vitals, height: e.target.value }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="170"
-                  />
+              {!showVitalsHistory && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-medium">Height (cm)</label>
+                      <input
+                        type="number"
+                        min="100"
+                        max="250"
+                        value={formData.vitals.height || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          vitals: { ...prev.vitals, height: e.target.value }
+                        }))}
+                        className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                        placeholder="170"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-medium">Weight (kg)</label>
+                      <input
+                        type="number"
+                        min="20"
+                        max="300"
+                        step="0.1"
+                        value={formData.vitals.weight || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          vitals: { ...prev.vitals, weight: e.target.value }
+                        }))}
+                        className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                        placeholder="65.5"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs text-gray-600 mb-1 font-medium">Blood Pressure</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Systolic (80-200)</label>
+                          <input
+                            type="number"
+                            min="80"
+                            max="200"
+                            value={formData.vitals.bloodPressure.systolic || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              vitals: {
+                                ...prev.vitals,
+                                bloodPressure: { ...prev.vitals.bloodPressure, systolic: e.target.value }
+                              }
+                            }))}
+                            className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                            placeholder="120"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Diastolic (50-130)</label>
+                          <input
+                            type="number"
+                            min="50"
+                            max="130"
+                            value={formData.vitals.bloodPressure.diastolic || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              vitals: {
+                                ...prev.vitals,
+                                bloodPressure: { ...prev.vitals.bloodPressure, diastolic: e.target.value }
+                              }
+                            }))}
+                            className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                            placeholder="80"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-medium">Heart Rate (30-220)</label>
+                      <input
+                        type="number"
+                        min="30"
+                        max="220"
+                        value={formData.vitals.heartRate || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          vitals: { ...prev.vitals, heartRate: e.target.value }
+                        }))}
+                        className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                        placeholder="72"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-medium">Blood Oxygen (50-100)</label>
+                      <input
+                        type="number"
+                        min="50"
+                        max="100"
+                        value={formData.vitals.bloodOxygen || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          vitals: { ...prev.vitals, bloodOxygen: e.target.value }
+                        }))}
+                        className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                        placeholder="98"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs text-gray-600 mb-1 font-medium">Blood Glucose (2-30)</label>
+                    <input
+                      type="number"
+                      min="2"
+                      max="30"
+                      step="0.1"
+                      value={formData.vitals.bloodGlucose || ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        vitals: { ...prev.vitals, bloodGlucose: e.target.value }
+                      }))}
+                      className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                      placeholder="5.5"
+                    />
+                  </div>
+                </>
+              )}
+              
+              {/* Vitals History Charts */}
+              {showVitalsHistory && (
+                <div className="mt-6 space-y-6">
+                  {/* Weight Chart */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Weight Trend (Last 30 Days)</h4>
+                    <div className="mb-4">
+                      <div className="h-32 relative">
+                        {/* Grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between">
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                        </div>
+                        
+                        {/* Y-axis labels */}
+                        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                          <span>100</span>
+                          <span>75</span>
+                          <span>50</span>
+                        </div>
+
+                        {/* Line Chart */}
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polyline
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="1"
+                            points={getWeightHistory()
+                              .map((item, index) => {
+                                if (item.weight !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - ((item.weight - 50) / 50) * 100; // Scale to fit 50-100 kg range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Data points */}
+                          {getWeightHistory().map((item, index) => {
+                            if (item.weight !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - ((item.weight - 50) / 50) * 100;
+                              return (
+                                <circle
+                                  key={index}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#3b82f6"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </svg>
+                      </div>
+                      
+                      {/* X-axis labels */}
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{getWeightHistory()[0]?.date || ''}</span>
+                        <span>{getWeightHistory()[14]?.date || ''}</span>
+                        <span>{getWeightHistory()[29]?.date || ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Blood Pressure Chart */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Blood Pressure Trend (Last 30 Days)</h4>
+                    <div className="mb-4">
+                      <div className="h-32 relative">
+                        {/* Grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between">
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                        </div>
+                        
+                        {/* Y-axis labels */}
+                        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                          <span>150</span>
+                          <span>75</span>
+                          <span>0</span>
+                        </div>
+
+                        {/* Line Chart - Systolic */}
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polyline
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="1"
+                            points={getBloodPressureHistory()
+                              .map((item, index) => {
+                                if (item.systolic !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - (item.systolic / 150) * 100; // Scale to fit 0-150 range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Line Chart - Diastolic */}
+                          <polyline
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="1"
+                            points={getBloodPressureHistory()
+                              .map((item, index) => {
+                                if (item.diastolic !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - (item.diastolic / 150) * 100; // Scale to fit 0-150 range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Data points */}
+                          {getBloodPressureHistory().map((item, index) => {
+                            if (item.systolic !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - (item.systolic / 150) * 100;
+                              return (
+                                <circle
+                                  key={`systolic-${index}`}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#ef4444"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                          {getBloodPressureHistory().map((item, index) => {
+                            if (item.diastolic !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - (item.diastolic / 150) * 100;
+                              return (
+                                <circle
+                                  key={`diastolic-${index}`}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#3b82f6"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </svg>
+                      </div>
+                      
+                      {/* X-axis labels */}
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{getBloodPressureHistory()[0]?.date || ''}</span>
+                        <span>{getBloodPressureHistory()[14]?.date || ''}</span>
+                        <span>{getBloodPressureHistory()[29]?.date || ''}</span>
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="flex justify-center space-x-4 mt-2 text-xs">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                          <span className="text-gray-600">Systolic</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <span className="text-gray-600">Diastolic</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Heart Rate Chart */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Heart Rate Trend (Last 30 Days)</h4>
+                    <div className="mb-4">
+                      <div className="h-32 relative">
+                        {/* Grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between">
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                        </div>
+                        
+                        {/* Y-axis labels */}
+                        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                          <span>220</span>
+                          <span>125</span>
+                          <span>30</span>
+                        </div>
+
+                        {/* Line Chart */}
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polyline
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth="1"
+                            points={getHeartRateHistory()
+                              .map((item, index) => {
+                                if (item.heartRate !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - ((item.heartRate - 30) / 190) * 100; // Scale to fit 30-220 range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Data points */}
+                          {getHeartRateHistory().map((item, index) => {
+                            if (item.heartRate !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - ((item.heartRate - 30) / 190) * 100;
+                              return (
+                                <circle
+                                  key={index}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#10b981"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </svg>
+                      </div>
+                      
+                      {/* X-axis labels */}
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{getHeartRateHistory()[0]?.date || ''}</span>
+                        <span>{getHeartRateHistory()[14]?.date || ''}</span>
+                        <span>{getHeartRateHistory()[29]?.date || ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Blood Oxygen Chart */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Blood Oxygen Trend (Last 30 Days)</h4>
+                    <div className="mb-4">
+                      <div className="h-32 relative">
+                        {/* Grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between">
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                        </div>
+                        
+                        {/* Y-axis labels */}
+                        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                          <span>100</span>
+                          <span>90</span>
+                          <span>80</span>
+                        </div>
+
+                        {/* Line Chart */}
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polyline
+                            fill="none"
+                            stroke="#8b5cf6"
+                            strokeWidth="1"
+                            points={getBloodOxygenHistory()
+                              .map((item, index) => {
+                                if (item.bloodOxygen !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - ((item.bloodOxygen - 80) / 20) * 100; // Scale to fit 80-100 range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Data points */}
+                          {getBloodOxygenHistory().map((item, index) => {
+                            if (item.bloodOxygen !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - ((item.bloodOxygen - 80) / 20) * 100;
+                              return (
+                                <circle
+                                  key={index}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#8b5cf6"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </svg>
+                      </div>
+                      
+                      {/* X-axis labels */}
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{getBloodOxygenHistory()[0]?.date || ''}</span>
+                        <span>{getBloodOxygenHistory()[14]?.date || ''}</span>
+                        <span>{getBloodOxygenHistory()[29]?.date || ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Blood Glucose Chart */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Blood Glucose Trend (Last 30 Days)</h4>
+                    <div className="mb-4">
+                      <div className="h-32 relative">
+                        {/* Grid lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between">
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                          <div className="border-t border-gray-200"></div>
+                        </div>
+                        
+                        {/* Y-axis labels */}
+                        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
+                          <span>6</span>
+                          <span>4</span>
+                          <span>2</span>
+                        </div>
+
+                        {/* Line Chart */}
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polyline
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="1"
+                            points={getBloodGlucoseHistory()
+                              .map((item, index) => {
+                                if (item.bloodGlucose !== null) {
+                                  const x = (index / 29) * 100;
+                                  const y = 100 - ((item.bloodGlucose - 2) / 4) * 100; // Scale to fit 2-6 range
+                                  return `${x},${y}`;
+                                }
+                                return null;
+                              })
+                              .filter(Boolean)
+                              .join(' ')
+                            }
+                          />
+                          
+                          {/* Data points */}
+                          {getBloodGlucoseHistory().map((item, index) => {
+                            if (item.bloodGlucose !== null) {
+                              const x = (index / 29) * 100;
+                              const y = 100 - ((item.bloodGlucose - 2) / 4) * 100;
+                              return (
+                                <circle
+                                  key={index}
+                                  cx={x}
+                                  cy={y}
+                                  r="2"
+                                  fill="#f59e0b"
+                                  stroke="white"
+                                  strokeWidth="1"
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </svg>
+                      </div>
+                      
+                      {/* X-axis labels */}
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{getBloodGlucoseHistory()[0]?.date || ''}</span>
+                        <span>{getBloodGlucoseHistory()[14]?.date || ''}</span>
+                        <span>{getBloodGlucoseHistory()[29]?.date || ''}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Weight (kg)</label>
-                  <input
-                    type="number"
-                    min="20"
-                    max="300"
-                    step="0.1"
-                    value={formData.vitals.weight || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: { ...prev.vitals, weight: e.target.value }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="65.5"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Systolic (80-200)</label>
-                  <input
-                    type="number"
-                    min="80"
-                    max="200"
-                    value={formData.vitals.bloodPressure.systolic || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: {
-                        ...prev.vitals,
-                        bloodPressure: { ...prev.vitals.bloodPressure, systolic: e.target.value }
-                      }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="120"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Diastolic (50-130)</label>
-                  <input
-                    type="number"
-                    min="50"
-                    max="130"
-                    value={formData.vitals.bloodPressure.diastolic || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: {
-                        ...prev.vitals,
-                        bloodPressure: { ...prev.vitals.bloodPressure, diastolic: e.target.value }
-                      }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="80"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Heart Rate (30-220)</label>
-                  <input
-                    type="number"
-                    min="30"
-                    max="220"
-                    value={formData.vitals.heartRate || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: { ...prev.vitals, heartRate: e.target.value }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="72"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1 font-medium">Blood Oxygen (50-100)</label>
-                  <input
-                    type="number"
-                    min="50"
-                    max="100"
-                    value={formData.vitals.bloodOxygen || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      vitals: { ...prev.vitals, bloodOxygen: e.target.value }
-                    }))}
-                    className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="98"
-                  />
-                </div>
-              </div>
-              <div className="mt-3">
-                <label className="block text-xs text-gray-600 mb-1 font-medium">Blood Glucose (2-30)</label>
-                <input
-                  type="number"
-                  min="2"
-                  max="30"
-                  step="0.1"
-                                      value={formData.vitals.bloodGlucose || ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    vitals: { ...prev.vitals, bloodGlucose: e.target.value }
-                  }))}
-                                      className="w-full p-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-                    placeholder="5.5"
-                />
-              </div>
+              )}
             </div>
 
             {/* Sex Card */}
@@ -640,7 +1545,7 @@ export default function RecordPage() {
                   className={`
                     px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out
                     ${formData.menstrual.isMenstruating
-                      ? 'bg-pink-500 text-white shadow-lg border-0'
+                      ? 'bg-red-500 text-white shadow-lg border-0'
                       : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-600'
                     }
                   `}
