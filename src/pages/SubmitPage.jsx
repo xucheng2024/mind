@@ -58,29 +58,6 @@ export default function SubmitPage() {
       }
 
       setProgress(20);
-      setCurrentStep('Checking existing registration...');
-
-      // Query using API to bypass RLS
-      let existingUser = null;
-      try {
-        setProgress(30);
-        setCurrentStep('Querying database...');
-        const result = await apiClient.getUser(registrationData.clinic_id, user_id);
-        existingUser = result.data;
-      } catch (error) {
-        // User not found is expected for new registrations
-        console.error('[SubmitPage] User not found (expected for new registration):', error.message);
-      }
-
-      // Check if already registered
-      if (existingUser) {
-        setErrorMessage('This patient is already registered.');
-        setLoading(false);
-        setProgress(0);
-        return;
-      }
-
-      setProgress(40);
       setCurrentStep('Processing registration...');
 
       let selfiePath = registrationData.selfieUrl || registrationData.selfie || '';
@@ -149,7 +126,7 @@ export default function SubmitPage() {
         created_at: new Date().toISOString(),
       };
 
-      setProgress(60);
+      setProgress(40);
       setCurrentStep('Creating user account...');
       
       // Insert users using API to bypass RLS
@@ -158,7 +135,7 @@ export default function SubmitPage() {
         const result = await apiClient.createUser(userPayload);
         insertedUser = result.data;
         
-        setProgress(70);
+        setProgress(60);
         setCurrentStep('Logging registration...');
         
         // Log user registration
