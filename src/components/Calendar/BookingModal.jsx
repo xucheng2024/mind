@@ -10,7 +10,7 @@ export default function BookingModal({
   formatTime,
   businessHours 
 }) {
-  if (modal.type !== 'booking') return null;
+  if (modal.type !== 'book') return null;
 
   const commonModalProps = {
     className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50",
