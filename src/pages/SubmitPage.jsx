@@ -136,6 +136,7 @@ export default function SubmitPage() {
       
       // Insert users using API to bypass RLS
       let insertedUser;
+      let user_row_id; // Declare user_row_id at function scope level
       try {
         const result = await apiClient.createUser(userPayload);
         console.log('[SubmitPage] Raw user creation result:', result);
@@ -165,7 +166,7 @@ export default function SubmitPage() {
           throw new Error('User creation failed - missing row_id');
         }
         
-        const user_row_id = insertedUser.row_id;
+        user_row_id = insertedUser.row_id; // Assign value to the outer scope variable
         console.log('[SubmitPage] User created successfully with row_id:', user_row_id);
         console.log('[SubmitPage] user_row_id details:', {
           value: user_row_id,
@@ -196,6 +197,12 @@ export default function SubmitPage() {
 
       setProgress(75);
       setCurrentStep('Preparing visit creation...');
+
+      // Verify user_row_id is available before creating visit
+      if (!user_row_id) {
+        console.error('[SubmitPage] user_row_id is not available for visit creation');
+        throw new Error('User row ID is required for visit creation');
+      }
 
       // visits payload
       const visitPayload = {
