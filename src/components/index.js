@@ -17,6 +17,7 @@ export { default as ProgressBar } from './ProgressBar';
 export { default as SkeletonLoader } from './SkeletonLoader';
 export { default as Confetti } from './Confetti';
 export { default as OfflineIndicator } from './OfflineIndicator';
+export { default as BottomTabBar } from './BottomTabBar';
 
 // Utility Components
 export { default as HapticFeedback, useHapticFeedback } from './HapticFeedback';

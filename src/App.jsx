@@ -8,7 +8,7 @@ import QueryProvider from './components/QueryProvider';
 import PWAInstallButton from './components/PWAInstallButton';
 import VersionUpdate from './components/VersionUpdate';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
-import { OfflineIndicator } from './components';
+import { OfflineIndicator, BottomTabBar } from './components';
 import SafariInstallGuide from './components/SafariInstallGuide';
 
 import { RegistrationProvider } from '../context/RegistrationContext';
@@ -26,6 +26,10 @@ const BookingPage = lazy(() => import('./pages/BookingPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const RecordPage = lazy(() => import('./pages/RecordPage'));
+const MindPage = lazy(() => import('./pages/MindPage'));
+const DietPage = lazy(() => import('./pages/DietPage'));
 
 
 // Loading component
@@ -59,11 +63,16 @@ function App() {
             <Route path="/register/authorize" element={<AuthorizationPage />} />
             <Route path="/register/selfie" element={<SelfiePage />} />
             <Route path="/register/submit" element={<SubmitPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/record" element={<RecordPage />} />
+            <Route path="/mind" element={<MindPage />} />
+            <Route path="/diet" element={<DietPage />} />
     
             <Route path="/" element={<HomePage />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
+      <BottomTabBar />
       <PerformanceMonitor />
       <PWAInstallButton />
       <SafariInstallGuide />

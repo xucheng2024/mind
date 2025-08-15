@@ -134,7 +134,7 @@ export default function HomePage() {
   }, 100);
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-white to-blue-50">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-white to-blue-50 pb-24">
       <Confetti isActive={showConfetti} />
       {/* 品牌区块 */}
       <div className="w-full flex flex-col items-center mb-10 mt-12">
