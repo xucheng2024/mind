@@ -129,19 +129,23 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
     }
   }, [clinicId, userRowId, trigger, setEvents, setModal, actionLoading]);
 
-  const cancelAppointment = useCallback(async () => {
+  const cancelAppointment = useCallback(async (directEventData = null) => {
     if (actionLoading) return;
     
     try {
       setActionLoading(true);
       trigger('warning');
       
-      // Get the appointment to cancel
+      // Get the appointment to cancel - prioritize direct event data if provided
+      console.log('🔍 Direct event data:', directEventData);
       console.log('🔍 Modal data for cancellation:', modal);
       
       // Handle different modal types and data structures
       let appointment;
-      if (modal?.type === 'cancel' && modal?.data?.eventId) {
+      if (directEventData) {
+        // Use directly passed event data (most reliable)
+        appointment = directEventData;
+      } else if (modal?.type === 'cancel' && modal?.data?.eventId) {
         // For cancel modal type, we need to find the event by ID
         appointment = { id: modal.data.eventId };
       } else if (modal?.data?.event) {
