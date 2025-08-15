@@ -3,12 +3,11 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
-import cacheManager from '../lib/cache';
-import { Calendar, Clock, Check, X, RotateCcw, AlertCircle } from 'lucide-react';
 import { useHapticFeedback } from '../components/HapticFeedback';
-import toast from 'react-hot-toast';
-import { logSubmitBook, logCancelAppointment } from '../lib/logger';
-import { debounce } from '../lib/debounce';
+import { useAppointment } from '../hooks/useAppointment';
+import CalendarHeader from '../components/Calendar/CalendarHeader';
+import BookingModal from '../components/Calendar/BookingModal';
+import CancelModal from '../components/Calendar/CancelModal';
 
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
@@ -25,7 +24,7 @@ export default function CalendarPage() {
   const [businessHours, setBusinessHours] = useState(null);
   const [clinicInfo, setClinicInfo] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [actionLoading, setActionLoading] = useState(false);
+
   
   // Month navigation functions
   const nextMonth = () => {
@@ -430,191 +429,34 @@ export default function CalendarPage() {
     }
   }, [trigger, userRowId]);
 
-  // Book appointment with immediate feedback
-  const bookAppointment = useMemo(
-    () => async (hour, minute) => {
-      if (actionLoading) return;
-      
-      // Immediate visual feedback
-      const date = new Date(modal.data.date);
-      date.setHours(hour, minute, 0, 0);
-      
-      // Show immediate loading state
-      setActionLoading(true);
-      trigger('success');
-      
-      // Optimistic UI update - show the slot as booked immediately
-      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      const optimisticEvent = {
-        id: `temp-${Date.now()}`,
-        title: timeString,
-        start: date,
-        end: new Date(date.getTime() + 30 * 60 * 1000),
-        backgroundColor: '#3B82F6',
-        borderColor: '#3B82F6',
-        textColor: 'white',
-        userRowId,
-        isOptimistic: true // Mark as temporary
-      };
-      
-      setEvents(prev => [...prev, optimisticEvent]);
-      
-      try {
-        // Log the booking action
-        await logSubmitBook({
-          clinic_id: clinicId,
-          user_id: userRowId,
-          appointment_id: null, // Will be set after creation
-          service_type: 'consultation',
-          doctor_id: null,
-          appointment_date: date.toISOString(),
-          duration_minutes: 30,
-          booking_method: 'web_app',
-          payment_status: 'pending',
-          total_amount: null
-        });
-      
-      // Validate user and check existing bookings
-      const [validateResult, { data: existingBookings }] = await Promise.all([
-        apiClient.validateUser(clinicId, userRowId),
-        apiClient.getUserVisits(clinicId, userRowId)
-      ]);
-      
-      // Update cached user name if available
-      if (validateResult.data?.full_name) {
-        const currentLoginInfo = cacheManager.getLoginInfo();
-        if (currentLoginInfo.userId && currentLoginInfo.userRowId) {
-          cacheManager.saveLoginInfo(
-            currentLoginInfo.userId, 
-            currentLoginInfo.userRowId, 
-            currentLoginInfo.clinicId,
-            validateResult.data.full_name
-          );
-        }
-      }
-      
-      const today = new Date(modal.data.date);
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      
-      const todayBookings = (existingBookings || []).filter(booking => {
-        const bookingDate = new Date(booking.book_time);
-        return booking.status === 'booked' && bookingDate >= today && bookingDate < tomorrow;
-      });
-      
-        if (todayBookings.length > 0) {
-          // Remove optimistic event if booking fails
-          setEvents(prev => prev.filter(event => !event.isOptimistic));
-          toast.error('You already have an appointment today');
-          return;
-        }
-      
-      // Create appointment
-      const createResponse = await apiClient.createVisit({
-        user_row_id: userRowId,
-        clinic_id: clinicId,
-        book_time: date.toISOString(),
-        visit_time: date.toISOString(),
-        status: 'booked',
-        is_first: false,
-      });
-      
-      const appointmentId = createResponse.data?.id || createResponse.id;
-      
-      // Log the successful booking with actual appointment ID
-      await logSubmitBook({
-        clinic_id: clinicId,
-        user_id: userRowId,
-        appointment_id: appointmentId,
-        service_type: 'consultation',
-        doctor_id: null,
-        appointment_date: date.toISOString(),
-        duration_minutes: 30,
-        booking_method: 'web_app',
-        payment_status: 'pending',
-        total_amount: null
-      });
-      
-        // Replace optimistic event with real event
-        setEvents(prev => prev.map(event => 
-          event.isOptimistic ? {
-            ...event,
-            id: appointmentId,
-            isOptimistic: false
-          } : event
-        ));
-      setModal({ type: null, data: null });
-      toast.success(`Appointment booked: ${formatTime(hour, minute)}`);
-      
-      } catch (error) {
-        // Remove optimistic event if booking fails
-        setEvents(prev => prev.filter(event => !event.isOptimistic));
-        trigger('error');
-        console.error('Booking failed:', error);
-        toast.error('Booking failed. Please try again.');
-      } finally {
-        setActionLoading(false);
-      }
-    },
-    [modal, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]
+  // Use custom hook for appointment management
+  const { actionLoading, bookAppointment, cancelAppointment } = useAppointment(
+    clinicId, 
+    userRowId, 
+    trigger, 
+    setEvents, 
+    setModal
   );
 
-  // Cancel appointment with debounce
-  const cancelAppointment = useMemo(
-    () => 
-      debounce(async () => {
-        if (actionLoading) return;
-        try {
-          setActionLoading(true);
-          trigger('warning');
-          
-          // Get event details for logging
-          const event = events.find(e => e.id === modal.data.eventId);
-          if (event) {
-            // Log the cancellation action with original book_time
-            await logCancelAppointment({
-              clinic_id: clinicId,
-              user_id: userRowId,
-              appointment_id: modal.data.eventId,
-              original_date: event.start.toISOString()
-            });
-          }
-          
-          await apiClient.updateVisit(modal.data.eventId, { status: 'canceled' });
-          setEvents(prev => prev.filter(e => e.id !== modal.data.eventId));
-          setModal({ type: null, data: null });
-          toast.success('Appointment cancelled');
-        } catch (error) {
-          trigger('error');
-          console.error('Cancel failed:', error);
-          toast.error('Failed to cancel appointment');
-        } finally {
-          setActionLoading(false);
-        }
-      }, 300),
-    [events, modal.data, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]
-  );
+  const handleTimeSelect = useCallback((hour, minute) => {
+    const date = new Date(modal.data.date);
+    date.setHours(hour, minute, 0, 0);
+    bookAppointment(hour, minute, date);
+  }, [modal.data.date, bookAppointment]);
+
+
 
   const formatTime = (hour, minute = 0) => 
     `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
-  // Render modal content
+  // Render modals using components
   const renderModal = () => {
     if (!modal.type) return null;
-
-    const commonModalProps = {
-      className: "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4",
-      onClick: (e) => {
-        if (e.target === e.currentTarget) {
-          setModal({ type: null, data: null });
-        }
-      }
-    };
 
     if (modal.type === 'confirmCancel') {
       const { event } = modal.data;
       return (
-        <div {...commonModalProps}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Cancel Appointment</h3>
             <p className="text-gray-600 mb-6">
@@ -655,139 +497,26 @@ export default function CalendarPage() {
     }
 
     if (modal.type === 'book') {
-      const { date, slots, userHasOtherBooking, isLoading } = modal.data;
-      
       return (
-        <div {...commonModalProps}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-scale-in border border-gray-100">
-            <div className="px-6 py-5 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    Select Time
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {date.toLocaleDateString('en-US', { 
-                      month: 'long', day: 'numeric', weekday: 'long'
-                    })}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setModal({ type: null, data: null })}
-                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              {isLoading ? (
-                // Loading skeleton
-                <div className="space-y-4">
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Actual time slots
-                (() => {
-                  const amSlots = slots.filter(s => s.hour < 12);
-                  const pmSlots = slots.filter(s => s.hour >= 12);
-                  
-                  return (
-                    <>
-                      {[
-                        { label: 'Morning', slots: amSlots },
-                        { label: 'Afternoon', slots: pmSlots }
-                      ].map(({ label, slots }) => 
-                        slots.length > 0 && (
-                          <div key={label} className="mb-5 last:mb-0">
-                            <h4 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">{label}</h4>
-                            <div className="grid grid-cols-4 gap-2">
-                              {slots.map(slot => {
-                                const isClickable = slot.isAvailable;
-                                
-                                const handleSlotClick = () => {
-                                  if (!isClickable) return;
-                                  bookAppointment(slot.hour, slot.minute);
-                                };
-                                
-                                return (
-                                  <button
-                                    key={`${slot.hour}:${slot.minute}`}
-                                    onClick={handleSlotClick}
-                                    disabled={!isClickable || loading}
-                                    className={`px-3 py-2 rounded-full transition-all duration-200 text-center font-medium text-sm ${
-                                      !isClickable
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-dashed border-gray-300'
-                                        : 'bg-white text-gray-700 hover:bg-blue-500 hover:text-white border border-gray-300 hover:border-blue-500'
-                                    }`}
-                                  >
-                                    {formatTime(slot.hour, slot.minute)}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </>
-                  );
-                })()
-              )}
-            </div>
-          </div>
-        </div>
+        <BookingModal
+          modal={modal}
+          setModal={setModal}
+          onTimeSelect={handleTimeSelect}
+          loading={actionLoading}
+          formatTime={formatTime}
+          businessHours={businessHours}
+        />
       );
     }
 
-
-
     if (modal.type === 'cancel') {
       return (
-        <div {...commonModalProps}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scale-in border border-gray-100">
-            <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl mx-auto mb-4 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Already Booked
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                To reschedule, please cancel first
-              </p>
-              <div className="space-y-3">
-                <button
-                  onClick={cancelAppointment}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors"
-                >
-                  Cancel Appointment
-                </button>
-                <button
-                  onClick={() => setModal({ type: null, data: null })}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Keep
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CancelModal
+          modal={modal}
+          setModal={setModal}
+          onCancel={cancelAppointment}
+          loading={actionLoading}
+        />
       );
     }
 
@@ -1048,30 +777,12 @@ export default function CalendarPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="p-6">
-            {/* Month Navigation */}
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={prevMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Previous month"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </h2>
-              <button
-                onClick={nextMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Next month"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <CalendarHeader
+              currentMonth={currentMonth}
+              onPrevMonth={prevMonth}
+              onNextMonth={nextMonth}
+              clinicInfo={clinicInfo}
+            />
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
