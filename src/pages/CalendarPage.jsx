@@ -487,7 +487,7 @@ export default function CalendarPage() {
                 onClick={() => setModal({ type: null, data: null })}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
               >
-                Keep Appointment
+                Keep
               </button>
               <button
                 onClick={() => {
