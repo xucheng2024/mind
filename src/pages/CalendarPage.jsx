@@ -430,17 +430,37 @@ export default function CalendarPage() {
     }
   }, [trigger, userRowId]);
 
-  // Book appointment with debounce
+  // Book appointment with immediate feedback
   const bookAppointment = useMemo(
-    () => debounce(async (hour, minute) => {
+    () => async (hour, minute) => {
       if (actionLoading) return;
+      
+      // Immediate visual feedback
+      const date = new Date(modal.data.date);
+      date.setHours(hour, minute, 0, 0);
+      
+      // Show immediate loading state
+      setActionLoading(true);
+      trigger('success');
+      
+      // Optimistic UI update - show the slot as booked immediately
+      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      const optimisticEvent = {
+        id: `temp-${Date.now()}`,
+        title: timeString,
+        start: date,
+        end: new Date(date.getTime() + 30 * 60 * 1000),
+        backgroundColor: '#3B82F6',
+        borderColor: '#3B82F6',
+        textColor: 'white',
+        userRowId,
+        isOptimistic: true // Mark as temporary
+      };
+      
+      setEvents(prev => [...prev, optimisticEvent]);
+      
       try {
-        setActionLoading(true);
-        trigger('success');
-        const date = new Date(modal.data.date);
-        date.setHours(hour, minute, 0, 0);
-        
-                // Log the booking action
+        // Log the booking action
         await logSubmitBook({
           clinic_id: clinicId,
           user_id: userRowId,
@@ -482,10 +502,12 @@ export default function CalendarPage() {
         return booking.status === 'booked' && bookingDate >= today && bookingDate < tomorrow;
       });
       
-      if (todayBookings.length > 0) {
-        toast.error('You already have an appointment today');
-        return;
-      }
+        if (todayBookings.length > 0) {
+          // Remove optimistic event if booking fails
+          setEvents(prev => prev.filter(event => !event.isOptimistic));
+          toast.error('You already have an appointment today');
+          return;
+        }
       
       // Create appointment
       const createResponse = await apiClient.createVisit({
@@ -513,32 +535,29 @@ export default function CalendarPage() {
         total_amount: null
       });
       
-      // Update UI with the actual ID from server
-      const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      const newEvent = {
-        id: appointmentId,
-        title: timeString,
-        start: date,
-        end: new Date(date.getTime() + 30 * 60 * 1000),
-        backgroundColor: '#3B82F6',
-        borderColor: '#3B82F6',
-        textColor: 'white',
-        userRowId
-      };
-      
-      setEvents(prev => [...prev, newEvent]);
+        // Replace optimistic event with real event
+        setEvents(prev => prev.map(event => 
+          event.isOptimistic ? {
+            ...event,
+            id: appointmentId,
+            isOptimistic: false
+          } : event
+        ));
       setModal({ type: null, data: null });
       toast.success(`Appointment booked: ${formatTime(hour, minute)}`);
       
-    } catch (error) {
-      trigger('error');
-      console.error('Booking failed:', error);
-      toast.error('Booking failed. Please try again.');
-    } finally {
-      setActionLoading(false);
-    }
-  }, 300),
-  [modal, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]);
+      } catch (error) {
+        // Remove optimistic event if booking fails
+        setEvents(prev => prev.filter(event => !event.isOptimistic));
+        trigger('error');
+        console.error('Booking failed:', error);
+        toast.error('Booking failed. Please try again.');
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [modal, clinicId, userRowId, trigger, setEvents, setModal, actionLoading, setActionLoading]
+  );
 
   // Cancel appointment with debounce
   const cancelAppointment = useMemo(
