@@ -151,25 +151,18 @@ export default function MindPage() {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
+          <div className="flex items-center justify-center">
             <div className="text-center">
               <h1 className="text-xl font-semibold text-slate-800">Mind & Meditation</h1>
               <p className="text-sm text-slate-500">Find your inner peace</p>
             </div>
-            <div className="w-10" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-6 py-4">
         {/* Daily Inspiration */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">

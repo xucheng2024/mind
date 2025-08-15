@@ -33,7 +33,7 @@ export default function RecordPage() {
 
   // Auto-save to localStorage whenever formData changes
   useEffect(() => {
-    const dateKey = selectedDate.toISOString().split('T')[0];
+    const dateKey = selectedDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
     
     // Check if there's actual meaningful data to save
     const hasData = (
@@ -73,7 +73,7 @@ export default function RecordPage() {
 
   // Load data from localStorage when date changes
   useEffect(() => {
-    const dateKey = selectedDate.toISOString().split('T')[0];
+    const dateKey = selectedDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
     loadFormDataFromStorage(dateKey);
   }, [selectedDate]);
 
@@ -106,7 +106,7 @@ export default function RecordPage() {
     // Add current month's days
     for (let i = 1; i <= daysInMonth; i++) {
       const currentDate = new Date(year, month, i);
-      const dateKey = currentDate.toISOString().split('T')[0];
+      const dateKey = currentDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
       let hasRecord = false;
       
       try {
@@ -164,7 +164,7 @@ export default function RecordPage() {
       setSelectedDate(day.date);
       
       // Immediately load or reset form when switching dates
-      const dateKey = day.date.toISOString().split('T')[0];
+      const dateKey = day.date.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
       loadFormDataFromStorage(dateKey);
     }
   };
@@ -258,6 +258,18 @@ export default function RecordPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-xl font-semibold text-gray-800">Health Records</h1>
+              <p className="text-sm text-gray-500">Track your wellness journey</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Calendar Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
