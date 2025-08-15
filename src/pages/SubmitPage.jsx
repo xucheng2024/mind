@@ -154,25 +154,7 @@ export default function SubmitPage() {
       const user_row_id = insertedUser.row_id;
 
       setProgress(75);
-      setCurrentStep('Checking visit status...');
-      
-      // Check if user already has a visit
-      try {
-        const result = await apiClient.checkUserVisit(registrationData.clinic_id, user_row_id);
-        if (result.data.hasVisit) {
-          setErrorMessage('This patient already has a visit record.');
-          setLoading(false);
-          setProgress(0);
-          return;
-        }
-      } catch (error) {
-        console.error('[SubmitPage] Visit check failed:', error);
-        setErrorMessage('Failed to verify visit status. Please try again later.');
-        submittedRef.current = false;
-        setLoading(false);
-        setProgress(0);
-        return;
-      }
+      setCurrentStep('Preparing visit creation...');
 
       // visits payload
       const visitPayload = {
