@@ -14,7 +14,6 @@ export default function RecordPage() {
     sleepQuality: '',
     symptoms: [],
     sexualActivity: '',
-    habits: [],
     vitals: {
       height: '',
       weight: '',
@@ -41,7 +40,6 @@ export default function RecordPage() {
       formData.sleepQuality || 
       formData.symptoms.length > 0 || 
       formData.sexualActivity || 
-      formData.habits.length > 0 || 
       formData.vitals.height || 
       formData.vitals.weight || 
       formData.vitals.bloodPressure.systolic || 
@@ -178,14 +176,7 @@ export default function RecordPage() {
     }));
   };
 
-  const handleHabitToggle = (habit) => {
-    setFormData(prev => ({
-      ...prev,
-      habits: prev.habits.includes(habit)
-        ? prev.habits.filter(h => h !== habit)
-        : [...prev.habits, habit]
-    }));
-  };
+
 
   // Helper function to reset form to empty state
   const resetFormToEmpty = () => {
@@ -194,7 +185,6 @@ export default function RecordPage() {
       sleepQuality: '',
       symptoms: [],
       sexualActivity: '',
-      habits: [],
       vitals: {
         height: '',
         weight: '',
@@ -224,7 +214,6 @@ export default function RecordPage() {
             sleepQuality: parsedData.sleepQuality || '',
             symptoms: Array.isArray(parsedData.symptoms) ? parsedData.symptoms : [],
             sexualActivity: parsedData.sexualActivity || '',
-            habits: Array.isArray(parsedData.habits) ? parsedData.habits : [],
             vitals: {
               height: parsedData.vitals?.height || '',
               weight: parsedData.vitals?.weight || '',
@@ -408,38 +397,7 @@ export default function RecordPage() {
               </div>
             </div>
 
-            {/* Habits Card */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 border-2 border-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-green-500 text-lg">💪</span>
-                </div>
-                <label className="text-base font-semibold text-gray-900">
-                  Habits
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {['gym', 'running', 'yoga', 'sleep_early', 'meditation', 'no_smoking', 'no_drinking', 'no_sugar'].map(habit => (
-                  <button
-                    key={habit}
-                    type="button"
-                    onClick={() => handleHabitToggle(habit)}
-                    className={`
-                      px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105
-                      ${formData.habits.includes(habit)
-                        ? 'bg-green-500 text-white shadow-md'
-                        : 'bg-white text-green-700 hover:bg-green-100 border border-green-200 hover:border-green-300'
-                      }
-                    `}
-                  >
-                    {habit === 'no_smoking' ? 'No Smoking' : 
-                     habit === 'no_drinking' ? 'No Drinking' : 
-                     habit === 'no_sugar' ? 'No Sugar' : 
-                     habit.replace('_', ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
+
 
             {/* Symptoms Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
