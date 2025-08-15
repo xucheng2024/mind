@@ -164,6 +164,27 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
         fullEvent = { id: modal.data.eventId };
       }
       
+      // Actually cancel the appointment in the database
+      try {
+        await apiClient.updateVisit(fullEvent.id, {
+          status: 'cancelled',
+          cancellation_reason: 'user_requested',
+          cancelled_at: new Date().toISOString()
+        });
+        console.log('✅ Appointment cancelled in database:', fullEvent.id);
+      } catch (apiError) {
+        console.error('❌ Failed to cancel appointment in database:', apiError);
+        // Still log the cancellation attempt
+        await logCancelAppointment({
+          clinic_id: clinicId,
+          user_id: userRowId,
+          appointment_id: fullEvent.id,
+          appointment_date: fullEvent.start || new Date().toISOString(),
+          cancellation_reason: 'user_requested'
+        });
+        throw new Error('Failed to cancel appointment in database');
+      }
+      
       // Log the cancellation
       await logCancelAppointment({
         clinic_id: clinicId,
