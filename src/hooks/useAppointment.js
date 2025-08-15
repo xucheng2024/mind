@@ -137,7 +137,7 @@ export function useAppointment(clinicId, userRowId, trigger, setEvents, setModal
       trigger('warning');
       
       // Get the appointment to cancel
-      const appointment = modal?.data?.appointment;
+      const appointment = modal?.data?.event;
       if (!appointment) {
         toast.error('No appointment to cancel');
         return;
