@@ -158,17 +158,7 @@ export const apiClient = {
     return response.json();
   },
 
-  // Get slot availability
-  async getSlotAvailability(clinicId, date) {
-    const response = await fetch(`${API_BASE_URL}/api/slots/${clinicId}/${date}`);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get slot availability');
-    }
-    
-    return response.json();
-  },
+
 
   // Check if user has existing visit
   async checkUserVisit(clinicId, userRowId) {

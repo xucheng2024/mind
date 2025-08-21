@@ -85,9 +85,7 @@ export default function BookingModal({
     acc[label].push({
       hour: slot.hour,
       minute: slot.minute,
-      isAvailable: slot.isAvailable,
-      isFull: slot.isFull,
-      bookingCount: slot.bookingCount,
+      isAvailable: true, // All slots are available now
       timeStr: slot.timeStr
     });
     

@@ -163,90 +163,34 @@ export default function CalendarPage() {
       return [];
     }
     
-    try {
-      const dateStr = date.toISOString().split('T')[0];
+    // Generate slots for business hours (every 30 minutes) - all available
+    const slots = [];
+    for (let minutes = startH * 60 + startM; minutes < endH * 60 + endM; minutes += 30) {
+      const hour = Math.floor(minutes / 60);
+      const minute = minutes % 60;
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, minute, 0, 0);
       
-      const result = await apiClient.getSlotAvailability(clinicId, dateStr);
-      
-      const slotAvailability = result.data || [];
-      
-      const slots = [];
-      
-      // Generate slots for business hours (every 30 minutes)
-      for (let minutes = startH * 60 + startM; minutes < endH * 60 + endM; minutes += 30) {
-        const hour = Math.floor(minutes / 60);
-        const minute = minutes % 60;
-        const slotTime = new Date(date);
-        slotTime.setHours(hour, minute, 0, 0);
-        
-        // Skip past times - if today, must be at least next full hour after current time
-        if (date.toDateString() === now.toDateString()) {
-          const nextHour = new Date(now);
-          nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-          if (slotTime < nextHour) continue;
-        }
-        
-        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
-        
-        // Check how many bookings exist for this slot
-        let bookingCount = 0;
-        const slotData = slotAvailability.find(slot => slot.visit_time === timeStr);
-        
-        if (slotData) {
-          // Count existing bookings for this time slot
-          bookingCount = slotData.booking_count || 0;
-        }
-        // If no slotData found, bookingCount remains 0 (available)
-        
-        // Slot is available if less than 2 people booked
-        const isAvailable = bookingCount < 2;
-        const isFull = bookingCount >= 2;
-        
-        slots.push({ 
-          hour, 
-          minute, 
-          isAvailable, 
-          isFull,
-          bookingCount,
-          timeStr 
-        });
+      // Skip past times - if today, must be at least next full hour after current time
+      if (date.toDateString() === now.toDateString()) {
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+        if (slotTime < nextHour) continue;
       }
       
-      return slots;
-    } catch (error) {
-      console.error('❌ Slot availability query failed:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        stack: error.stack,
-        clinicId,
-        date: date.toISOString()
+      const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+      
+      slots.push({ 
+        hour, 
+        minute, 
+        isAvailable: true, 
+        isFull: false,
+        bookingCount: 0,
+        timeStr 
       });
-      
-      // If API fails, generate default slots based on business hours only
-      const slots = [];
-      for (let minutes = startH * 60 + startM; minutes < endH * 60 + endM; minutes += 30) {
-        const hour = Math.floor(minutes / 60);
-        const minute = minutes % 60;
-        const slotTime = new Date(date);
-        slotTime.setHours(hour, minute, 0, 0);
-        
-        if (date.toDateString() === now.toDateString()) {
-          const nextHour = new Date(now);
-          nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-          if (slotTime < nextHour) continue;
-        }
-        
-        slots.push({ 
-          hour, 
-          minute, 
-          isAvailable: true, 
-          isFull: false,
-          bookingCount: 0,
-          timeStr: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`
-        });
-      }
-      return slots;
     }
+    
+    return slots;
   };
 
   // Handle date selection
@@ -331,14 +275,7 @@ export default function CalendarPage() {
         return;
       }
       
-      // Include all slots but mark availability
-      const availableSlots = slots.filter(s => s.isAvailable);
-      
-      if (availableSlots.length === 0) {
-        setModal({ type: null, data: null });
-        toast.error('All time slots are full for this date');
-        return;
-      }
+      // All slots are available now - no need to filter
       
       // Update modal with actual data
       setModal({ 
