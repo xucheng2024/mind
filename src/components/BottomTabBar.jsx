@@ -68,7 +68,7 @@ const BottomTabBar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4">
-      <div className={`bg-white border-8 border-gray-800 shadow-lg rounded-full px-4 py-1.5 transition-all duration-500 ${getActiveBorderColor()}`}>
+      <div className={`bg-white/60 backdrop-blur-xl shadow-2xl shadow-black/30 rounded-full px-4 py-1.5 transition-all duration-500 ${getActiveBorderColor()}`}>
         <div className="flex items-center space-x-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
