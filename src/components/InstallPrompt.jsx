@@ -101,7 +101,7 @@ const InstallPrompt = () => {
             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
               <FiSmartphone className="w-4 h-4 text-purple-600" />
             </div>
-            <span className="text-sm text-gray-700">Works offline</span>
+            <span className="text-sm text-gray-700">Daily yoga & meditation</span>
           </div>
         </div>
 

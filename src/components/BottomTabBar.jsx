@@ -12,33 +12,39 @@ const BottomTabBar = () => {
   const location = useLocation();
   const { trigger: hapticTrigger } = useHapticFeedback();
 
+  // Only show on specific pages
+  const allowedPaths = ['/', '/record', '/mind'];
+  if (!allowedPaths.includes(location.pathname)) {
+    return null;
+  }
+
   const tabs = [
     {
       id: 'clinic',
       label: 'Clinic',
       icon: Stethoscope,
       path: '/',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-300'
+      color: 'text-cyan-500',
+      bgColor: 'bg-cyan-100',
+      borderColor: 'border-cyan-400'
     },
     {
       id: 'record',
       label: 'Record',
       icon: PenTool,
       path: '/record',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-300'
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-100',
+      borderColor: 'border-rose-400'
     },
     {
       id: 'mind',
       label: 'Mind',
       icon: Brain,
       path: '/mind',
-      color: 'text-violet-600',
-      bgColor: 'bg-violet-50',
-      borderColor: 'border-violet-300'
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100',
+      borderColor: 'border-indigo-400'
     }
   ];
 
@@ -62,7 +68,7 @@ const BottomTabBar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4">
-      <div className={`bg-white border-2 shadow-lg rounded-full px-4 py-1.5 transition-all duration-500 ${getActiveBorderColor()}`}>
+      <div className={`bg-white border-8 border-gray-800 shadow-lg rounded-full px-4 py-1.5 transition-all duration-500 ${getActiveBorderColor()}`}>
         <div className="flex items-center space-x-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
