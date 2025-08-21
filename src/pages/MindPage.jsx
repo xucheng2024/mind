@@ -162,26 +162,20 @@ export default function MindPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-4">
         {/* Daily Inspiration */}
-        <div className="text-center mb-4">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <Heart className="w-6 h-6 text-rose-500" />
-                <h3 className="text-xl font-bold text-slate-800">Daily Quote</h3>
-              </div>
-              {!isLoadingQuote && dailyQuote.author && (
-                <span className="text-sm text-slate-500">- {dailyQuote.author}</span>
-              )}
-            </div>
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm rounded-3xl p-6 border border-indigo-200/30 shadow-lg">
             {isLoadingQuote ? (
               <div className="space-y-2">
                 <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
-                <div className="h-3 bg-slate-200 rounded animate-pulse w-3/4 mx-auto"></div>
+                <div className="h-3 bg-slate-200 rounded animate-pulse w-3/4"></div>
               </div>
             ) : (
               <>
-                <p className="text-slate-600 italic text-base text-left">
-                  {dailyQuote.content}
+                <p className="text-slate-700 text-xl leading-relaxed font-extralight tracking-wide italic">
+                  "{dailyQuote.content}"
+                  {dailyQuote.author && (
+                    <span className="block mt-4 text-sm text-slate-500 font-light tracking-wider">— {dailyQuote.author}</span>
+                  )}
                 </p>
               </>
             )}
