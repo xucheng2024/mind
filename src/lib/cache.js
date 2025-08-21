@@ -99,12 +99,13 @@ class CacheManager {
   }
 
   // Save login info for auto-login
-  saveLoginInfo(userId, userRowId, clinicId, fullName = '') {
+  saveLoginInfo(userId, userRowId, clinicId, fullName = '', gender = '') {
     try {
       localStorage.setItem('user_id', userId);
       localStorage.setItem('user_row_id', userRowId);
       localStorage.setItem('clinic_id', clinicId);
       localStorage.setItem('user_full_name', fullName);
+      localStorage.setItem('user_gender', gender);
       localStorage.setItem('login_timestamp', Date.now().toString());
       return true;
     } catch (error) {
@@ -141,6 +142,7 @@ class CacheManager {
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_row_id');
     localStorage.removeItem('user_full_name');
+    localStorage.removeItem('user_gender');
     localStorage.removeItem('login_timestamp');
   }
 
@@ -150,9 +152,15 @@ class CacheManager {
       userId: localStorage.getItem('user_id'),
       userRowId: localStorage.getItem('user_row_id'),
       clinicId: localStorage.getItem('clinic_id'),
-      fullName: localStorage.getItem('user_full_name') || ''
+      fullName: localStorage.getItem('user_full_name') || '',
+      gender: localStorage.getItem('user_gender') || ''
     };
     return loginInfo;
+  }
+
+  // Get user data from localStorage (for backward compatibility)
+  getUser() {
+    return this.getLoginInfo();
   }
 }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Check, X } from 'lucide-react';
 import { EnhancedButton, useHapticFeedback, TextArea } from '../components';
+import cacheManager from '../lib/cache';
 
 export default function RecordPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function RecordPage() {
   const [showMoodHistory, setShowMoodHistory] = useState(false);
   const [showSleepHistory, setShowSleepHistory] = useState(false);
   const [showVitalsHistory, setShowVitalsHistory] = useState(false);
+  const [userGender, setUserGender] = useState('');
   const [formData, setFormData] = useState({
     mood: '',
     sleepQuality: '',
@@ -31,6 +33,19 @@ export default function RecordPage() {
     },
     notes: ''
   });
+
+  // Get user gender from cache on component mount
+  useEffect(() => {
+    const loginInfo = cacheManager.getLoginInfo();
+    console.log('User login info:', loginInfo);
+    if (loginInfo.gender) {
+      setUserGender(loginInfo.gender.toLowerCase());
+      console.log('User gender:', loginInfo.gender.toLowerCase());
+    } else {
+      console.log('No gender information found');
+      setUserGender('');
+    }
+  }, []);
 
   // Auto-save to localStorage whenever formData changes
   useEffect(() => {
@@ -1458,93 +1473,95 @@ export default function RecordPage() {
 
 
 
-            {/* Menstrual Card */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 border-2 border-rose-500 rounded-full flex items-center justify-center">
-                    <span className="text-rose-500 text-lg">🌸</span>
+            {/* Menstrual Card - Only show for female users */}
+            {userGender === 'female' && userGender && (
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 border-2 border-rose-500 rounded-full flex items-center justify-center">
+                      <span className="text-rose-500 text-lg">🌸</span>
+                    </div>
+                    <label className="text-base font-semibold text-gray-900">Menstrual</label>
                   </div>
-                  <label className="text-base font-semibold text-gray-900">Menstrual</label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      menstrual: { ...prev.menstrual, isMenstruating: !prev.menstrual.isMenstruating }
+                    }))}
+                    className={`
+                      px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ease-in-out border
+                      ${formData.menstrual.isMenstruating
+                        ? 'border-red-500 text-red-500 bg-white'
+                        : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 hover:text-gray-600'
+                      }
+                    `}
+                  >
+                    {formData.menstrual.isMenstruating ? 'on' : 'off'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    menstrual: { ...prev.menstrual, isMenstruating: !prev.menstrual.isMenstruating }
-                  }))}
-                  className={`
-                    px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ease-in-out border
-                    ${formData.menstrual.isMenstruating
-                      ? 'border-red-500 text-red-500 bg-white'
-                      : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 hover:text-gray-600'
-                    }
-                  `}
-                >
-                  {formData.menstrual.isMenstruating ? 'on' : 'off'}
-                </button>
+                
+                {formData.menstrual.isMenstruating && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-rose-700 mb-2 font-medium">Flow</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['light', 'medium', 'heavy'].map(flow => (
+                          <button
+                            key={flow}
+                            type="button"
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              menstrual: { 
+                                ...prev.menstrual, 
+                                flow: prev.menstrual.flow === flow ? '' : flow 
+                              }
+                            }))}
+                            className={`
+                              px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
+                              ${(formData.menstrual.flow || '') === flow
+                                ? 'bg-rose-500 text-white shadow-md'
+                                : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
+                              }
+                            `}
+                          >
+                            {flow === 'light' ? 'Light' : flow === 'medium' ? 'Medium' : 'Heavy'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm text-rose-700 mb-2 font-medium">Pain</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['none', 'mild', 'severe'].map(pain => (
+                          <button
+                            key={pain}
+                            type="button"
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              menstrual: { 
+                                ...prev.menstrual, 
+                                pain: prev.menstrual.pain === pain ? '' : pain 
+                              }
+                            }))}
+                            className={`
+                              px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
+                              ${(formData.menstrual.pain || '') === pain
+                                ? 'bg-rose-500 text-white shadow-md'
+                                : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
+                              }
+                            `}
+                          >
+                            {pain === 'none' ? 'None' : pain === 'mild' ? 'Mild' : 'Severe'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              {formData.menstrual.isMenstruating && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-rose-700 mb-2 font-medium">Flow</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['light', 'medium', 'heavy'].map(flow => (
-                        <button
-                          key={flow}
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            menstrual: { 
-                              ...prev.menstrual, 
-                              flow: prev.menstrual.flow === flow ? '' : flow 
-                            }
-                          }))}
-                          className={`
-                            px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
-                            ${(formData.menstrual.flow || '') === flow
-                              ? 'bg-rose-500 text-white shadow-md'
-                              : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
-                            }
-                          `}
-                        >
-                          {flow === 'light' ? 'Light' : flow === 'medium' ? 'Medium' : 'Heavy'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm text-rose-700 mb-2 font-medium">Pain</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['none', 'mild', 'severe'].map(pain => (
-                        <button
-                          key={pain}
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            menstrual: { 
-                              ...prev.menstrual, 
-                              pain: prev.menstrual.pain === pain ? '' : pain 
-                            }
-                          }))}
-                          className={`
-                            px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
-                            ${(formData.menstrual.pain || '') === pain
-                              ? 'bg-rose-500 text-white shadow-md'
-                              : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
-                            }
-                          `}
-                        >
-                          {pain === 'none' ? 'None' : pain === 'mild' ? 'Mild' : 'Severe'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Notes */}
             <div className="lg:col-span-2">

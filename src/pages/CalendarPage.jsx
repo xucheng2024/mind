@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import { FaCheckCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { apiClient } from '../lib/api';
 import { useHapticFeedback } from '../components/HapticFeedback';
@@ -10,6 +10,7 @@ import { useAppointment } from '../hooks/useAppointment';
 import CalendarHeader from '../components/Calendar/CalendarHeader';
 import BookingModal from '../components/Calendar/BookingModal';
 import CancelModal from '../components/Calendar/CancelModal';
+import cacheManager from '../lib/cache';
 
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
@@ -26,6 +27,7 @@ export default function CalendarPage() {
   const [businessHours, setBusinessHours] = useState(null);
   const [clinicInfo, setClinicInfo] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [userName, setUserName] = useState('');
 
   
   // Month navigation functions
@@ -80,6 +82,13 @@ export default function CalendarPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Get user info from cache
+        const loginInfo = cacheManager.getLoginInfo();
+        if (loginInfo.fullName) {
+          setUserName(loginInfo.fullName);
+        }
+        // Note: gender is also available in loginInfo.gender if needed
+        
         const [clinicRes, visitsRes] = await Promise.all([
           apiClient.getClinicInfo(clinicId),
           apiClient.getUserVisits(clinicId, userRowId)
@@ -94,7 +103,7 @@ export default function CalendarPage() {
           thursday: { open: '09:00', close: '17:00', closed: false },
           friday: { open: '09:00', close: '17:00', closed: false },
           saturday: { open: '09:00', close: '12:00', closed: false },
-          sunday: { open: '09:00', close: '12:00', closed: true }
+          sunday: { open: '09:00', close: '12:00', closed: false }
         };
         
         setBusinessHours(businessHoursData);
@@ -783,14 +792,16 @@ export default function CalendarPage() {
                 
                 {/* Appointments Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Appointments</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    {userName ? `${userName}'s Appointments` : 'Your Appointments'}
+                  </h3>
                   {events.length > 0 ? (
                     <div className="space-y-3">
                       {events.map(event => (
                         <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                           <div className="flex items-center space-x-3">
                             <div className="flex-shrink-0">
-                              <Clock className="w-5 h-5 text-blue-600" />
+                              <FaCheckCircle className="w-5 h-5 text-green-600" />
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">
@@ -825,7 +836,7 @@ export default function CalendarPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <FaCheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p className="text-sm">Your appointment times will be displayed here</p>
                     </div>
                   )}

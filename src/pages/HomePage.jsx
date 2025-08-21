@@ -34,13 +34,24 @@ export default function HomePage() {
   // 检查登录状态
   useEffect(() => {
     // Check login status
-    const checkLoginStatus = async () => {
+    const checkLoginStatus = () => {
       try {
         // Use cache manager to check login status
-        const cachedUser = await cacheManager.getUser();
-        setIsLoggedIn(true);
-        setUserName(cachedUser.fullName || 'User');
+        const isLoggedIn = cacheManager.isLoggedIn();
+        console.log('Login status check:', { isLoggedIn });
+        
+        if (isLoggedIn) {
+          const loginInfo = cacheManager.getLoginInfo();
+          console.log('Login info:', loginInfo);
+          setIsLoggedIn(true);
+          setUserName(loginInfo.fullName || 'User');
+        } else {
+          console.log('User not logged in');
+          setIsLoggedIn(false);
+          setUserName('');
+        }
       } catch (error) {
+        console.error('Error checking login status:', error);
         setIsLoggedIn(false);
         setUserName('');
       }
@@ -125,12 +136,19 @@ export default function HomePage() {
   const handleLogoutClick = debounce(() => {
     hapticTrigger('light');
     setLogoutLoading(true);
-    // Clear login info (will re-verify login next time)
-    localStorage.removeItem('user_id');
-    // Update state immediately instead of reloading
-    setIsLoggedIn(false);
-    setUserName('');
-    setLogoutLoading(false);
+    try {
+      // Use cache manager to clear login info
+      cacheManager.clearLoginInfo();
+      // Update state immediately instead of reloading
+      setIsLoggedIn(false);
+      setUserName('');
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast.error('Logout failed');
+    } finally {
+      setLogoutLoading(false);
+    }
   }, 100);
 
   return (

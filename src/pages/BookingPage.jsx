@@ -4,6 +4,7 @@ import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isPhone, isEmail } from '../lib/utils';
 import CryptoJS from 'crypto-js';
+import cacheManager from '../lib/cache';
 
 // Hash function that matches backend quickHash - 改为不可逆
 function quickHash(text) {
@@ -63,16 +64,12 @@ const BookingPage = React.memo(() => {
             navigate(`/booking/slots?clinic_id=${currentClinicId}&user_row_id=${savedUserRowId}`);
           } else {
             // User invalid, clear saved info
-            localStorage.removeItem('clinic_id');
-            localStorage.removeItem('user_row_id');
-            localStorage.removeItem('user_id');
+            cacheManager.clearLoginInfo();
           }
         } catch (err) {
           console.error('User validation failed:', err);
           // Validation failed, clear saved info
-          localStorage.removeItem('clinic_id');
-          localStorage.removeItem('user_rowId');
-          localStorage.removeItem('user_id');
+          cacheManager.clearLoginInfo();
         }
       };
       
@@ -132,10 +129,9 @@ const BookingPage = React.memo(() => {
       
       const totalTime = performance.now() - startTime;
       
-      // Save user_id and clinic_id to localStorage for free login
-      if (data.user_id) localStorage.setItem('user_id', data.user_id);
-      if (data.row_id) localStorage.setItem('user_row_id', data.row_id);
-      if (clinicId) localStorage.setItem('clinic_id', clinicId);
+      // Save login info using cacheManager (includes user name and gender)
+      cacheManager.saveLoginInfo(data.user_id, data.row_id, clinicId, data.full_name || '', data.gender || '');
+      
       navigate(`/booking/slots?clinic_id=${clinicId}&user_id=${data.user_id}&user_row_id=${data.row_id}`);
     } catch (err) {
       console.error('Unexpected error:', err);

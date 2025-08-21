@@ -304,7 +304,7 @@ async function handleQueryUser(req, res) {
   
   const { clinicId, phoneHash, emailHash } = req.body;
   
-  let query = supabase.from('users').select('user_id, row_id');
+  let query = supabase.from('users').select('user_id, row_id, full_name, gender');
   
   if (phoneHash) {
     query = query.eq('phone_hash', phoneHash);
@@ -321,7 +321,19 @@ async function handleQueryUser(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
   
-  res.json({ success: true, data });
+  // Decrypt the full_name and gender
+  const decryptedFullName = decrypt(data.full_name || '');
+  const decryptedGender = decrypt(data.gender || '');
+  
+  res.json({ 
+    success: true, 
+    data: {
+      user_id: data.user_id,
+      row_id: data.row_id,
+      full_name: decryptedFullName,
+      gender: decryptedGender
+    }
+  });
 }
 
 async function handleValidateUser(req, res) {

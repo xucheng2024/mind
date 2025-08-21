@@ -280,7 +280,7 @@ export default function SubmitPage() {
       // After successful registration, save login info for auto-login
       if (user_id && user_row_id && registrationData.clinic_id) {
         try {
-          cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id, registrationData.fullName || '');
+          cacheManager.saveLoginInfo(user_id, user_row_id, registrationData.clinic_id, registrationData.fullName || '', registrationData.gender || '');
         } catch (cacheError) {
           console.warn('[SubmitPage] ⚠️ Failed to save login info (non-critical):', cacheError);
         }
