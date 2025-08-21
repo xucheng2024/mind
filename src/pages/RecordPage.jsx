@@ -16,7 +16,6 @@ export default function RecordPage() {
     mood: '',
     sleepQuality: '',
     symptoms: [],
-    sexualActivity: '',
     vitals: {
       height: '',
       weight: '',
@@ -42,7 +41,6 @@ export default function RecordPage() {
       formData.mood || 
       formData.sleepQuality || 
       formData.symptoms.length > 0 || 
-      formData.sexualActivity || 
       formData.vitals.height || 
       formData.vitals.weight || 
       formData.vitals.bloodPressure.systolic || 
@@ -106,7 +104,6 @@ export default function RecordPage() {
         isCurrentMonth: false, 
         hasRecord: false,
         hasSymptom: false,
-        hasSex: false,
         hasMenstrual: false
       });
     }
@@ -119,7 +116,6 @@ export default function RecordPage() {
       // Initialize variables
       let hasRecord = false;
       let hasSymptom = false;
-      let hasSex = false;
       let hasMenstrual = false;
       
       try {
@@ -128,18 +124,16 @@ export default function RecordPage() {
           const parsedData = JSON.parse(savedData);
           // Check for specific data types and assign colors
           hasSymptom = Boolean(parsedData.symptoms && parsedData.symptoms.length > 0);
-          hasSex = Boolean(parsedData.sexualActivity && parsedData.sexualActivity !== '');
           hasMenstrual = Boolean(parsedData.menstrual && parsedData.menstrual.isMenstruating);
           
-          // Show dots for symptom, and for sex/menstrual when they are ON
-          hasRecord = hasSymptom || hasSex || hasMenstrual;
+          // Show dots for symptom, and for menstrual when they are ON
+          hasRecord = hasSymptom || hasMenstrual;
         }
       } catch (error) {
         console.error('Error checking localStorage for date:', dateKey, error);
         // Ensure variables are set to false on error
         hasRecord = false;
         hasSymptom = false;
-        hasSex = false;
         hasMenstrual = false;
       }
       
@@ -148,7 +142,6 @@ export default function RecordPage() {
         isCurrentMonth: true, 
         hasRecord,
         hasSymptom,
-        hasSex,
         hasMenstrual,
         isToday: currentDate.toDateString() === new Date().toDateString()
       });
@@ -163,7 +156,6 @@ export default function RecordPage() {
         isCurrentMonth: false, 
         hasRecord: false,
         hasSymptom: false,
-        hasSex: false,
         hasMenstrual: false
       });
     }
@@ -207,9 +199,9 @@ export default function RecordPage() {
 
   const getSleepScore = (sleep) => {
     const sleepScores = {
-      'good': 3,
-      'fair': 0,
-      'poor': -3
+      'refreshed': 3,
+      'normal': 0,
+      'tired': -3
     };
     return sleepScores[sleep] || 0;
   };
@@ -479,7 +471,6 @@ export default function RecordPage() {
       mood: '',
       sleepQuality: '',
       symptoms: [],
-      sexualActivity: '',
       vitals: {
         height: '',
         weight: '',
@@ -508,7 +499,6 @@ export default function RecordPage() {
             mood: parsedData.mood || '',
             sleepQuality: parsedData.sleepQuality || '',
             symptoms: Array.isArray(parsedData.symptoms) ? parsedData.symptoms : [],
-            sexualActivity: parsedData.sexualActivity || '',
             vitals: {
               height: parsedData.vitals?.height || '',
               weight: parsedData.vitals?.weight || '',
@@ -544,7 +534,7 @@ export default function RecordPage() {
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-center">
             <div className="text-center">
               <h1 className="text-xl font-semibold text-gray-800">Health Records</h1>
@@ -554,7 +544,7 @@ export default function RecordPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="px-4 py-6">
         {/* Calendar Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
           {/* Calendar Header */}
@@ -617,11 +607,8 @@ export default function RecordPage() {
                 {day.hasSymptom && (
                   <div className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></div>
                 )}
-                {day.hasSex && (
-                  <div className="absolute top-1 right-3 w-2 h-2 bg-pink-500 rounded-full"></div>
-                )}
                 {day.hasMenstrual && (
-                  <div className="absolute top-1 right-5 w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div className="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full"></div>
                 )}
               </button>
             ))}
@@ -629,9 +616,8 @@ export default function RecordPage() {
         </div>
 
         {/* Selected Date Info */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          {/* Health Tracking Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Health Tracking Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Mood Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -663,7 +649,7 @@ export default function RecordPage() {
                         mood: prev.mood === mood ? '' : mood 
                       }))}
                       className={`
-                        px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                        px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
                         ${formData.mood === mood
                           ? 'border-blue-500 bg-blue-100 shadow-md scale-105'
                           : 'border-blue-200 hover:border-blue-300 bg-white hover:shadow-md hover:scale-102'
@@ -783,7 +769,7 @@ export default function RecordPage() {
               {!showSleepHistory && (
                 <div className="flex flex-wrap gap-2">
                   {[
-                    'good', 'fair', 'poor'
+                    'refreshed', 'normal', 'tired'
                   ].map(quality => (
                     <button
                       key={quality}
@@ -793,14 +779,14 @@ export default function RecordPage() {
                         sleepQuality: prev.sleepQuality === quality ? '' : quality 
                       }))}
                       className={`
-                        px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                        px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
                         ${formData.sleepQuality === quality
                           ? 'border-purple-500 bg-purple-100 shadow-md scale-105'
                           : 'border-purple-200 hover:border-purple-300 bg-white hover:shadow-md hover:scale-102'
                         }
                       `}
                     >
-                      {quality === 'good' ? 'Good (>7h)' : quality === 'fair' ? 'Fair (5-7h)' : 'Poor (<5h)'}
+                      {quality === 'refreshed' ? 'Refreshed' : quality === 'normal' ? 'Normal' : 'Tired'}
                     </button>
                   ))}
                 </div>
@@ -900,7 +886,7 @@ export default function RecordPage() {
                     type="button"
                     onClick={() => handleSymptomToggle(symptom)}
                     className={`
-                      px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105
+                      px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105
                       ${formData.symptoms.includes(symptom)
                         ? 'bg-orange-500 text-white shadow-md'
                         : 'bg-white text-orange-700 hover:bg-orange-100 border border-orange-200 hover:border-orange-300'
@@ -1470,62 +1456,7 @@ export default function RecordPage() {
               )}
             </div>
 
-            {/* Sex Card */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 border-2 border-pink-500 rounded-full flex items-center justify-center">
-                    <span className="text-pink-500 text-lg">💕</span>
-                  </div>
-                  <label className="text-base font-semibold text-gray-900">Sex</label>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    sexualActivity: prev.sexualActivity ? '' : 'protected'
-                  }))}
-                  className={`
-                    px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out
-                    ${formData.sexualActivity
-                      ? 'bg-pink-500 text-white shadow-lg border-0'
-                      : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-600'
-                    }
-                  `}
-                >
-                  {formData.sexualActivity ? 'ON' : 'OFF'}
-                </button>
-              </div>
-              
-              {formData.sexualActivity && (
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex flex-wrap gap-2">
-                      {['protected', 'unprotected'].map(activity => (
-                        <button
-                          key={activity}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ 
-                            ...prev, 
-                            sexualActivity: prev.sexualActivity === activity ? '' : activity 
-                          }))}
-                          className={`
-                            px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
-                            ${formData.sexualActivity === activity
-                              ? 'bg-pink-500 text-white shadow-md'
-                              : 'bg-white text-pink-700 hover:bg-pink-100 border-pink-200 hover:border-pink-300'
-                            }
-                          `}
-                        >
-                          {activity === 'protected' ? 'Protected' :
-                           activity === 'unprotected' ? 'Unprotected' : activity}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+
 
             {/* Menstrual Card */}
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -1543,14 +1474,14 @@ export default function RecordPage() {
                     menstrual: { ...prev.menstrual, isMenstruating: !prev.menstrual.isMenstruating }
                   }))}
                   className={`
-                    px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out
+                    px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ease-in-out border
                     ${formData.menstrual.isMenstruating
-                      ? 'bg-red-500 text-white shadow-lg border-0'
-                      : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-600'
+                      ? 'border-red-500 text-red-500 bg-white'
+                      : 'border-gray-200 text-gray-500 bg-white hover:border-gray-300 hover:text-gray-600'
                     }
                   `}
                 >
-                  {formData.menstrual.isMenstruating ? 'ON' : 'OFF'}
+                  {formData.menstrual.isMenstruating ? 'on' : 'off'}
                 </button>
               </div>
               
@@ -1571,7 +1502,7 @@ export default function RecordPage() {
                             }
                           }))}
                           className={`
-                            px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                            px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
                             ${(formData.menstrual.flow || '') === flow
                               ? 'bg-rose-500 text-white shadow-md'
                               : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
@@ -1599,7 +1530,7 @@ export default function RecordPage() {
                             }
                           }))}
                           className={`
-                            px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 border
+                            px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 border
                             ${(formData.menstrual.pain || '') === pain
                               ? 'bg-rose-500 text-white shadow-md'
                               : 'bg-white text-rose-700 hover:bg-rose-100 border-rose-200 hover:border-rose-300'
@@ -1625,7 +1556,6 @@ export default function RecordPage() {
               />
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
