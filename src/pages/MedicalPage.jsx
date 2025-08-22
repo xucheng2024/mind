@@ -91,14 +91,40 @@ export default function MedicalPage() {
     try {
       setIsSubmitting(true);
       
-      // Only process notes content when clicking Next
+      // Process and merge all health conditions with notes
       const prefix = formatSGTime();
-      let notes = form.otherHealthNotes && form.otherHealthNotes.trim() ? form.otherHealthNotes.trim() : '';
+      
+      // Build health conditions summary - record YES items without value, UNSURE items with value
+      const healthSummary = healthItems.map(item => {
+        const value = form[item];
+        if (value === 'YES') {
+          return `${item.replace(/([A-Z])/g, ' $1')}`;
+        } else if (value === 'UNSURE') {
+          return `${item.replace(/([A-Z])/g, ' $1')} (${value})`;
+        }
+        return null;
+      }).filter(Boolean).join(', ');
+      
+      // Combine health conditions with other notes
+      let notes = '';
+      if (healthSummary) {
+        notes = `Health Conditions: ${healthSummary}`;
+      }
+      
+      if (form.otherHealthNotes && form.otherHealthNotes.trim()) {
+        const otherNotes = form.otherHealthNotes.trim();
+        if (notes) {
+          notes += `, ${otherNotes}`;
+        } else {
+          notes = otherNotes;
+        }
+      }
+      
       if (!notes) {
         notes = 'None reported';
-      } else {
-        notes = `${prefix}: ${notes}`;
       }
+      
+      notes = `${prefix}: ${notes}`;
       updateRegistrationData({ ...form, otherHealthNotes: notes });
       navigate('/register/selfie');
     } finally {
