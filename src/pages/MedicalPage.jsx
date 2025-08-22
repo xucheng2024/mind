@@ -5,8 +5,9 @@ import RegistrationHeader from '../components/RegistrationHeader';
 import { EnhancedButton, ProgressBar } from '../components';
 
 const healthItems = [
-  'HeartDisease', 'Diabetes', 'Hypertension', 'Cancer', 'Asthma',
-  'MentalIllness', 'Epilepsy', 'Stroke', 'KidneyDisease', 'LiverDisease'
+  'HeartDisease', 'Diabetes', 'Cancer', 'Hepatitis', 'SensitiveSkin',
+  'HIV/AIDS', 'Fits', 'BleedingDisorder', 'Pacemaker', 'Anticoagulant',
+  'Pregnant'
 ];
 
 export default function MedicalPage() {
@@ -155,7 +156,7 @@ export default function MedicalPage() {
         {healthItems.map(item => (
           <div key={item} id={`option-${item}`} style={{ marginBottom: '24px' }}>
             <label style={labelStyle}>
-              {item.replace(/([A-Z])/g, ' $1')} <span style={{ color: '#dc2626' }}>*</span>
+              {item === 'HIV/AIDS' ? 'HIV/AIDS' : item.replace(/([A-Z])/g, ' $1')} <span style={{ fontSize: '12px', color: '#666', fontWeight: '400' }}>{item === 'HeartDisease' ? '(心脏病)' : item === 'Diabetes' ? '(糖尿病)' : item === 'Cancer' ? '(癌症)' : item === 'Hepatitis' ? '(肝炎)' : item === 'SensitiveSkin' ? '(敏感皮肤)' : item === 'HIV/AIDS' ? '(艾滋病)' : item === 'Fits' ? '(癫痫)' : item === 'BleedingDisorder' ? '(出血性疾病)' : item === 'Pacemaker' ? '(心脏起搏器)' : item === 'Anticoagulant' ? '(抗凝治疗)' : item === 'Pregnant' ? '(怀孕)' : ''}</span> <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <div style={{ display: 'flex', gap: '10px' }}>
               {['YES', 'NO', 'UNSURE'].map(opt => (
