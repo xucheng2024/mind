@@ -10,9 +10,11 @@ export default function MindPage() {
   const { trigger: hapticTrigger } = useHapticFeedback();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayingSecond, setIsPlayingSecond] = useState(false);
+  const [isPlayingMovement, setIsPlayingMovement] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [breathExerciseCount, setBreathExerciseCount] = useLocalStorage('breathExerciseCount', 0);
   const [secondMeditationCount, setSecondMeditationCount] = useLocalStorage('secondMeditationCount', 0);
+  const [movementCount, setMovementCount] = useLocalStorage('movementCount', 0);
   const [dailyQuote, setDailyQuote] = useState({
     content: "Peace comes from within. Do not seek it without.",
     author: "Buddha"
@@ -34,6 +36,10 @@ export default function MindPage() {
       if (isPlayingSecond) {
         audioManager.stopAudio();
         setIsPlayingSecond(false);
+      }
+      if (isPlayingMovement) {
+        audioManager.stopAudio();
+        setIsPlayingMovement(false);
       }
       
       await audioManager.playAudio(AUDIO_URL, { 
@@ -77,6 +83,10 @@ export default function MindPage() {
         audioManager.stopAudio();
         setIsPlaying(false);
       }
+      if (isPlayingMovement) {
+        audioManager.stopAudio();
+        setIsPlayingMovement(false);
+      }
       
       await audioManager.playAudio(SECOND_AUDIO_URL, { 
         volume: 0.8,
@@ -108,6 +118,53 @@ export default function MindPage() {
     setIsPlayingSecond(false);
     setSecondMeditationCount(prev => prev + 1);
     console.log('Second meditation completed, total sessions:', secondMeditationCount + 1);
+  };
+
+  const handleMovementStart = async () => {
+    try {
+      hapticTrigger('light');
+      setIsPlayingMovement(true);
+      
+      // Stop other meditations if playing
+      if (isPlaying) {
+        audioManager.stopAudio();
+        setIsPlaying(false);
+      }
+      if (isPlayingSecond) {
+        audioManager.stopAudio();
+        setIsPlayingSecond(false);
+      }
+      
+      await audioManager.playAudio(MOVEMENT_AUDIO_URL, { 
+        volume: 0.8,
+        onEnd: handleMovementComplete
+      });
+      
+      console.log('Mindful movement started');
+    } catch (error) {
+      console.error('Error playing movement audio:', error);
+      setIsPlayingMovement(false);
+    }
+  };
+
+  const handleMovementPause = () => {
+    hapticTrigger('light');
+    setIsPlayingMovement(false);
+    audioManager.pauseAudio();
+    console.log('Mindful movement paused');
+  };
+
+  const handleMovementStop = () => {
+    hapticTrigger('light');
+    setIsPlayingMovement(false);
+    audioManager.stopAudio();
+    console.log('Mindful movement stopped');
+  };
+
+  const handleMovementComplete = () => {
+    setIsPlayingMovement(false);
+    setMovementCount(prev => prev + 1);
+    console.log('Mindful movement completed, total sessions:', movementCount + 1);
   };
 
   // Fetch daily inspiration quote from local file
@@ -361,14 +418,48 @@ export default function MindPage() {
                 <p className="text-sm text-slate-400 leading-relaxed">Gentle body reconnection</p>
               </div>
               
-              <EnhancedButton
-                variant="primary"
-                size="sm"
-                className="w-full bg-gradient-to-r from-violet-400 to-violet-500 hover:from-violet-500 hover:to-violet-600 border-0 text-white shadow-md py-3 rounded-2xl font-light transition-all duration-300"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start Session
-              </EnhancedButton>
+              <div className="space-y-3">
+                {!isPlayingMovement ? (
+                  <EnhancedButton
+                    variant="primary"
+                    onClick={handleMovementStart}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-violet-400 to-violet-500 hover:from-violet-500 hover:to-violet-600 border-0 text-white shadow-md py-3 rounded-2xl font-light transition-all duration-300"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Session
+                  </EnhancedButton>
+                ) : (
+                  <div className="space-y-3">
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleMovementPause}
+                      size="sm"
+                      className="w-full py-3 rounded-2xl font-light border-violet-200 text-violet-600 hover:bg-violet-50 transition-all duration-300"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleMovementStop}
+                      size="sm"
+                      className="w-full py-3 rounded-2xl font-light border-violet-200 text-violet-600 hover:bg-violet-50 transition-all duration-300"
+                    >
+                      Stop
+                    </EnhancedButton>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-center mt-4">
+                {movementCount > 0 && (
+                  <div className="flex items-center space-x-2 text-sm text-slate-500">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="font-light">{movementCount} sessions</span>
+                  </div>
+                )}
+              </div>
               
             </div>
           </div>
