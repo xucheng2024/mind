@@ -11,10 +11,12 @@ export default function MindPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayingSecond, setIsPlayingSecond] = useState(false);
   const [isPlayingMovement, setIsPlayingMovement] = useState(false);
+  const [isPlayingVipassana, setIsPlayingVipassana] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [breathExerciseCount, setBreathExerciseCount] = useLocalStorage('breathExerciseCount', 0);
   const [secondMeditationCount, setSecondMeditationCount] = useLocalStorage('secondMeditationCount', 0);
   const [movementCount, setMovementCount] = useLocalStorage('movementCount', 0);
+  const [vipassanaCount, setVipassanaCount] = useLocalStorage('vipassanaCount', 0);
   const [dailyQuote, setDailyQuote] = useState({
     content: "Peace comes from within. Do not seek it without.",
     author: "Buddha"
@@ -26,6 +28,7 @@ export default function MindPage() {
   const AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Patrick-Kozakiewicz-Short-Body-Scan.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL1BhdHJpY2stS296YWtpZXdpY3otU2hvcnQtQm9keS1TY2FuLm1wMyIsImlhdCI6MTc1NTI0NTg0MCwiZXhwIjoxOTEyOTI1ODQwfQ.ZEvMe4AuhEcENDxSv2iNjDfK_ypwPjvS9I8nrzl8Wyc';
   const SECOND_AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Meditation-1-Mindfulness-of-Body-and-Breath.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL01lZGl0YXRpb24tMS1NaW5kZnVsbmVzcy1vZi1Cb2R5LWFuZC1CcmVhdGgubXAzIiwiaWF0IjoxNzU1MjQ2NTI3LCJleHAiOjE5MTI5MjY1Mjd9.pu5qcQfCyGBka3JRArNqUQXFp13GGh5RiJzcNdR5CyY';
   const MOVEMENT_AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Movement-with-Rebecca-Crane-10-min.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL01vdmVtZW50LXdpdGgtUmViZWNjYS1DcmFuZS0xMC1taW4ubXAzIiwiaWF0IjoxNzU1MjQ3NjA2LCJleHAiOjE5MTI5Mjc2MDZ9.uVntCBeQbaA0JpW1Tu717Ekb95pXVkg4RqDzK4wThs8';
+  const VIPASSANA_AUDIO_URL = 'https://rsfkkiuoutgacrblubtt.supabase.co/storage/v1/object/sign/meditation/Vipassana.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82N2RkOTBiMy03MDE3LTQyZTYtODhlMS0wMzk5MGJlNWE4MTIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtZWRpdGF0aW9uL1ZpcGFzc2FuYS5tcDMiLCJpYXQiOjE3NTg2MzU1NjMsImV4cCI6MjA3Mzk5NTU2M30.omJd7YBN8_Ir5G3kclHkTcHSHQCzUy1Pa4mYIW-nito';
 
   const handleBreathExerciseStart = async () => {
     try {
@@ -40,6 +43,10 @@ export default function MindPage() {
       if (isPlayingMovement) {
         audioManager.stopAudio();
         setIsPlayingMovement(false);
+      }
+      if (isPlayingVipassana) {
+        audioManager.stopAudio();
+        setIsPlayingVipassana(false);
       }
       
       await audioManager.playAudio(AUDIO_URL, { 
@@ -86,6 +93,10 @@ export default function MindPage() {
       if (isPlayingMovement) {
         audioManager.stopAudio();
         setIsPlayingMovement(false);
+      }
+      if (isPlayingVipassana) {
+        audioManager.stopAudio();
+        setIsPlayingVipassana(false);
       }
       
       await audioManager.playAudio(SECOND_AUDIO_URL, { 
@@ -134,6 +145,10 @@ export default function MindPage() {
         audioManager.stopAudio();
         setIsPlayingSecond(false);
       }
+      if (isPlayingVipassana) {
+        audioManager.stopAudio();
+        setIsPlayingVipassana(false);
+      }
       
       await audioManager.playAudio(MOVEMENT_AUDIO_URL, { 
         volume: 0.8,
@@ -165,6 +180,57 @@ export default function MindPage() {
     setIsPlayingMovement(false);
     setMovementCount(prev => prev + 1);
     console.log('Mindful movement completed, total sessions:', movementCount + 1);
+  };
+
+  const handleVipassanaStart = async () => {
+    try {
+      hapticTrigger('light');
+      setIsPlayingVipassana(true);
+      
+      // Stop other meditations if playing
+      if (isPlaying) {
+        audioManager.stopAudio();
+        setIsPlaying(false);
+      }
+      if (isPlayingSecond) {
+        audioManager.stopAudio();
+        setIsPlayingSecond(false);
+      }
+      if (isPlayingMovement) {
+        audioManager.stopAudio();
+        setIsPlayingMovement(false);
+      }
+      
+      await audioManager.playAudio(VIPASSANA_AUDIO_URL, { 
+        volume: 0.8,
+        onEnd: handleVipassanaComplete
+      });
+      
+      console.log('Vipassana meditation started');
+    } catch (error) {
+      console.error('Error playing Vipassana audio:', error);
+      setIsPlayingVipassana(false);
+    }
+  };
+
+  const handleVipassanaPause = () => {
+    hapticTrigger('light');
+    setIsPlayingVipassana(false);
+    audioManager.pauseAudio();
+    console.log('Vipassana meditation paused');
+  };
+
+  const handleVipassanaStop = () => {
+    hapticTrigger('light');
+    setIsPlayingVipassana(false);
+    audioManager.stopAudio();
+    console.log('Vipassana meditation stopped');
+  };
+
+  const handleVipassanaComplete = () => {
+    setIsPlayingVipassana(false);
+    setVipassanaCount(prev => prev + 1);
+    console.log('Vipassana meditation completed, total sessions:', vipassanaCount + 1);
   };
 
   // Fetch daily inspiration quote from local file
@@ -240,7 +306,7 @@ export default function MindPage() {
         </div>
 
         {/* Meditation Sessions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Body Scan Session */}
           <div className="group bg-gradient-to-br from-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-blue-100/50 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
             <div className="relative">
@@ -457,6 +523,81 @@ export default function MindPage() {
                   <div className="flex items-center space-x-2 text-sm text-slate-500">
                     <TrendingUp className="w-4 h-4" />
                     <span className="font-light">{movementCount} sessions</span>
+                  </div>
+                )}
+              </div>
+              
+            </div>
+          </div>
+
+          {/* Vipassana Meditation Session */}
+          <div className="group bg-gradient-to-br from-amber-50/80 to-orange-50/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-amber-100/50 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
+            <div className="relative">
+              <div className="w-full h-48 bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/Vipassana.jpg" 
+                  alt="Vipassana Meditation" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+              <div className="absolute top-4 left-4">
+                <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 text-xs text-white font-light">
+                  Goenka Practice
+                </div>
+              </div>
+              <div className="absolute top-4 right-4">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs text-slate-700 font-medium">
+                  15 min
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-light text-slate-700 mb-3 tracking-wide">Mini Anapana</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">Breath observation practice</p>
+              </div>
+              
+              <div className="space-y-3">
+                {!isPlayingVipassana ? (
+                  <EnhancedButton
+                    variant="primary"
+                    onClick={handleVipassanaStart}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 border-0 text-white shadow-md py-3 rounded-2xl font-light transition-all duration-300"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Session
+                  </EnhancedButton>
+                ) : (
+                  <div className="space-y-3">
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleVipassanaPause}
+                      size="sm"
+                      className="w-full py-3 rounded-2xl font-light border-amber-200 text-amber-600 hover:bg-amber-50 transition-all duration-300"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="outline"
+                      onClick={handleVipassanaStop}
+                      size="sm"
+                      className="w-full py-3 rounded-2xl font-light border-amber-200 text-amber-600 hover:bg-amber-50 transition-all duration-300"
+                    >
+                      Stop
+                    </EnhancedButton>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-center mt-4">
+                {vipassanaCount > 0 && (
+                  <div className="flex items-center space-x-2 text-sm text-slate-500">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="font-light">{vipassanaCount} sessions</span>
                   </div>
                 )}
               </div>
