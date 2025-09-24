@@ -202,8 +202,8 @@ export default function BrainPage() {
       hapticTrigger('success');
       console.log(`Correct answer! Consecutive correct: ${newConsecutiveCorrect}`);
       
-      // Increase difficulty if 2 consecutive correct
-      if (newConsecutiveCorrect >= 2) {
+      // Increase difficulty if 1 correct answer
+      if (newConsecutiveCorrect >= 1) {
         if (currentMode === 'updating') {
           // For updating span, increase window size
           setUpdatingWindowSize(prev => Math.min(prev + 1, 5));
@@ -223,8 +223,8 @@ export default function BrainPage() {
       hapticTrigger('error');
       console.log(`Wrong answer! Consecutive wrong: ${newConsecutiveWrong}`);
       
-      // Decrease difficulty if 2 consecutive wrong
-      if (newConsecutiveWrong >= 2) {
+      // Decrease difficulty if 1 wrong answer
+      if (newConsecutiveWrong >= 1) {
         if (currentMode === 'updating') {
           // For updating span, decrease window size
           setUpdatingWindowSize(prev => Math.max(prev - 1, 3));
@@ -379,12 +379,12 @@ export default function BrainPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-20">
         {gameState === 'menu' && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Stats Overview */}
-            <div className="bg-gray-50 rounded-xl p-5">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h2>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h2 className="text-base font-semibold text-gray-900 mb-3">Your Progress</h2>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="bg-white rounded-lg p-3 text-center">
                   <div className="text-xl font-bold text-blue-600 mb-1">{forwardSpanRecord}</div>
@@ -414,8 +414,8 @@ export default function BrainPage() {
             </div>
 
             {/* Training Description */}
-            <div className="space-y-3">
-              <h2 className="text-base font-semibold text-gray-900">Training Modes</h2>
+            <div className="space-y-2">
+              <h2 className="text-sm font-semibold text-gray-900">Training Modes</h2>
               <div className="space-y-2">
                 <div className="flex items-center gap-3 p-2.5 bg-blue-50 rounded-lg">
                   <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">1</div>
@@ -439,19 +439,19 @@ export default function BrainPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs text-gray-600 text-center">
-                  <strong>30 rounds total</strong> • 10 rounds per mode • Adaptive difficulty
+                  <strong>30 rounds total</strong> • 10 rounds per mode
                 </div>
               </div>
             </div>
 
             {/* Start Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <EnhancedButton
                 variant="primary"
                 onClick={startTraining}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-colors"
               >
                 <Play className="w-4 h-4 mr-2" />
                 Start Training
