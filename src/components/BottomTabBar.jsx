@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Stethoscope, 
   PenTool, 
-  Brain
+  Brain,
+  Zap
 } from 'lucide-react';
 import { useHapticFeedback } from './index';
 
@@ -13,7 +14,7 @@ const BottomTabBar = () => {
   const { trigger: hapticTrigger } = useHapticFeedback();
 
   // Only show on specific pages
-  const allowedPaths = ['/', '/record', '/mind'];
+  const allowedPaths = ['/', '/record', '/mind', '/brain'];
   if (!allowedPaths.includes(location.pathname)) {
     return null;
   }
@@ -45,6 +46,15 @@ const BottomTabBar = () => {
       color: 'text-indigo-500',
       bgColor: 'bg-indigo-100',
       borderColor: 'border-indigo-400'
+    },
+    {
+      id: 'brain',
+      label: 'Brain',
+      icon: Zap,
+      path: '/brain',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-100',
+      borderColor: 'border-purple-400'
     }
   ];
 
