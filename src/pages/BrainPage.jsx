@@ -71,6 +71,17 @@ export default function BrainPage() {
     return generateSequence(length);
   }, [updatingWindowSize, generateSequence]);
 
+  // Reset all records (for testing)
+  const resetRecords = () => {
+    setForwardSpanRecord(0);
+    setBackwardSpanRecord(0);
+    setUpdatingSpanRecord(0);
+    setTotalSessions(0);
+    setDailyStreak(0);
+    setLastSessionDate(null);
+    alert('All records reset to 0. Next training will start fresh.');
+  };
+
   // Start training session
   const startTraining = () => {
     setSessionStartTime(Date.now());
@@ -79,6 +90,7 @@ export default function BrainPage() {
     setScore(0);
     setCurrentMode('forward');
     // Set initial difficulty based on last session (first time starts at 3, returning users start 1 below record)
+    console.log(`Starting Forward with record: ${forwardSpanRecord}, will start at: ${forwardSpanRecord === 0 ? 3 : Math.max(3, forwardSpanRecord - 1)}`);
     setCurrentLength(forwardSpanRecord === 0 ? 3 : Math.max(3, forwardSpanRecord - 1));
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
@@ -253,13 +265,17 @@ export default function BrainPage() {
         if (currentMode === 'forward') {
           setCurrentMode('backward');
           // Set backward difficulty (first time starts at 2, returning users start 1 below record)
-          setCurrentLength(backwardSpanRecord === 0 ? 2 : Math.max(2, backwardSpanRecord - 1));
+          const backwardStart = backwardSpanRecord === 0 ? 2 : Math.max(2, backwardSpanRecord - 1);
+          console.log(`Starting Backward with record: ${backwardSpanRecord}, will start at: ${backwardStart}`);
+          setCurrentLength(backwardStart);
           setGameState('rest');
           setRemainingTime(30);
         } else if (currentMode === 'backward') {
           setCurrentMode('updating');
           // Set updating window size (first time starts at 2, returning users start 1 below record)
-          setUpdatingWindowSize(updatingSpanRecord === 0 ? 2 : Math.max(2, updatingSpanRecord - 1));
+          const updatingStart = updatingSpanRecord === 0 ? 2 : Math.max(2, updatingSpanRecord - 1);
+          console.log(`Starting Updating with record: ${updatingSpanRecord}, will start at: ${updatingStart}`);
+          setUpdatingWindowSize(updatingStart);
           setGameState('rest');
           setRemainingTime(30);
         } else {
@@ -279,12 +295,15 @@ export default function BrainPage() {
   const updateRecords = () => {
     switch (currentMode) {
       case 'forward':
+        console.log(`Saving Forward record: ${currentLength} (was: ${forwardSpanRecord})`);
         setForwardSpanRecord(currentLength); // Save ending difficulty
         break;
       case 'backward':
+        console.log(`Saving Backward record: ${currentLength} (was: ${backwardSpanRecord})`);
         setBackwardSpanRecord(currentLength); // Save ending difficulty
         break;
       case 'updating':
+        console.log(`Saving Updating record: ${updatingWindowSize} (was: ${updatingSpanRecord})`);
         setUpdatingSpanRecord(updatingWindowSize); // Save ending difficulty
         break;
     }
@@ -371,11 +390,17 @@ export default function BrainPage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="border-b border-gray-100">
-        <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="max-w-2xl mx-auto px-4 py-6 relative">
           <div className="text-center">
             <h1 className="text-xl font-bold text-gray-900 mb-1">Brain Training</h1>
             <p className="text-sm text-gray-600">Adaptive digit span training</p>
           </div>
+          <button
+            onClick={resetRecords}
+            className="absolute top-6 right-4 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            reset
+          </button>
         </div>
       </div>
 
