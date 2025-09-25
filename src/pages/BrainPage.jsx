@@ -21,13 +21,13 @@ export default function BrainPage() {
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [currentRound, setCurrentRound] = useState(0);
   const [roundsInMode, setRoundsInMode] = useState(0);
-  const [maxRoundsPerMode] = useState(10); // Each mode has 10 rounds
+  const [maxRoundsPerMode] = useState(3); // Each mode has 3 rounds (for testing)
   const [lastResult, setLastResult] = useState(null); // 'correct' or 'incorrect'
   const [showFeedback, setShowFeedback] = useState(false);
   const [currentRoundLength, setCurrentRoundLength] = useState(4); // Length for current round
   
   // Updating span specific states
-  const [updatingWindowSize, setUpdatingWindowSize] = useState(3); // Size of sliding window
+  const [updatingWindowSize, setUpdatingWindowSize] = useState(2); // Size of sliding window
   const [totalSequenceLength, setTotalSequenceLength] = useState(8); // Total length of sequence (unknown to user)
   
   // Progress tracking
@@ -63,9 +63,9 @@ export default function BrainPage() {
 
   // Generate updating span sequence with dynamic length
   const generateUpdatingSequence = useCallback(() => {
-    // Dynamic sequence length based on difficulty (8-15 digits)
+    // Dynamic sequence length based on difficulty (8-13 digits)
     const minLength = Math.max(8, updatingWindowSize + 3);
-    const maxLength = Math.max(12, updatingWindowSize + 7);
+    const maxLength = Math.max(10, updatingWindowSize + 5);
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
     setTotalSequenceLength(length);
     return generateSequence(length);
@@ -78,8 +78,8 @@ export default function BrainPage() {
     setRoundsInMode(0);
     setScore(0);
     setCurrentMode('forward');
-    // Set initial difficulty based on last session (first time starts at 3)
-    setCurrentLength(forwardSpanRecord === 0 ? 3 : forwardSpanRecord);
+    // Set initial difficulty based on last session (first time starts at 3, returning users start 1 below record)
+    setCurrentLength(forwardSpanRecord === 0 ? 3 : Math.max(3, forwardSpanRecord - 1));
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
     startRound();
@@ -165,7 +165,7 @@ export default function BrainPage() {
     setUserInput(newInput);
 
     // Check if input is complete
-    const expectedLength = currentMode === 'updating' ? updatingWindowSize : currentRoundLength;
+    const expectedLength = currentRoundLength;
     if (newInput.length === expectedLength) {
       checkAnswer(newInput);
     }
@@ -183,7 +183,7 @@ export default function BrainPage() {
         correct = JSON.stringify(input) === JSON.stringify([...currentSequence].reverse());
         break;
       case 'updating':
-        const lastWindow = currentSequence.slice(-updatingWindowSize);
+        const lastWindow = currentSequence.slice(-currentRoundLength);
         correct = JSON.stringify(input) === JSON.stringify(lastWindow);
         break;
     }
@@ -228,8 +228,8 @@ export default function BrainPage() {
       if (newConsecutiveWrong >= 1) {
         if (currentMode === 'updating') {
           // For updating span, decrease window size
-          setUpdatingWindowSize(prev => Math.max(prev - 1, 3));
-          console.log(`Updating window size decreased to ${Math.max(updatingWindowSize - 1, 3)}`);
+          setUpdatingWindowSize(prev => Math.max(prev - 1, 2));
+          console.log(`Updating window size decreased to ${Math.max(updatingWindowSize - 1, 2)}`);
         } else {
           // For forward/backward, decrease sequence length
           newLength = Math.max(2, currentLength - 1);
@@ -252,14 +252,14 @@ export default function BrainPage() {
         updateRecords();
         if (currentMode === 'forward') {
           setCurrentMode('backward');
-          // Set backward difficulty (first time starts at 2)
-          setCurrentLength(backwardSpanRecord === 0 ? 2 : backwardSpanRecord);
+          // Set backward difficulty (first time starts at 2, returning users start 1 below record)
+          setCurrentLength(backwardSpanRecord === 0 ? 2 : Math.max(2, backwardSpanRecord - 1));
           setGameState('rest');
           setRemainingTime(30);
         } else if (currentMode === 'backward') {
           setCurrentMode('updating');
-          // Set updating window size (first time starts at 3)
-          setUpdatingWindowSize(updatingSpanRecord === 0 ? 3 : updatingSpanRecord);
+          // Set updating window size (first time starts at 2, returning users start 1 below record)
+          setUpdatingWindowSize(updatingSpanRecord === 0 ? 2 : Math.max(2, updatingSpanRecord - 1));
           setGameState('rest');
           setRemainingTime(30);
         } else {
@@ -441,7 +441,7 @@ export default function BrainPage() {
               </div>
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs text-gray-600 text-center">
-                  <strong>30 rounds total</strong> • 10 rounds per mode
+                  <strong>9 rounds total</strong> • 3 rounds per mode
                 </div>
               </div>
             </div>
@@ -494,7 +494,7 @@ export default function BrainPage() {
             {/* Input Display */}
             <div className="space-y-6">
               <div className="flex justify-center items-center gap-3">
-                {Array.from({ length: currentMode === 'updating' ? updatingWindowSize : currentRoundLength }).map((_, index) => (
+                {Array.from({ length: currentRoundLength }).map((_, index) => (
                   <div
                     key={index}
                     className={`w-14 h-14 border-2 rounded-xl flex items-center justify-center text-xl font-bold transition-colors ${
