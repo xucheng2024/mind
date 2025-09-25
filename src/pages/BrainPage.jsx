@@ -89,9 +89,16 @@ export default function BrainPage() {
     setRoundsInMode(0);
     setScore(0);
     setCurrentMode('forward');
+    
+    // Read latest record from localStorage to ensure fresh data
+    const latestRecord = parseInt(localStorage.getItem('forwardSpanRecord') || '0');
+    console.log(`Latest Forward record from localStorage: ${latestRecord}`);
+    console.log(`React state record: ${forwardSpanRecord}`);
+    
     // Set initial difficulty based on last session (first time starts at 3, returning users start 1 below record)
-    console.log(`Starting Forward with record: ${forwardSpanRecord}, will start at: ${forwardSpanRecord === 0 ? 3 : Math.max(3, forwardSpanRecord - 1)}`);
-    setCurrentLength(forwardSpanRecord === 0 ? 3 : Math.max(3, forwardSpanRecord - 1));
+    const startDifficulty = latestRecord === 0 ? 3 : Math.max(3, latestRecord - 1);
+    console.log(`Starting Forward - will start at: ${startDifficulty}`);
+    setCurrentLength(startDifficulty);
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
     startRound();
@@ -297,14 +304,18 @@ export default function BrainPage() {
       case 'forward':
         console.log(`Saving Forward record: ${currentLength} (was: ${forwardSpanRecord})`);
         setForwardSpanRecord(currentLength); // Save ending difficulty
+        // Also save to localStorage immediately
+        localStorage.setItem('forwardSpanRecord', currentLength.toString());
         break;
       case 'backward':
         console.log(`Saving Backward record: ${currentLength} (was: ${backwardSpanRecord})`);
         setBackwardSpanRecord(currentLength); // Save ending difficulty
+        localStorage.setItem('backwardSpanRecord', currentLength.toString());
         break;
       case 'updating':
         console.log(`Saving Updating record: ${updatingWindowSize} (was: ${updatingSpanRecord})`);
         setUpdatingSpanRecord(updatingWindowSize); // Save ending difficulty
+        localStorage.setItem('updatingSpanRecord', updatingWindowSize.toString());
         break;
     }
   };
