@@ -95,13 +95,15 @@ export default function BrainPage() {
     console.log(`Latest Forward record from localStorage: ${latestRecord}`);
     console.log(`React state record: ${forwardSpanRecord}`);
     
-    // Set initial difficulty based on last session (first time starts at 3, returning users start 1 below record)
-    const startDifficulty = latestRecord === 0 ? 3 : Math.max(3, latestRecord - 1);
+    // Set initial difficulty based on last session (first time starts at 4, returning users start 1 below record)
+    const startDifficulty = latestRecord === 0 ? 4 : Math.max(4, latestRecord - 1);
     console.log(`Starting Forward - will start at: ${startDifficulty}`);
     setCurrentLength(startDifficulty);
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
-    startRound();
+    // Ensure the first round uses the exact same computed difficulty
+    console.log(`Starting first round explicitly with length: ${startDifficulty}`);
+    startRound(startDifficulty);
   };
 
   // Start a new round with specific length
@@ -164,6 +166,7 @@ export default function BrainPage() {
     }
 
     console.log(`Showing digit ${index + 1}/${sequence.length}: ${sequence[index]}`);
+    setCurrentDigitIndex(index + 1);
     setShowingDigit(sequence[index]);
     hapticTrigger('light');
     
@@ -552,7 +555,7 @@ export default function BrainPage() {
                     variant="outline"
                     onClick={() => handleDigitInput(digit)}
                     className="h-14 text-lg font-semibold border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
-                    disabled={userInput.length >= (currentMode === 'updating' ? 3 : currentRoundLength)}
+                    disabled={userInput.length >= currentRoundLength}
                   >
                     {digit}
                   </EnhancedButton>
