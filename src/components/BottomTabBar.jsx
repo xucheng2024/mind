@@ -4,7 +4,8 @@ import {
   Stethoscope, 
   PenTool, 
   Brain,
-  Zap
+  Zap,
+  Leaf
 } from 'lucide-react';
 import { useHapticFeedback } from './index';
 
@@ -41,7 +42,7 @@ const BottomTabBar = () => {
     {
       id: 'mind',
       label: 'Mind',
-      icon: Brain,
+      icon: Leaf,
       path: '/mind',
       color: 'text-indigo-500',
       bgColor: 'bg-indigo-100',
@@ -50,7 +51,7 @@ const BottomTabBar = () => {
     {
       id: 'brain',
       label: 'Brain',
-      icon: Zap,
+      icon: Brain,
       path: '/brain',
       color: 'text-purple-500',
       bgColor: 'bg-purple-100',

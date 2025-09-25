@@ -31,9 +31,9 @@ export default function BrainPage() {
   const [totalSequenceLength, setTotalSequenceLength] = useState(8); // Total length of sequence (unknown to user)
   
   // Progress tracking
-  const [forwardSpanRecord, setForwardSpanRecord] = useLocalStorage('forwardSpanRecord', 4);
-  const [backwardSpanRecord, setBackwardSpanRecord] = useLocalStorage('backwardSpanRecord', 3);
-  const [updatingSpanRecord, setUpdatingSpanRecord] = useLocalStorage('updatingSpanRecord', 3); // Window size record
+  const [forwardSpanRecord, setForwardSpanRecord] = useLocalStorage('forwardSpanRecord', 0); // Last session ending difficulty
+  const [backwardSpanRecord, setBackwardSpanRecord] = useLocalStorage('backwardSpanRecord', 0); // Last session ending difficulty  
+  const [updatingSpanRecord, setUpdatingSpanRecord] = useLocalStorage('updatingSpanRecord', 0); // Last session ending difficulty
   const [totalSessions, setTotalSessions] = useLocalStorage('brainTrainingSessions', 0);
   const [dailyStreak, setDailyStreak] = useLocalStorage('brainTrainingStreak', 0);
   const [lastSessionDate, setLastSessionDate] = useLocalStorage('lastBrainSessionDate', null);
@@ -78,7 +78,8 @@ export default function BrainPage() {
     setRoundsInMode(0);
     setScore(0);
     setCurrentMode('forward');
-    setCurrentLength(Math.max(4, forwardSpanRecord - 1));
+    // Set initial difficulty based on last session (first time starts at 3)
+    setCurrentLength(forwardSpanRecord === 0 ? 3 : forwardSpanRecord);
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
     startRound();
@@ -251,12 +252,14 @@ export default function BrainPage() {
         updateRecords();
         if (currentMode === 'forward') {
           setCurrentMode('backward');
-          setCurrentLength(Math.max(3, backwardSpanRecord - 1));
+          // Set backward difficulty (first time starts at 2)
+          setCurrentLength(backwardSpanRecord === 0 ? 2 : backwardSpanRecord);
           setGameState('rest');
           setRemainingTime(30);
         } else if (currentMode === 'backward') {
           setCurrentMode('updating');
-          setUpdatingWindowSize(Math.max(3, updatingSpanRecord)); // Start at record window size
+          // Set updating window size (first time starts at 3)
+          setUpdatingWindowSize(updatingSpanRecord === 0 ? 3 : updatingSpanRecord);
           setGameState('rest');
           setRemainingTime(30);
         } else {
@@ -272,17 +275,17 @@ export default function BrainPage() {
     }, 500); // Just a brief pause
   };
 
-  // Update records
+  // Update records - save current ending difficulty for next session
   const updateRecords = () => {
     switch (currentMode) {
       case 'forward':
-        setForwardSpanRecord(Math.max(forwardSpanRecord, currentLength));
+        setForwardSpanRecord(currentLength); // Save ending difficulty
         break;
       case 'backward':
-        setBackwardSpanRecord(Math.max(backwardSpanRecord, currentLength));
+        setBackwardSpanRecord(currentLength); // Save ending difficulty
         break;
       case 'updating':
-        setUpdatingSpanRecord(Math.max(updatingSpanRecord, updatingWindowSize));
+        setUpdatingSpanRecord(updatingWindowSize); // Save ending difficulty
         break;
     }
   };
@@ -370,9 +373,6 @@ export default function BrainPage() {
       <div className="border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="text-center">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
             <h1 className="text-xl font-bold text-gray-900 mb-1">Brain Training</h1>
             <p className="text-sm text-gray-600">Adaptive digit span training</p>
           </div>

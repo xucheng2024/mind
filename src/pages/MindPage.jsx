@@ -276,7 +276,7 @@ export default function MindPage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-xl font-semibold text-slate-800">Mind & Meditation</h1>
+              <h1 className="text-xl font-semibold text-slate-800">Meditation</h1>
               <p className="text-sm text-slate-500">Find your inner peace</p>
             </div>
           </div>
