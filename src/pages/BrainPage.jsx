@@ -21,7 +21,7 @@ export default function BrainPage() {
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [currentRound, setCurrentRound] = useState(0);
   const [roundsInMode, setRoundsInMode] = useState(0);
-  const [maxRoundsPerMode] = useState(3); // Each mode has 3 rounds (for testing)
+  const [maxRoundsPerMode] = useState(10); // Each mode has 10 rounds
   const [lastResult, setLastResult] = useState(null); // 'correct' or 'incorrect'
   const [showFeedback, setShowFeedback] = useState(false);
   const [currentRoundLength, setCurrentRoundLength] = useState(4); // Length for current round
@@ -441,7 +441,7 @@ export default function BrainPage() {
               </div>
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs text-gray-600 text-center">
-                  <strong>9 rounds total</strong> • 3 rounds per mode
+                  <strong>30 rounds total</strong> • 10 rounds per mode
                 </div>
               </div>
             </div>
@@ -487,7 +487,7 @@ export default function BrainPage() {
               <h2 className="text-xl font-semibold text-gray-900">{modeInfo.title}</h2>
               <p className="text-gray-600">{modeInfo.description}</p>
               <div className="text-sm text-gray-500">
-                Enter {currentMode === 'updating' ? '3' : currentRoundLength} digits • Round {roundsInMode + 1}/{maxRoundsPerMode}
+                Enter {currentRoundLength} digits • Round {roundsInMode + 1}/{maxRoundsPerMode}
               </div>
             </div>
 
