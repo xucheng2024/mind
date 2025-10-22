@@ -134,9 +134,9 @@ async function handleCreateUser(req, res) {
     return res.status(400).json({ error: 'Invalid email format' });
   }
   
-  const phoneRegex = /^\d+$/;
+  const phoneRegex = /^\d{8,15}$/;
   if (!phoneRegex.test(phone)) {
-    return res.status(400).json({ error: 'Phone must contain only digits' });
+    return res.status(400).json({ error: 'Phone must contain 8-15 digits only' });
   }
   
   const phoneHash = quickHash(phone);

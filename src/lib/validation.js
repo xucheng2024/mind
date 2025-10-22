@@ -4,10 +4,10 @@ import { z } from 'zod';
 export const registrationSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  phone: z.string().min(8, 'Phone number must be at least 8 digits').max(15, 'Phone number must be at most 15 digits'),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
-  emergency_contact: z.string().min(10, 'Emergency contact must be at least 10 digits'),
+  emergency_contact: z.string().min(8, 'Emergency contact must be at least 8 digits').max(15, 'Emergency contact must be at most 15 digits'),
   emergency_relationship: z.string().min(2, 'Relationship is required'),
 });
 

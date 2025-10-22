@@ -23,8 +23,10 @@ const PhoneInput = forwardRef(({
       return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     } else if (cleaned.length <= 10) {
       return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length <= 13) {
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}-${cleaned.slice(10)}`;
     } else {
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}-${cleaned.slice(10, 15)}`;
     }
   };
 
@@ -39,7 +41,7 @@ const PhoneInput = forwardRef(({
 
   const validatePhone = (phone) => {
     const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 8 && cleaned.length <= 12;
+    return cleaned.length >= 8 && cleaned.length <= 15;
   };
 
   const isValid = !value || validatePhone(value);
@@ -61,7 +63,7 @@ const PhoneInput = forwardRef(({
           inputMode="tel"
           autoComplete="tel"
           placeholder="e.g. 91234567"
-          maxLength={14}
+          maxLength={19}
           className={`
             w-full pl-12 pr-4 py-4 text-base bg-white border rounded-xl
             transition-all duration-200 ease-out
