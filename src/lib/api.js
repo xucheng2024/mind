@@ -1,5 +1,5 @@
 // API client for database operations (bypasses RLS)
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://appclinic.vercel.app' : 'http://localhost:3001');
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://www.sgclinchub.com' : 'http://localhost:3001');
 
 import { requestInterceptor } from './apiInterceptors';
 

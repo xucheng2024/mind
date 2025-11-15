@@ -1,6 +1,6 @@
 // src/lib/logger.js - Frontend logging utility for user actions
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://appclinic.vercel.app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://www.sgclinchub.com';
 
 // Timeout protection for logging operations
 const LOG_TIMEOUT_MS = 10000; // 10 seconds timeout for logging
