@@ -152,11 +152,13 @@ export default function RegistrationForm() {
   }, []);
 
   const validateDOB = () => {
+    if (!form.dobDay || !form.dobMonth || !form.dobYear) return false;
+    
     const dd = parseInt(form.dobDay, 10);
     const mm = parseInt(form.dobMonth, 10);
     const yyyy = parseInt(form.dobYear, 10);
     
-    if (!dd || !mm || !yyyy) return false;
+    if (isNaN(dd) || isNaN(mm) || isNaN(yyyy)) return false;
     
     // Basic range check
     if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return false;
@@ -253,10 +255,10 @@ export default function RegistrationForm() {
       }
       updateRegistrationData({
         ...form,
-        dob: `${form.dobDay.padStart(2, '0')}/${form.dobMonth.padStart(2, '0')}/${form.dobYear}`,
-        dobDay: form.dobDay,
-        dobMonth: form.dobMonth,
-        dobYear: form.dobYear,
+        dob: `${(form.dobDay || '').padStart(2, '0')}/${(form.dobMonth || '').padStart(2, '0')}/${form.dobYear || ''}`,
+        dobDay: form.dobDay || '',
+        dobMonth: form.dobMonth || '',
+        dobYear: form.dobYear || '',
         gender: form.gender
       });
 
@@ -447,18 +449,25 @@ export default function RegistrationForm() {
 
           {/* Date of Birth */}
           <DateInput
-            value={`${form.dobDay || ''}${form.dobMonth ? '/' + form.dobMonth : ''}${form.dobYear ? '/' + form.dobYear : ''}`}
+            value={form.dobDay && form.dobMonth && form.dobYear 
+              ? `${form.dobDay}/${form.dobMonth}/${form.dobYear}`
+              : form.dobDay || form.dobMonth || form.dobYear
+              ? `${form.dobDay || ''}${form.dobMonth ? '/' + form.dobMonth : ''}${form.dobYear ? '/' + form.dobYear : ''}`
+              : ''}
             onChange={(e, formatted) => {
               const parts = formatted.split('/');
-              const day = parts[0] || '';
-              const month = parts[1] || '';
-              const year = parts[2] || '';
+              const day = (parts[0] || '').trim();
+              const month = (parts[1] || '').trim();
+              const year = (parts[2] || '').trim();
               
-              setForm({ ...form, dobDay: day, dobMonth: month, dobYear: year });
-              updateRegistrationData({ dobDay: day, dobMonth: month, dobYear: year });
-              
-              if (day && month && year) {
-                setErrors(prev => ({ ...prev, dob: '' }));
+              // Only update if values are valid (not NaN)
+              if (day || month || year) {
+                setForm(prev => ({ ...prev, dobDay: day, dobMonth: month, dobYear: year }));
+                updateRegistrationData({ dobDay: day, dobMonth: month, dobYear: year });
+                
+                if (day && month && year) {
+                  setErrors(prev => ({ ...prev, dob: '' }));
+                }
               }
             }}
             onBlur={() => {
@@ -490,7 +499,7 @@ export default function RegistrationForm() {
                   } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={() => {
                     if (!loading) {
-                      setForm({ ...form, gender: option });
+                      setForm(prev => ({ ...prev, gender: option }));
                       updateRegistrationData({ gender: option });
                       if (errors.gender) {
                         setErrors(prev => ({ ...prev, gender: '' }));

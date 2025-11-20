@@ -18,7 +18,7 @@ const DateInput = forwardRef(({
     // Remove all non-digits
     const cleaned = input.replace(/\D/g, '');
     
-    // Format as MM/DD/YYYY
+    // Format as DD/MM/YYYY
     if (cleaned.length <= 2) {
       return cleaned;
     } else if (cleaned.length <= 4) {
@@ -42,11 +42,11 @@ const DateInput = forwardRef(({
   const validateDate = (dateStr) => {
     if (!dateStr || dateStr.length !== 10) return false;
     
-    const [month, day, year] = dateStr.split('/').map(Number);
+    const [day, month, year] = dateStr.split('/').map(Number);
     
-    if (!month || !day || !year) return false;
-    if (month < 1 || month > 12) return false;
+    if (!day || !month || !year) return false;
     if (day < 1 || day > 31) return false;
+    if (month < 1 || month > 12) return false;
     if (year < 1900 || year > new Date().getFullYear() + 1) return false;
     
     const date = new Date(year, month - 1, day);
@@ -76,7 +76,7 @@ const DateInput = forwardRef(({
           required={required}
           inputMode="numeric"
           autoComplete="off"
-          placeholder="MM/DD/YYYY"
+          placeholder="DD/MM/YYYY"
           maxLength={10}
           className={`
             w-full pl-12 pr-4 py-4 text-base bg-white border rounded-xl
@@ -113,7 +113,7 @@ const DateInput = forwardRef(({
           <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          {error || 'Please enter a valid date (MM/DD/YYYY)'}
+          {error || 'Please enter a valid date (DD/MM/YYYY)'}
         </div>
       )}
     </div>
