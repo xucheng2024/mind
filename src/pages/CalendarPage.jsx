@@ -599,8 +599,10 @@ export default function CalendarPage() {
             margin: 0;
             padding: 0;
             background: transparent;
+          }
+          
+          .react-datepicker__week {
             display: flex !important;
-            flex-wrap: wrap !important;
             width: 100% !important;
           }
           
@@ -616,8 +618,8 @@ export default function CalendarPage() {
             border: none;
             color: #111827;
             text-align: center;
-            flex: 0 0 calc(14.28% - 8px) !important;
-            max-width: calc(14.28% - 8px) !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -681,8 +683,7 @@ export default function CalendarPage() {
               line-height: 45px;
               font-size: 18px;
               margin: 4px;
-              flex: 0 0 calc(14.28% - 8px) !important;
-              max-width: calc(14.28% - 8px) !important;
+              flex: 1 1 0 !important;
             }
             
             .react-datepicker__day-name {
