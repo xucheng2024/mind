@@ -190,7 +190,8 @@ export default function HomePage() {
             </div>
             <div className="space-y-4">
               <EnhancedButton
-                variant="primary"
+                variant="outline"
+                className="bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
                 onClick={() => {
                   hapticTrigger('light');
                   handleBookingClick();
@@ -219,8 +220,6 @@ export default function HomePage() {
       {!isLoggedIn && (
         <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center">
           <div className="w-full mb-8">
-            <div className="text-lg font-bold text-gray-800 mb-1">First-time Visitor</div>
-            <div className="text-xs text-gray-400 mb-4">First visit to clinic now</div>
             <EnhancedButton
               variant="primary"
               onClick={() => {
@@ -234,11 +233,10 @@ export default function HomePage() {
             </EnhancedButton>
           </div>
           <div className="w-full">
-            <div className="text-lg font-bold text-gray-800 mb-1">Returning Visitor</div>
-            <div className="text-xs text-gray-400 mb-4">For patients who already have an account.</div>
             <div className="space-y-4">
               <EnhancedButton
-                variant="primary"
+                variant="outline"
+                className="bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
                 onClick={() => {
                   hapticTrigger('light');
                   handleBookingClick();
