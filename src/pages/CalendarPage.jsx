@@ -579,6 +579,8 @@ export default function CalendarPage() {
             margin: 0;
             padding: 0;
             background: transparent;
+            display: flex !important;
+            width: 100% !important;
           }
           
           .react-datepicker__day-name {
@@ -587,14 +589,19 @@ export default function CalendarPage() {
             font-size: 16px;
             padding: 16px 8px;
             margin: 0;
-            width: 14.28%;
+            width: 14.28% !important;
+            flex: 0 0 14.28% !important;
             text-align: center;
+            display: block !important;
           }
           
           .react-datepicker__days {
             margin: 0;
             padding: 0;
             background: transparent;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            width: 100% !important;
           }
           
           .react-datepicker__day {
@@ -609,6 +616,11 @@ export default function CalendarPage() {
             border: none;
             color: #111827;
             text-align: center;
+            flex: 0 0 calc(14.28% - 8px) !important;
+            max-width: calc(14.28% - 8px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
           
           .react-datepicker__day:hover {
@@ -669,14 +681,16 @@ export default function CalendarPage() {
               line-height: 45px;
               font-size: 18px;
               margin: 4px;
+              flex: 0 0 calc(14.28% - 8px) !important;
+              max-width: calc(14.28% - 8px) !important;
             }
             
-                      .react-datepicker__day-name {
-            font-size: 18px;
-            padding: 20px 8px;
-          }
-          
-
+            .react-datepicker__day-name {
+              font-size: 18px;
+              padding: 20px 8px;
+              width: 14.28% !important;
+              flex: 0 0 14.28% !important;
+            }
           }
         `}
       </style>
