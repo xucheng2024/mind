@@ -46,6 +46,14 @@ function quickHash(text) {
   return CryptoJS.SHA256(text.replace(/\s+/g, '').toLowerCase()).toString();
 }
 
+function nameHash(fullName) {
+  if (!fullName) return '';
+  // Get the part before the first space, convert to uppercase, then hash
+  const firstName = fullName.trim().split(/\s+/)[0];
+  if (!firstName) return '';
+  return CryptoJS.SHA256(firstName.toUpperCase()).toString();
+}
+
 function encrypt(text) {
   if (!text) return '';
   try {
@@ -141,6 +149,7 @@ async function handleCreateUser(req, res) {
   
   const phoneHash = quickHash(phone);
   const emailHash = quickHash(email);
+  const nameHashValue = nameHash(full_name);
   
   const { data: existingUser } = await supabase
     .from('users')
@@ -162,6 +171,7 @@ async function handleCreateUser(req, res) {
     phone_hash: phoneHash,
     email: encrypt(req.body.email || ''),
     email_hash: emailHash,
+    name_hash: nameHashValue,
     postal_code: encrypt(req.body.postal_code || ''),
     block_no: encrypt(req.body.block_no || ''),
     street: encrypt(req.body.street || ''),
@@ -230,16 +240,17 @@ async function handleCheckDuplicate(req, res) {
   }
   
   try {
-    const { clinicId, phone, email } = req.body;
+    const { clinicId, phone, email, fullName } = req.body;
     
-    if (!clinicId || (!phone && !email)) {
+    if (!clinicId || (!phone && !email && !fullName)) {
       return res.status(400).json({ 
-        error: 'Missing required fields: clinicId and either phone or email' 
+        error: 'Missing required fields: clinicId and either phone, email, or fullName' 
       });
     }
     
     let phoneExists = false;
     let emailExists = false;
+    let nameExists = false;
     
     if (phone) {
       const phoneHash = quickHash(phone);
@@ -277,12 +288,31 @@ async function handleCheckDuplicate(req, res) {
       emailExists = emailData && emailData.length > 0;
     }
     
+    if (fullName) {
+      const nameHashValue = nameHash(fullName);
+      
+      const { data: nameData, error: nameError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('clinic_id', clinicId)
+        .eq('name_hash', nameHashValue)
+        .limit(1);
+      
+      if (nameError) {
+        console.error('Name check error:', nameError);
+        return res.status(500).json({ error: 'Failed to check name duplicate' });
+      }
+      
+      nameExists = nameData && nameData.length > 0;
+    }
+    
     const result = { 
       success: true, 
       data: { 
         phoneExists, 
         emailExists,
-        isDuplicate: phoneExists || emailExists
+        nameExists,
+        isDuplicate: phoneExists || emailExists || nameExists
       } 
     };
     
@@ -302,7 +332,7 @@ async function handleQueryUser(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { clinicId, phoneHash, emailHash } = req.body;
+  const { clinicId, phoneHash, emailHash, nameHash: nameHashValue } = req.body;
   
   let query = supabase.from('users').select('user_id, row_id, full_name, gender');
   
@@ -310,8 +340,10 @@ async function handleQueryUser(req, res) {
     query = query.eq('phone_hash', phoneHash);
   } else if (emailHash) {
     query = query.eq('email_hash', emailHash);
+  } else if (nameHashValue) {
+    query = query.eq('name_hash', nameHashValue);
   } else {
-    return res.status(400).json({ error: 'Either phoneHash or emailHash is required' });
+    return res.status(400).json({ error: 'Either phoneHash, emailHash, or nameHash is required' });
   }
   
   const { data, error } = await query.eq('clinic_id', clinicId).single();
