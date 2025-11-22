@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaDownload, FaTimes, FaSync } from 'react-icons/fa';
+import React, { useEffect } from 'react';
 
 export default function PWAUpdateNotification() {
-  const [showUpdate, setShowUpdate] = useState(false);
-  const [newWorker, setNewWorker] = useState(null);
-
   useEffect(() => {
+    const handleUpdate = (newWorker) => {
+      if (newWorker) {
+        // Automatically update without user interaction
+        newWorker.postMessage({ type: 'SKIP_WAITING' });
+        // Reload after a short delay to allow the message to be processed
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    };
+
     const handleUpdateAvailable = (event) => {
-      setNewWorker(event.detail.newWorker);
-      setShowUpdate(true);
+      handleUpdate(event.detail.newWorker);
     };
 
     // Listen for PWA update events
@@ -20,14 +25,13 @@ export default function PWAUpdateNotification() {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then((registration) => {
           if (registration && registration.waiting) {
-            setNewWorker(registration.waiting);
-            setShowUpdate(true);
+            handleUpdate(registration.waiting);
           }
         });
       }
     };
 
-    // Check immediately and after very short delay
+    // Check immediately and after a short delay
     checkForUpdates();
     const timeoutId = setTimeout(checkForUpdates, 200);
 
@@ -37,20 +41,8 @@ export default function PWAUpdateNotification() {
     };
   }, []);
 
-  const handleUpdate = () => {
-    if (newWorker) {
-      newWorker.postMessage({ type: 'SKIP_WAITING' });
-      window.location.reload();
-    }
-  };
-
-  const handleDismiss = () => {
-    setShowUpdate(false);
-  };
-
-  if (!showUpdate) {
-    return null;
-  }
+  // No UI, just auto-update in background
+  return null;
 
   return (
     <AnimatePresence>
