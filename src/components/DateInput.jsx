@@ -15,8 +15,18 @@ const DateInput = forwardRef(({
   const [hasValue, setHasValue] = useState(!!value);
 
   const formatDate = (input) => {
+    // If input is empty, return empty string
+    if (!input || input.trim() === '') {
+      return '';
+    }
+    
     // Remove all non-digits
     const cleaned = input.replace(/\D/g, '');
+    
+    // If cleaned is empty after removing non-digits, return empty string
+    if (!cleaned) {
+      return '';
+    }
     
     // Format as DD/MM/YYYY
     if (cleaned.length <= 2) {

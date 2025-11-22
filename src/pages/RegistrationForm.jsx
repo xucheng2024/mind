@@ -460,14 +460,15 @@ export default function RegistrationForm() {
               const month = (parts[1] || '').trim();
               const year = (parts[2] || '').trim();
               
-              // Only update if values are valid (not NaN)
-              if (day || month || year) {
-                setForm(prev => ({ ...prev, dobDay: day, dobMonth: month, dobYear: year }));
-                updateRegistrationData({ dobDay: day, dobMonth: month, dobYear: year });
-                
-                if (day && month && year) {
-                  setErrors(prev => ({ ...prev, dob: '' }));
-                }
+              // Always update form state, even if empty (to allow deletion)
+              setForm(prev => ({ ...prev, dobDay: day, dobMonth: month, dobYear: year }));
+              updateRegistrationData({ dobDay: day, dobMonth: month, dobYear: year });
+              
+              if (day && month && year) {
+                setErrors(prev => ({ ...prev, dob: '' }));
+              } else if (!day && !month && !year) {
+                // Clear error when all fields are empty
+                setErrors(prev => ({ ...prev, dob: '' }));
               }
             }}
             onBlur={() => {
