@@ -449,16 +449,24 @@ export default function RegistrationForm() {
 
           {/* Date of Birth */}
           <DateInput
-            value={form.dobDay && form.dobMonth && form.dobYear 
-              ? `${form.dobDay}/${form.dobMonth}/${form.dobYear}`
-              : form.dobDay || form.dobMonth || form.dobYear
-              ? `${form.dobDay || ''}${form.dobMonth ? '/' + form.dobMonth : ''}${form.dobYear ? '/' + form.dobYear : ''}`
-              : ''}
+            value={(() => {
+              const day = String(form.dobDay || '').trim();
+              const month = String(form.dobMonth || '').trim();
+              const year = String(form.dobYear || '').trim();
+              
+              if (day && month && year) {
+                return `${day}/${month}/${year}`;
+              } else if (day || month || year) {
+                return `${day}${month ? '/' + month : ''}${year ? '/' + year : ''}`;
+              }
+              return '';
+            })()}
             onChange={(e, formatted) => {
               const parts = formatted.split('/');
-              const day = (parts[0] || '').trim();
-              const month = (parts[1] || '').trim();
-              const year = (parts[2] || '').trim();
+              // Ensure all values are strings, not numbers
+              const day = String(parts[0] || '').trim();
+              const month = String(parts[1] || '').trim();
+              const year = String(parts[2] || '').trim();
               
               // Always update form state, even if empty (to allow deletion)
               setForm(prev => ({ ...prev, dobDay: day, dobMonth: month, dobYear: year }));
