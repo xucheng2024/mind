@@ -227,7 +227,7 @@ export default function RegistrationForm() {
 
     try {
       // Check for duplicates using server API
-      const duplicateResult = await apiClient.checkDuplicate(clinicId, form.phone, form.email);
+      const duplicateResult = await apiClient.checkDuplicate(clinicId, form.phone, null);
       
       if (!duplicateResult.success) {
         toast.dismiss(loadingToast);
@@ -237,19 +237,12 @@ export default function RegistrationForm() {
         return;
       }
       
-      const { phoneExists, emailExists } = duplicateResult.data;
+      const { phoneExists } = duplicateResult.data;
 
       if (phoneExists) {
         toast.dismiss(loadingToast);
         toast.error('This phone number has already been registered.');
         setErrors((prev) => ({ ...prev, phone: 'This phone number has already been registered.' }));
-        setLoading(false);
-        return;
-      }
-      if (emailExists) {
-        toast.dismiss(loadingToast);
-        toast.error('This email has already been registered.');
-        setErrors((prev) => ({ ...prev, email: 'This email has already been registered.' }));
         setLoading(false);
         return;
       }
@@ -573,20 +566,9 @@ export default function RegistrationForm() {
                 updateRegistrationData({ email: val });
                 if (val) setErrors(prev => ({ ...prev, email: '' }));
               }}
-              onBlur={async () => {
+              onBlur={() => {
                 let err = '';
                 if (!/^\S+@\S+\.\S+$/.test(form.email)) err = 'Invalid email';
-                else {
-                  // Check for duplicate using server API
-                  try {
-                    const result = await apiClient.checkDuplicate(clinicId, null, form.email);
-                    if (result.success && result.data.emailExists) {
-                      err = 'This email has already been registered.';
-                    }
-                  } catch (error) {
-                    err = 'Server error, please try again later.';
-                  }
-                }
                 setErrors(prev => ({ ...prev, email: err }));
               }}
               className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl p-4 text-base bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400`}

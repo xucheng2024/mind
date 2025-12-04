@@ -156,11 +156,11 @@ async function handleCreateUser(req, res) {
     .from('users')
     .select('row_id')
     .eq('clinic_id', clinic_id)
-    .or(`phone_hash.eq.${phoneHash},email_hash.eq.${emailHash}`)
+    .eq('phone_hash', phoneHash)
     .maybeSingle();
   
   if (existingUser) {
-    return res.status(409).json({ error: 'User already exists with this phone or email' });
+    return res.status(409).json({ error: 'User already exists with this phone' });
   }
   
   const userData = {
@@ -243,14 +243,13 @@ async function handleCheckDuplicate(req, res) {
   try {
     const { clinicId, phone, email, fullName } = req.body;
     
-    if (!clinicId || (!phone && !email && !fullName)) {
+    if (!clinicId || (!phone && !fullName)) {
       return res.status(400).json({ 
-        error: 'Missing required fields: clinicId and either phone, email, or fullName' 
+        error: 'Missing required fields: clinicId and either phone or fullName' 
       });
     }
     
     let phoneExists = false;
-    let emailExists = false;
     let nameExists = false;
     
     if (phone) {
@@ -269,24 +268,6 @@ async function handleCheckDuplicate(req, res) {
       }
       
       phoneExists = phoneData && phoneData.length > 0;
-    }
-    
-    if (email) {
-      const emailHash = quickHash(email);
-      
-      const { data: emailData, error: emailError } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('clinic_id', clinicId)
-        .eq('email_hash', emailHash)
-        .limit(1);
-      
-      if (emailError) {
-        console.error('Email check error:', emailError);
-        return res.status(500).json({ error: 'Failed to check email duplicate' });
-      }
-      
-      emailExists = emailData && emailData.length > 0;
     }
     
     if (fullName) {
@@ -311,9 +292,8 @@ async function handleCheckDuplicate(req, res) {
       success: true, 
       data: { 
         phoneExists, 
-        emailExists,
         nameExists,
-        isDuplicate: phoneExists || emailExists || nameExists
+        isDuplicate: phoneExists || nameExists
       } 
     };
     
