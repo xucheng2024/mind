@@ -64,13 +64,13 @@ export const apiClient = {
     return response.json();
   },
 
-  async queryUser(clinicId, phoneHash, emailHash) {
+  async queryUser(clinicId, phoneHash) {
     const response = await fetch(`${API_BASE_URL}/api/users?action=query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ clinicId, phoneHash, emailHash }),
+      body: JSON.stringify({ clinicId, phoneHash }),
     });
     
     if (!response.ok) {

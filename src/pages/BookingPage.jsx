@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { apiClient } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { isPhone, isEmail } from '../lib/utils';
+import { isPhone } from '../lib/utils';
 import CryptoJS from 'crypto-js';
 import cacheManager from '../lib/cache';
 
@@ -87,7 +87,12 @@ const BookingPage = React.memo(() => {
     
     setError('');
     if (!isFormValid) {
-      setError('Please enter your email or phone number.');
+      setError('Please enter your phone number.');
+      return;
+    }
+    
+    if (!isPhone(input)) {
+      setError('Please enter a valid phone number (digits only).');
       return;
     }
     
@@ -100,30 +105,19 @@ const BookingPage = React.memo(() => {
       let hashValue;
       let data;
       try {
-        if (isPhone(input)) {
-          hashValue = quickHash(input);
-          const apiStart = performance.now();
-          const result = await apiClient.queryUser(clinicId, hashValue, null);
-          const apiEnd = performance.now();
-          data = result.data;
-        } else if (isEmail(input)) {
-          hashValue = quickHash(input);
-          const apiStart = performance.now();
-          const result = await apiClient.queryUser(clinicId, null, hashValue);
-          const apiEnd = performance.now();
-          data = result.data;
-        } else {
-          setError('Please enter a valid phone number (digits only) or a valid email address (must contain @).');
-          return;
-        }
+        hashValue = quickHash(input);
+        const apiStart = performance.now();
+        const result = await apiClient.queryUser(clinicId, hashValue);
+        const apiEnd = performance.now();
+        data = result.data;
       } catch (error) {
         console.error('User query failed:', error);
-        setError('No user found with this email or phone number in this clinic.');
+        setError('No user found with this phone number in this clinic.');
         return;
       }
       
       if (!data) {
-        setError('No user found with this email or phone number in this clinic.');
+        setError('No user found with this phone number in this clinic.');
         return;
       }
       
@@ -166,16 +160,17 @@ const BookingPage = React.memo(() => {
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email or Phone Number
+              Phone Number
             </label>
             <input
-              type="text"
+              type="tel"
               value={input}
               onChange={handleInputChange}
-              placeholder="Enter your email or phone number"
+              placeholder="Enter your phone number"
               autoFocus
-              aria-label="Email or Phone Number"
-              maxLength={100}
+              aria-label="Phone Number"
+              inputMode="tel"
+              maxLength={20}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
             />
           </div>

@@ -313,18 +313,16 @@ async function handleQueryUser(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { clinicId, phoneHash, emailHash, nameHash: nameHashValue } = req.body;
+  const { clinicId, phoneHash, nameHash: nameHashValue } = req.body;
   
   let query = supabase.from('users').select('user_id, row_id, full_name, gender');
   
   if (phoneHash) {
     query = query.eq('phone_hash', phoneHash);
-  } else if (emailHash) {
-    query = query.eq('email_hash', emailHash);
   } else if (nameHashValue) {
     query = query.eq('name_hash', nameHashValue);
   } else {
-    return res.status(400).json({ error: 'Either phoneHash, emailHash, or nameHash is required' });
+    return res.status(400).json({ error: 'Either phoneHash or nameHash is required' });
   }
   
   const { data, error } = await query.eq('clinic_id', clinicId).single();
