@@ -4,46 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { useRegistration } from '../../context/RegistrationContext';
 import RegistrationHeader from '../components/RegistrationHeader';
 import { apiClient } from '../lib/api';
-import { prepareImageForUpload } from '../lib/imageUtils';
+import { prepareImageForUpload, fileToBase64 } from '../lib/imageUtils';
 import { 
   EnhancedButton, 
-  CheckboxInput, 
   useHapticFeedback,
-  LoadingSpinner,
   Confetti,
   ProgressBar
 } from '../components';
 
-// Native image compression function
-const compressImage = async (file) => {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    img.onload = () => {
-      // Calculate new dimensions (60% of original size)
-      const maxWidth = img.width * 0.6;
-      const maxHeight = img.height * 0.6;
-      
-      canvas.width = maxWidth;
-      canvas.height = maxHeight;
-      
-      // Draw and compress
-      ctx.drawImage(img, 0, 0, maxWidth, maxHeight);
-      canvas.toBlob(resolve, 'image/jpeg', 0.6);
-    };
-    
-    img.src = URL.createObjectURL(file);
-  });
-};
 
 export default function SelfiePage() {
   const cameraRef = useRef(null);
   const navigate = useNavigate();
   const { registrationData, updateRegistrationData } = useRegistration();
   const [imageSrc, setImageSrc] = useState(null);
-  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [compressedBlob, setCompressedBlob] = useState(null);
@@ -51,11 +25,12 @@ export default function SelfiePage() {
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraLoading, setCameraLoading] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
-  const [fileInputRef] = useState(() => React.createRef());
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { trigger: hapticTrigger } = useHapticFeedback();
   const submittedRef = useRef(false); // Add debounce ref
+  const cameraKeyRef = useRef(0); // Key for Camera component remount
+  const objectUrlRef = useRef(null); // Track object URLs for cleanup
 
   // Check camera permissions - simplified version
   const checkCamera = async () => {
@@ -114,50 +89,75 @@ export default function SelfiePage() {
   useEffect(() => {
     // Check camera directly, no delay needed
     checkCamera();
+    
+    // Cleanup function
+    return () => {
+      // Cleanup object URLs
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
   }, []);
 
-  // Take photo logic changed to use react-camera-pro
-  const capture = () => {
+  // Take photo logic using react-camera-pro
+  const capture = async () => {
     hapticTrigger('medium');
     setCapturing(true);
+    setError('');
+    
     if (!cameraRef.current) {
       console.error('Camera ref not available');
       setError('Camera not ready. Please wait and try again.');
       setCapturing(false);
       return;
     }
+    
     try {
       const image = cameraRef.current.takePhoto();
-      if (image) {
-        setError('');
-        // base64 to blob
-        fetch(image)
-          .then(res => res.blob())
-          .then(async blob => {
-            try {
-              const compressedBlob = await compressImage(blob);
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                setImageSrc(reader.result);
-                setCompressedBlob(compressedBlob);
-              };
-              reader.readAsDataURL(compressedBlob);
-            } catch (err) {
-              // Fallback to original image if compression fails
-              setImageSrc(image);
-              setCompressedBlob(blob);
-            }
-          })
-          .catch(err => {
-            setError('Failed to process image. Please try again.');
-          })
-          .finally(() => setCapturing(false));
-      } else {
+      if (!image) {
+        console.error('takePhoto returned null');
         setError('Failed to take photo. Please try again.');
         setCapturing(false);
+        return;
       }
+
+      setError('');
+      
+      // Convert base64 to blob
+      const response = await fetch(image);
+      const blob = await response.blob();
+      
+      // Cleanup previous object URL if exists
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+      
+      // Compress image using utility function
+      const filename = `selfie_${Date.now()}.jpg`;
+      const { compressedFile } = await prepareImageForUpload(
+        blob,
+        filename,
+        {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 800,
+          quality: 0.7,
+          fileType: 'image/jpeg',
+          useWebWorker: true
+        }
+      );
+      
+      // Create preview URL from compressed file
+      const previewUrl = URL.createObjectURL(compressedFile);
+      objectUrlRef.current = previewUrl;
+      
+      setImageSrc(previewUrl);
+      setCompressedBlob(compressedFile);
+      setCapturing(false);
+      
     } catch (error) {
-      setError('Camera error. Please try again.');
+      console.error('Capture error:', error);
+      setError('Failed to process image. Please try again.');
       setCapturing(false);
     }
   };
@@ -166,10 +166,19 @@ export default function SelfiePage() {
 
   const handleRetake = () => {
     hapticTrigger('light');
+    
+    // Cleanup object URL
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    
     setImageSrc(null);
     setCompressedBlob(null);
     setError('');
+    setCapturing(false); // Reset capturing state
     setCameraReady(false); // Reset camera ready state
+    cameraKeyRef.current += 1; // Force Camera remount
   };
 
   const handleRetryCamera = () => {
@@ -208,28 +217,13 @@ export default function SelfiePage() {
       const timestamp = Date.now();
       const filename = `selfie_${timestamp}.enc`;
       
-      // Use compressed blob if available, otherwise convert base64 to blob
-      let uploadBlob = compressedBlob;
-      if (!uploadBlob && imageSrc) {
-        // Convert base64 to blob
-        const response = await fetch(imageSrc);
-        uploadBlob = await response.blob();
-      }
-      
-      if (!uploadBlob) {
+      // Use compressed blob if available
+      if (!compressedBlob) {
         throw new Error('No image data available for upload');
       }
       
-      // Convert already compressed blob to base64 (compression already done by native compressImage)
-      const reader = new FileReader();
-      const base64 = await new Promise((resolve) => {
-        reader.onloadend = () => {
-          // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(uploadBlob);
-      });
+      // Convert compressed blob to base64 using utility function
+      const base64 = await fileToBase64(compressedBlob);
       
       // Upload compressed image through server API (server handles encryption)
       const uploadResult = await apiClient.uploadFile('selfies', filename, base64, 'image/jpeg');
@@ -313,18 +307,23 @@ export default function SelfiePage() {
           <div className="flex flex-col items-center mb-4">
             <div className="w-[220px] h-[220px] max-w-[80vw] max-h-[80vw] rounded-full overflow-hidden flex justify-center items-center bg-gray-100 mx-auto border-4 border-blue-100 shadow-inner">
               <Camera
+                key={`camera-${cameraKeyRef.current}`}
                 ref={cameraRef}
                 facingMode="user"
                 aspectRatio={1}
                 onCameraStart={() => {
+                  console.log('Camera started');
                   setCameraReady(true);
                   setCameraLoading(false);
                   setError('');
+                  setCapturing(false); // Ensure capturing is reset when camera starts
                 }}
                 onCameraError={err => {
+                  console.error('Camera error:', err);
                   setError('Camera error. Please check permissions and try again.');
                   setCameraReady(false);
                   setCameraLoading(false);
+                  setCapturing(false); // Reset capturing on error
                 }}
                 className="w-full h-full object-cover"
               />
