@@ -177,8 +177,19 @@ export default function SelfiePage() {
     setCompressedBlob(null);
     setError('');
     setCapturing(false); // Reset capturing state
-    setCameraReady(false); // Reset camera ready state
-    cameraKeyRef.current += 1; // Force Camera remount
+    
+    // Force Camera remount by changing key
+    // If camera is already available, keep cameraReady true to avoid showing loading
+    // Camera will reinitialize and onCameraStart will be called to confirm it's ready
+    if (hasCamera) {
+      // Keep cameraReady true - Camera will quickly reinitialize via key change
+      // onCameraStart will be called again to confirm
+      cameraKeyRef.current += 1;
+    } else {
+      // Camera not available, reset state
+      setCameraReady(false);
+      cameraKeyRef.current += 1;
+    }
   };
 
   const handleRetryCamera = () => {
