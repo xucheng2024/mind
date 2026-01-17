@@ -1,8 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Stethoscope, 
-  PenTool, 
   Brain,
   Zap,
   Leaf
@@ -15,39 +13,12 @@ const BottomTabBar = () => {
   const { trigger: hapticTrigger } = useHapticFeedback();
 
   // Only show on specific pages
-  const allowedPaths = ['/', '/record', '/mind', '/brain'];
+  const allowedPaths = ['/', '/mind', '/brain'];
   if (!allowedPaths.includes(location.pathname)) {
     return null;
   }
 
   const tabs = [
-    {
-      id: 'clinic',
-      label: 'Clinic',
-      icon: Stethoscope,
-      path: '/',
-      color: 'text-cyan-500',
-      bgColor: 'bg-cyan-100',
-      borderColor: 'border-cyan-400'
-    },
-    {
-      id: 'record',
-      label: 'Record',
-      icon: PenTool,
-      path: '/record',
-      color: 'text-rose-500',
-      bgColor: 'bg-rose-100',
-      borderColor: 'border-rose-400'
-    },
-    {
-      id: 'mind',
-      label: 'Mind',
-      icon: Leaf,
-      path: '/mind',
-      color: 'text-indigo-500',
-      bgColor: 'bg-indigo-100',
-      borderColor: 'border-indigo-400'
-    },
     {
       id: 'brain',
       label: 'Brain',
@@ -56,6 +27,15 @@ const BottomTabBar = () => {
       color: 'text-purple-500',
       bgColor: 'bg-purple-100',
       borderColor: 'border-purple-400'
+    },
+    {
+      id: 'mind',
+      label: 'Mind',
+      icon: Leaf,
+      path: '/',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100',
+      borderColor: 'border-indigo-400'
     }
   ];
 
