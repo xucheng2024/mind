@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Performance optimization utilities
 export class PerformanceOptimizer {
   static debounce(func, wait) {

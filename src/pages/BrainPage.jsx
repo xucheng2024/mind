@@ -92,35 +92,47 @@ export default function BrainPage() {
     
     // Read latest record from localStorage to ensure fresh data
     const latestRecord = parseInt(localStorage.getItem('forwardSpanRecord') || '0');
-    console.log(`Latest Forward record from localStorage: ${latestRecord}`);
-    console.log(`React state record: ${forwardSpanRecord}`);
+    if (import.meta.env.DEV) {
+      console.log(`Latest Forward record from localStorage: ${latestRecord}`);
+      console.log(`React state record: ${forwardSpanRecord}`);
+    }
     
     // Set initial difficulty based on last session (first time starts at 4, returning users start 1 below record)
     const startDifficulty = latestRecord === 0 ? 4 : Math.max(4, latestRecord - 1);
-    console.log(`Starting Forward - will start at: ${startDifficulty}`);
+    if (import.meta.env.DEV) {
+      console.log(`Starting Forward - will start at: ${startDifficulty}`);
+    }
     setCurrentLength(startDifficulty);
     setConsecutiveCorrect(0);
     setConsecutiveWrong(0);
     // Ensure the first round uses the exact same computed difficulty
-    console.log(`Starting first round explicitly with length: ${startDifficulty}`);
+    if (import.meta.env.DEV) {
+      console.log(`Starting first round explicitly with length: ${startDifficulty}`);
+    }
     startRound(startDifficulty);
   };
 
   // Start a new round with specific length
   const startRound = (length = currentLength) => {
-    console.log(`Starting new round with length: ${length}`);
+    if (import.meta.env.DEV) {
+      console.log(`Starting new round with length: ${length}`);
+    }
     
     let sequence;
     if (currentMode === 'updating') {
       // For updating span, use dynamic sequence length
       sequence = generateUpdatingSequence();
       setCurrentRoundLength(updatingWindowSize); // Input grid shows window size
-      console.log(`Generated updating sequence (${sequence.length} total, window: ${updatingWindowSize}): ${sequence.join(', ')}`);
+      if (import.meta.env.DEV) {
+        console.log(`Generated updating sequence (${sequence.length} total, window: ${updatingWindowSize}): ${sequence.join(', ')}`);
+      }
     } else {
       // For forward/backward, use fixed length
       sequence = generateSequence(length);
       setCurrentRoundLength(length);
-      console.log(`Generated sequence: ${sequence.join(', ')}`);
+      if (import.meta.env.DEV) {
+        console.log(`Generated sequence: ${sequence.join(', ')}`);
+      }
     }
     
     setCurrentSequence(sequence);
@@ -132,7 +144,9 @@ export default function BrainPage() {
     // Start showing digits after a brief delay to ensure state is updated
     setTimeout(() => {
       if (sequence.length > 0) {
-        console.log(`Starting sequence display: ${sequence.join(', ')}`);
+        if (import.meta.env.DEV) {
+          console.log(`Starting sequence display: ${sequence.join(', ')}`);
+        }
         showDigitAtIndex(0, sequence);
       }
     }, 50);
@@ -140,7 +154,9 @@ export default function BrainPage() {
 
   // Start showing sequence
   const startShowingSequence = () => {
-    console.log('Starting to show sequence');
+    if (import.meta.env.DEV) {
+      console.log('Starting to show sequence');
+    }
     setGameState('showing');
     setCurrentDigitIndex(0);
     // Start showing digits immediately
@@ -150,7 +166,9 @@ export default function BrainPage() {
   // Show first digit to start the sequence
   const showFirstDigit = () => {
     if (currentSequence.length > 0) {
-      console.log(`Starting sequence display: ${currentSequence.join(', ')}`);
+      if (import.meta.env.DEV) {
+        console.log(`Starting sequence display: ${currentSequence.join(', ')}`);
+      }
       setCurrentDigitIndex(0);
       showDigitAtIndex(0);
     }
@@ -159,13 +177,17 @@ export default function BrainPage() {
   // Show digit at specific index
   const showDigitAtIndex = (index, sequence = currentSequence) => {
     if (index >= sequence.length) {
-      console.log('All digits shown, switching to input mode');
+      if (import.meta.env.DEV) {
+        console.log('All digits shown, switching to input mode');
+      }
       setGameState('input');
       setShowingDigit(null);
       return;
     }
 
-    console.log(`Showing digit ${index + 1}/${sequence.length}: ${sequence[index]}`);
+    if (import.meta.env.DEV) {
+      console.log(`Showing digit ${index + 1}/${sequence.length}: ${sequence[index]}`);
+    }
     setCurrentDigitIndex(index + 1);
     setShowingDigit(sequence[index]);
     hapticTrigger('light');
@@ -223,19 +245,25 @@ export default function BrainPage() {
       setConsecutiveCorrect(newConsecutiveCorrect);
       setConsecutiveWrong(0);
       hapticTrigger('success');
-      console.log(`Correct answer! Consecutive correct: ${newConsecutiveCorrect}`);
+      if (import.meta.env.DEV) {
+        console.log(`Correct answer! Consecutive correct: ${newConsecutiveCorrect}`);
+      }
       
       // Increase difficulty if 1 correct answer
       if (newConsecutiveCorrect >= 1) {
         if (currentMode === 'updating') {
           // For updating span, increase window size
           setUpdatingWindowSize(prev => Math.min(prev + 1, 5));
-          console.log(`Updating window size increased to ${updatingWindowSize + 1}`);
+          if (import.meta.env.DEV) {
+            console.log(`Updating window size increased to ${updatingWindowSize + 1}`);
+          }
         } else {
           // For forward/backward, increase sequence length
           newLength = currentLength + 1;
           setCurrentLength(newLength);
-          console.log(`Difficulty increased to ${newLength} digits`);
+          if (import.meta.env.DEV) {
+            console.log(`Difficulty increased to ${newLength} digits`);
+          }
         }
         setConsecutiveCorrect(0);
       }
@@ -244,19 +272,25 @@ export default function BrainPage() {
       setConsecutiveWrong(newConsecutiveWrong);
       setConsecutiveCorrect(0);
       hapticTrigger('error');
-      console.log(`Wrong answer! Consecutive wrong: ${newConsecutiveWrong}`);
+      if (import.meta.env.DEV) {
+        console.log(`Wrong answer! Consecutive wrong: ${newConsecutiveWrong}`);
+      }
       
       // Decrease difficulty if 1 wrong answer
       if (newConsecutiveWrong >= 1) {
         if (currentMode === 'updating') {
           // For updating span, decrease window size
           setUpdatingWindowSize(prev => Math.max(prev - 1, 2));
-          console.log(`Updating window size decreased to ${Math.max(updatingWindowSize - 1, 2)}`);
+          if (import.meta.env.DEV) {
+            console.log(`Updating window size decreased to ${Math.max(updatingWindowSize - 1, 2)}`);
+          }
         } else {
           // For forward/backward, decrease sequence length
           newLength = Math.max(2, currentLength - 1);
           setCurrentLength(newLength);
-          console.log(`Difficulty decreased to ${newLength} digits`);
+          if (import.meta.env.DEV) {
+            console.log(`Difficulty decreased to ${newLength} digits`);
+          }
         }
         setConsecutiveWrong(0);
       }
@@ -264,19 +298,25 @@ export default function BrainPage() {
 
     const newRoundsInMode = roundsInMode + 1;
     setRoundsInMode(newRoundsInMode);
-    console.log(`Round ${newRoundsInMode} completed in ${currentMode} mode with length ${newLength}`);
+    if (import.meta.env.DEV) {
+      console.log(`Round ${newRoundsInMode} completed in ${currentMode} mode with length ${newLength}`);
+    }
     
     // Continue immediately without showing result screen
     setTimeout(() => {
       // Check if current mode is complete (10 rounds)
       if (newRoundsInMode >= maxRoundsPerMode) {
-        console.log(`${currentMode} mode completed - ${maxRoundsPerMode} rounds finished`);
+        if (import.meta.env.DEV) {
+          console.log(`${currentMode} mode completed - ${maxRoundsPerMode} rounds finished`);
+        }
         updateRecords();
         if (currentMode === 'forward') {
           setCurrentMode('backward');
           // Set backward difficulty (first time starts at 2, returning users start 1 below record)
           const backwardStart = backwardSpanRecord === 0 ? 2 : Math.max(2, backwardSpanRecord - 1);
-          console.log(`Starting Backward with record: ${backwardSpanRecord}, will start at: ${backwardStart}`);
+          if (import.meta.env.DEV) {
+            console.log(`Starting Backward with record: ${backwardSpanRecord}, will start at: ${backwardStart}`);
+          }
           setCurrentLength(backwardStart);
           setGameState('rest');
           setRemainingTime(30);
@@ -284,7 +324,9 @@ export default function BrainPage() {
           setCurrentMode('updating');
           // Set updating window size (first time starts at 2, returning users start 1 below record)
           const updatingStart = updatingSpanRecord === 0 ? 2 : Math.max(2, updatingSpanRecord - 1);
-          console.log(`Starting Updating with record: ${updatingSpanRecord}, will start at: ${updatingStart}`);
+          if (import.meta.env.DEV) {
+            console.log(`Starting Updating with record: ${updatingSpanRecord}, will start at: ${updatingStart}`);
+          }
           setUpdatingWindowSize(updatingStart);
           setGameState('rest');
           setRemainingTime(30);
@@ -305,18 +347,24 @@ export default function BrainPage() {
   const updateRecords = () => {
     switch (currentMode) {
       case 'forward':
-        console.log(`Saving Forward record: ${currentLength} (was: ${forwardSpanRecord})`);
+        if (import.meta.env.DEV) {
+          console.log(`Saving Forward record: ${currentLength} (was: ${forwardSpanRecord})`);
+        }
         setForwardSpanRecord(currentLength); // Save ending difficulty
         // Also save to localStorage immediately
         localStorage.setItem('forwardSpanRecord', currentLength.toString());
         break;
       case 'backward':
-        console.log(`Saving Backward record: ${currentLength} (was: ${backwardSpanRecord})`);
+        if (import.meta.env.DEV) {
+          console.log(`Saving Backward record: ${currentLength} (was: ${backwardSpanRecord})`);
+        }
         setBackwardSpanRecord(currentLength); // Save ending difficulty
         localStorage.setItem('backwardSpanRecord', currentLength.toString());
         break;
       case 'updating':
-        console.log(`Saving Updating record: ${updatingWindowSize} (was: ${updatingSpanRecord})`);
+        if (import.meta.env.DEV) {
+          console.log(`Saving Updating record: ${updatingWindowSize} (was: ${updatingSpanRecord})`);
+        }
         setUpdatingSpanRecord(updatingWindowSize); // Save ending difficulty
         localStorage.setItem('updatingSpanRecord', updatingWindowSize.toString());
         break;
